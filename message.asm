@@ -70,26 +70,24 @@ receive_message:
 	call read_uart_byte
 	; Store
 	ldi (hl),a 
-	inc hl 
 	; Get second byte
 	call read_uart_byte
 	; Store
-	ld (hl),a 
-	inc hl 
+	ldi (hl),a 
 
 	; Receive the rest
 	ld de,(receive_buffer)
-	inc de
 .loop:
 	; Check if all bytes received
-	dec de
+	ld a,e
+	or d
 	ret z	; all bytes received
 	; Get next byte
 	call read_uart_byte
 	; Store
-	ld (hl),a 
-	inc hl 
+	ldi (hl),a 
 	; Next
+	dec de
 	jr .loop
 
 
@@ -119,9 +117,9 @@ send_message:
 	call write_uart_byte
 
 	; DE contains the length
-	inc de
 .loop:
-	dec de
+	ld a,e
+	or d
 	ret z		; Return if all bytes are sent
 
 	; Get next byte
@@ -129,6 +127,7 @@ send_message:
 	; Write to UART
 	call write_uart_byte
 	; Next
+	dec de
 	jr .loop
 
   

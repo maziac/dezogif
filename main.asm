@@ -34,8 +34,6 @@ BORDER:     equ 0xFE
 
 ;===========================================================================
 ; main routine - the code execution starts here.
-; Sets up the new interrupt routine, the memory
-; banks and jumps to the start loop.
 ;===========================================================================
 main:
     ; Disable interrupts
@@ -46,7 +44,7 @@ main:
 
 
     ; Enable interrupts
-    ei
+    ;ei
 
     ld a,6
     out (BORDER),a
@@ -60,18 +58,25 @@ main:
   ENDIF
 
 main_loop:
-  ;jr main_loop
-    ; Loopback UART
-
-
     ; Check if byte available.
     call check_uart_rx
     jr nz,state_receive_message
 
     jr main_loop
 
+
+; First byte of message has been detected. Now receive the rest
 state_receive_message:
     call receive_message
+    ; TODO: Interprete message.
+
+    ; Simply send back for now
+    ld hl,receive_buffer
+    call send_message
+
+.infinite:
+    jr .infinite
+
     jr main_loop
 
 
