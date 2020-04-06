@@ -1,0 +1,34 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "sjasmplus",
+            "type": "shell",
+            "command": "sjasmplus",
+            "args": [
+                "--zxnext",
+                "--lst=dbg-uart-if.list",
+                "--fullpath",
+                "main.asm"
+            ],
+            "problemMatcher": {
+                "fileLocation": [
+                    "relative",
+                    "${workspaceRoot}"
+                ],
+                "pattern": {
+                    "regexp": "^(.*)\\((\\d+)\\):\\s+(warning|error):\\s+(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "severity": 3,
+                    "message": 4
+                }
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
+$(ASM) --zxnext -DOUT_FILE=\"out/music_player.nex\" --inc=$(SRC) --lst=$(OUT)/music_player.list --sld=$(OUT)/music_player.sld --fullpath $(SRC)/examples/music_player.asm

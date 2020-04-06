@@ -1,0 +1,71 @@
+{
+    // Verwendet IntelliSense zum Ermitteln möglicher Attribute.
+    // Zeigen Sie auf vorhandene Attribute, um die zugehörigen Beschreibungen anzuzeigen.
+    // Weitere Informationen finden Sie unter https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "z80-debug",
+            "request": "launch",
+            "name": "dbg-uart-if",
+            "zhostname": "localhost",
+            "zport": 10000,
+            "listFiles": [
+                {
+                    "path": "dbg-uart-if.list",
+                    "useFiles": true,
+                    "asm": "sjasmplus",
+                    "mainFile": "main.asm"
+                }
+            ],
+            "startAutomatically": false,
+            "skipInterrupt": true,
+            "commandsAfterLaunch": [
+                //"-sprites",
+                //"-patterns"
+            ],
+            "disassemblerArgs": {
+                "esxdosRst": true
+            },
+            "rootFolder": "${workspaceFolder}",
+            "topOfStack": "stack_top",
+            "load": "dbg-uart-if.sna",
+            "smallValuesMaximum": 513,
+            "tmpDir": ".tmp"
+       },
+
+
+       {
+            "type": "z80-debug",
+            "request": "launch",
+            "name": "Unit Tests",
+            "unitTests": true,
+            "zhostname": "localhost",
+            "zport": 10000,
+            "resetOnLaunch": true,
+            "skipInterrupt": true,
+            "commandsAfterLaunch": [
+                "-wpmem enable",
+                "-assert enable",
+                //"-logpoint enable", // Enable all logpoints, especially [UNITTEST]
+            ],
+            "disassemblerArgs": {
+                "esxdosRst": true
+            },
+            "listFiles": [
+                {
+                    "path": "z80-sample-program.list",
+                    "useFiles": true,
+                    "asm": "sjasmplus",
+                    "mainFile": "main.asm"
+                }
+            ],
+    
+            "rootFolder": "${workspaceFolder}",
+            "load": "z80-sample-program.sna",
+            "smallValuesMaximum": 513,
+            "tmpDir": ".tmp"
+        },
+
+    ]
+}

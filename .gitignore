@@ -1,0 +1,6 @@
+*.obj
+.DS_Store
+.vscode/settings.json
+.tmp/
+*.list
+*.nex
