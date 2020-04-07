@@ -11,6 +11,7 @@
     
     include "unit_tests/unit_tests.inc"  
     include "unit_tests/ut_backup.asm"
+    include "unit_tests/ut_commands.asm"
  
     ; Initialization routine.
     UNITTEST_INITIALIZE

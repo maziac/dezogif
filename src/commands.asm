@@ -39,12 +39,13 @@ cmd_jump_table:
 ;===========================================================================
 ; Jumps to the correct command according the jump table.
 ; Parameters:
-;	A = the command, e.g. CMD_GET_CONFIG
+;	(receive_buffer.command) = the command, e.g. CMD_GET_CONFIG
 ; Changes:
 ;  NA
 ;===========================================================================
 cmd_call:
 	; Get pointer to subroutine
+	ld a,(receive_buffer.command)
 	add a,a
 	ld hl,cmd_jump_table
 	add hl,a
@@ -105,6 +106,64 @@ cmd_read_regs:
 	add hl,de 
 	pop bc
 	djnz .loop
+	ret
+
+
+
+;===========================================================================
+; CMD_WRITE_REG
+; Writes one register.
+; Changes:
+;  NA
+;===========================================================================
+cmd_write_reg:
+	; Send response
+	ld de,5
+	call send_length_and_seqno
+.test:	; jump label for unit tests
+	; Get value in DE
+	ld hl,receive_buffer.register_value+1
+	ldd d,(hl)
+	ldd e,(hl)
+	; Which register
+	ld a,(hl)	; hl=receive_buffer.register_number
+	or a
+	jr nz,.next1
+	; PC
+	ld hl,(backup.sp)
+.store_dreg:
+	ldi (hl),e
+	ld (hl),d
+	ret
+.next1:
+	sub 13
+	jr nc,.next2
+	; Double register. A is -12 to -2
+	neg ; A is 12 to 2
+	add a,a	; a*2: 24 to 4
+	ld hl,backup.hl2-4
+	add a,a
+	add hl,a
+	jr .store_dreg
+.next2:
+	; Single register
+	jr nz,.next4
+	; IM
+	ld hl,backup.im
+.store_reg:
+	ld (hl),e
+	ret
+.next4:	
+	sub 35-13
+	ret nc	; Otherwise unknown
+	; Single register. A is -20 to -1
+	neg ; A is 20 to 1
+	dec a	; A is 19 to 0
+	xor 0x01	; The endianess need to be corrected.
+	ld hl,backup.hl2
+	add hl,a
+	jr .store_reg
+
 
 
 ;===========================================================================

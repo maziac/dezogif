@@ -59,6 +59,10 @@ receive_buffer:
 .command:
 	defb 0
 .payload:
+.register_number:	; For CMD_READ_REGS
+	defs 1
+.register_value:	; For CMD_READ_REGS
+	defs 2
 	defs 100
     defb 0  ; WPMEM
 
@@ -118,7 +122,6 @@ cmd_loop:
 	; Receive
 	call receive_message
 	; Handle command
-	ld a,(receive_buffer.command)
 	call cmd_call
 	; Wait on next command
 	jr cmd_loop
