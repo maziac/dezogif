@@ -17,3 +17,23 @@ mono CSpect.exe  -sound -w2 -zxnext -nextrom -exit -brk -tv -mmc=. ../../asm/dbg
 
 to start it from the CSpect directory.
 
+
+# Design
+
+This uart driver needs cooperation by the debugged program.
+I.e. the debugged program needs to call it in it's main loop.
+
+The UART driver receive register is checked. If nothing has been received then the driver immediately returns. 
+Thus the overhead for a program should be just a few instructions.
+
+When a byte has been received the UART driver takes over control.
+It disables interrupts and receives the complete UART message.
+When received the message/command is interpreted.
+A response is sent. E.g. the register values are sent.
+
+The UART driver stays in it's own loop waiting for the next message/command.
+This goes on until the UART driver receives a CONTINUE command.
+The UART driver will restore all registers and return to the debugged program's main loop.
+
+
+

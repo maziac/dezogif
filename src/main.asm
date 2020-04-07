@@ -61,9 +61,11 @@ main:
 
 main_loop:
     ; Check if byte available.
-    call check_for_message
+    call dbg_check_for_message
 
-    jr main_loop
+    ; Some code
+    ld bc,0xb1c1
+    ld de,0xd1e1
 
     jr main_loop
 

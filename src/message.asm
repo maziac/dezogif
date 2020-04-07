@@ -85,7 +85,7 @@ init_receive_buffer:
 ; Changes:
 ;  -
 ;===========================================================================
-check_for_message:
+dbg_check_for_message:
 	; Save
 	ld (backup.hl),hl
 	ld (backup.sp),sp
@@ -117,27 +117,12 @@ start_cmd_loop:
 cmd_loop:
 	; Receive
 	call receive_message
-	; Parse
-	call parse_received_message
+	; Handle command
+	ld a,(receive_buffer.command)
+	call cmd_call
 	; Wait on next command
 	jr cmd_loop
 	
-;===========================================================================
-; Parses a received message and calls the appropriate command.
-; Also copies the seqence number into the send_buffer.
-; Returns:
-;  -
-; Changes:
-;  A, HL, BC
-;===========================================================================
-parse_received_message:
-	ld a,(receive_buffer.command)
-	cp CMD.GET_CONFIG
-	jp z,cmd_get_config
-
-	cp CMD.CONTINUE
-	jp z,cmd_continue
-	ret
 
 ;===========================================================================
 ; Once the first byte has been detected this function should be called.
