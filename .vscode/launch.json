@@ -5,15 +5,18 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "type": "z80-debug",
+            "type": "dezog",
             "request": "launch",
-            "name": "dbg-uart-if",
-            "zhostname": "localhost",
-            "zport": 10000,
+            "name": "ZEsarUX",
+            "remoteType": "zrcp",
+            "zrcp": {
+                "hostname": "localhost",
+                "port": 10000,
+                "socketTimeout": 50
+            },
             "listFiles": [
                 {
                     "path": "dbg-uart-if.list",
-                    "useFiles": true,
                     "asm": "sjasmplus",
                     "mainFile": "main.asm"
                 }
@@ -36,12 +39,14 @@
 
 
        {
-            "type": "z80-debug",
+            "type": "dezog",
             "request": "launch",
             "name": "Unit Tests",
             "unitTests": true,
-            "zhostname": "localhost",
-            "zport": 10000,
+            "remoteType": "zsim",
+            "zsim": {
+                "loadZxRom": true
+            },
             "resetOnLaunch": true,
             "skipInterrupt": true,
             "commandsAfterLaunch": [
@@ -54,15 +59,14 @@
             },
             "listFiles": [
                 {
-                    "path": "z80-sample-program.list",
-                    "useFiles": true,
+                    "path": "dbg-uart-if.list",
                     "asm": "sjasmplus",
                     "mainFile": "main.asm"
                 }
             ],
     
             "rootFolder": "${workspaceFolder}",
-            "load": "z80-sample-program.sna",
+            "load": "dbg-uart-if.sna",
             "smallValuesMaximum": 513,
             "tmpDir": ".tmp"
         },

@@ -14,6 +14,8 @@
 
     include "uart.asm"
     include "message.asm"
+    include "commands.asm"
+    include "backup.asm"
 
     
 ;===========================================================================
@@ -59,23 +61,9 @@ main:
 
 main_loop:
     ; Check if byte available.
-    call check_uart_rx
-    jr nz,state_receive_message
+    call check_for_message
 
     jr main_loop
-
-
-; First byte of message has been detected. Now receive the rest
-state_receive_message:
-    call receive_message
-    ; TODO: Interprete message.
-
-    ; Simply send back for now
-    ld hl,receive_buffer
-    call send_message
-
-.infinite:
-    jr .infinite
 
     jr main_loop
 
@@ -100,7 +88,7 @@ stack_top:
 
 
     ; Save NEX file
-    SAVENEX OPEN "dbg-uart-if.nex", main, stack_top
+    SAVENEX OPEN BIN_FILE, main, stack_top
     SAVENEX CORE 2, 0, 0        ; Next core 2.0.0 required as minimum
     ;SAVENEX CFG 0               ; black border
     ;SAVENEX BAR 0, 0            ; no load bar
