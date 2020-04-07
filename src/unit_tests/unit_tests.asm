@@ -7,13 +7,14 @@
 
     DEFINE UNIT_TEST
 
-     
-    include "main.asm"
+    ORG 0x7000
+    
     include "unit_tests/unit_tests.inc"  
-    include "unit_tests/ut_macros.asm"  
-;    include "unit_tests/ut_audio.asm"
+    include "unit_tests/ut_backup.asm"
  
     ; Initialization routine.
     UNITTEST_INITIALIZE
     ret
 
+    include "main.asm"
+ 

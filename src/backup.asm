@@ -84,6 +84,7 @@ save_registers:
 	ex af,af'
 	exx
 
+ ld a,9
 	push af ; Restore return address
 	ret 
 

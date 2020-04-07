@@ -17,7 +17,7 @@ OUT = out
 MAIN_ASM = $(SRC)/main.asm 
 ASM_FILES = $(wildcard $(SRC)/*.asm)
 UT_ASM = $(SRC)/unit_tests/unit_tests.asm 
-UT_ASM_FILES = $(UT_ASM) $(ASM_FILES)
+UT_ASM_FILES = $(wildcard $(SRC)/unit_tests/*.asm) $(ASM_FILES)
 #OBJS = $(BIN)/$(notdir $(ASM_FILES:.asm=.obj))
 #LABELS_OUT = $(OUT)/$(PROJ).labels
 # The assembler output listing file:
@@ -40,7 +40,7 @@ clean:
 main:	$(PRG_BIN)
 
 $(PRG_BIN):	$(ASM_FILES) Makefile $(OUT)/
-	$(ASM) --inc=$(SRC) --lst=$(LIST_OUT) --fullpath -DBIN_FILE=\"$(PRG_BIN)\" $(MAIN_ASM) $(EXPORTS_ASM)
+	$(ASM) --inc=$(SRC) --lst=$(LIST_OUT) --fullpath -DBIN_FILE=\"$(PRG_BIN)\" $(MAIN_ASM)
 
 
 # Build the unit tests
