@@ -95,7 +95,7 @@ save_registers:
 ; ===========================================================================
 restore_registers:
 	; Skip im
-	ld sp, backup.i
+	ld sp,backup.i
 
 	; I and R register
 	pop hl
@@ -125,4 +125,6 @@ restore_registers:
 	pop af
 
 	ld sp,(backup.sp)
+
+	; Jump to the address put on the stack before	
 	ret 

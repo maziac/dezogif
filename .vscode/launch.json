@@ -58,7 +58,7 @@
                 {
                     "path": "out/ut.list",
                     "asm": "sjasmplus",
-                    "mainFile": "unit_tests.asm",
+                    "mainFile": "unit_tests/unit_tests.asm",
                     "srcDirs": [
                         "src"
                     ]

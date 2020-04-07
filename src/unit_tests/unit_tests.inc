@@ -72,6 +72,11 @@
         pop de 
     ENDM
 
+    ; Creates a failure when reached.
+    MACRO TEST_FAIL
+        jp UNITTEST_TEST_READY_FAILURE
+    ENDM
+
     ; Tests A for a specific value.
     MACRO TEST_A value?
         cp value?
