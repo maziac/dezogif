@@ -373,8 +373,15 @@ cmd_get_slots:
 	call send_length_and_seqno
 
 .inner:
+	ld de,(REG_MMU<<8)+8	; Ld d and e at the same time
+.loop:
 	; Get bank for slot
-	ld a,REG_MMU
+	ld a,d
 	call read_tbblue_reg	; Result in A
+	; Send
+	call write_uart_byte
+	inc d
+	dec e
+	jr nz,.loop
 
 	ret

@@ -12,11 +12,11 @@
 test_stack:		defw 0
 	
 	defb 0	; WPMEM
-test_memory_src:	defb 1, 2, 3, 4, 5
+test_memory_src:	defb 1, 2, 3, 4, 5, 6, 7, 8
 test_memory_src_end:
 	defb 0	; WPMEM
 
-test_memory_dst:	defb 0, 0, 0, 0, 0
+test_memory_dst:	defb 0, 0, 0, 0, 0, 0, 0, 0
 test_memory_dst_end:
 	defb 0	; WPMEM
 
@@ -385,7 +385,6 @@ redirected_write_uart_byte:
 	ret
 
 
-
 ; Test writing memory.
 UT_cmd_write_mem:
 	; Redirect receive_bytes funtion call
@@ -408,6 +407,33 @@ UT_cmd_write_mem:
 	TEST_MEMORY_BYTE test_memory_dst, 0x5C
 	TEST_MEMORY_BYTE test_memory_dst_end-1, 0x5C
 	
+	ret
+	
+
+; Test retrieving the slot/bank association.
+UT_cmd_get_slots:
+	; Redirect write_uart_byte funtion call
+	ld hl,write_uart_byte
+	ldi (hl),0xC3	; JP
+	ldi (hl),redirected_write_uart_byte&0xFF
+	ld (hl),redirected_write_uart_byte>>8
+
+	; Pointer to write to
+	ld ix,test_memory_dst
+
+	; Test
+	call cmd_get_slots.inner
+
+	; Compare with standard slots
+	TEST_MEMORY_BYTE test_memory_dst, 	0xFF	; ROM
+	TEST_MEMORY_BYTE test_memory_dst+1, 0xFF	; ROM
+	TEST_MEMORY_BYTE test_memory_dst+2, 10
+	TEST_MEMORY_BYTE test_memory_dst+3, 11
+	TEST_MEMORY_BYTE test_memory_dst+4, 4
+	TEST_MEMORY_BYTE test_memory_dst+5, 5
+	TEST_MEMORY_BYTE test_memory_dst+6, 0
+	TEST_MEMORY_BYTE test_memory_dst+7, 1
+
 	ret
 	
 
