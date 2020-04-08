@@ -21,8 +21,8 @@
 cmd_jump_table:
 .get_config:		defw cmd_get_config
 .read_regs:			defw cmd_read_regs
-.write_regs:		defw 0
-.write_bank:		defw 0
+.write_regs:		defw cmd_write_reg
+.write_bank:		defw cmd_write_bank
 .continue:			defw cmd_continue
 .pause:				defw cmd_pause
 .add_breakpoint:	defw 0
@@ -109,7 +109,6 @@ cmd_read_regs:
 	ret
 
 
-
 ;===========================================================================
 ; CMD_WRITE_REG
 ; Writes one register.
@@ -117,9 +116,11 @@ cmd_read_regs:
 ;  NA
 ;===========================================================================
 cmd_write_reg:
+	call cmd_write_reg.test
 	; Send response
 	ld de,5
-	call send_length_and_seqno
+	jp send_length_and_seqno
+	
 .test:	; jump label for unit tests
 	; Get value in DE
 	ld hl,receive_buffer.register_value+1
@@ -176,7 +177,21 @@ cmd_write_reg:
 	; Store register
 	ld (hl),e
 	ret
-	
+
+
+;===========================================================================
+; CMD_WRITE_BANK
+; Writes one memory bank.
+; Changes:
+;  NA
+;===========================================================================
+cmd_write_reg:
+	; Send response
+	ld de,1
+	call send_length_and_seqno
+
+	ret
+
 
 ;===========================================================================
 ; CMD_CONTINUE
