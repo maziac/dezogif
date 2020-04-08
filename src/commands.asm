@@ -385,3 +385,34 @@ cmd_get_slots:
 	jr nz,.loop
 
 	ret
+
+
+;===========================================================================
+; CMD_READ_STATE
+; Returns the complete state of the device.
+; Changes:
+;  NA
+;===========================================================================
+cmd_read_state:
+	; TODO: Implement to save/restore state
+
+	; Send response
+	ld de,1
+	call send_length_and_seqno
+
+	ret
+
+;===========================================================================
+; CMD_WRITE_STATE
+; Writes the complete state of the device.
+; Changes:
+;  NA
+;===========================================================================
+cmd_write_state:
+	; TODO: Implement to save/restore state
+
+	; Send response
+	ld de,1
+	jp send_length_and_seqno
+
+
