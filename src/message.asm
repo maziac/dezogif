@@ -120,6 +120,9 @@ dbg_check_for_message:
 start_cmd_loop:
 	; Backup all registers after 'af', SP = points to backup.af
 	call save_registers
+	; Maximize clock speed
+	ld a,CLOCK_28MHZ
+	nextreg TURBO_CONTROL_REGISTER,a
 cmd_loop:
 	; Receive
 	call receive_message

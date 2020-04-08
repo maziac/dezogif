@@ -38,6 +38,7 @@ backup:
 .af:		defw 0
 .sp:		defw 0
 .pc:		defw 0
+backup.speed:	defb 0
 backup_top:
 			defb 0	; WPMEM
 
@@ -84,7 +85,14 @@ save_registers:
 	ex af,af'
 	exx
 
-	push af ; Restore return address
+ 	; Restore return address
+	push af
+
+	; Save clock speed
+	ld a,TURBO_CONTROL_REGISTER
+	call read_tbblue_reg
+	ld (backup.speed),a
+
 	ret 
 
 
@@ -94,7 +102,7 @@ save_registers:
 ;  SP = points to debug_stack_top-2 (i.e. the return address)
 ; ===========================================================================
 restore_registers:
-	; Skip im
+	; Skip IM
 	ld sp,backup.i
 
 	; I and R register
@@ -122,9 +130,14 @@ restore_registers:
 	pop hl
 	pop de
 	pop bc
+
+	; Restore clock speed
+	ld a,(backup.speed)
+	nextreg TURBO_CONTROL_REGISTER,a
+
+	; Restore AF
 	pop af
 
-	ld sp,(backup.sp)
-
 	; Jump to the address put on the stack before	
+	ld sp,(backup.sp)
 	ret 

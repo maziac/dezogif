@@ -10,8 +10,14 @@
 ;===========================================================================
 
 ; Feature control registers
-TBBLUE_REGISTER_SELECT:   equ 0x243B
-TBBLUE_REGISTER_ACCESS:   equ 0x253B
+TBBLUE_REGISTER_SELECT:   	equ 0x243B
+TBBLUE_REGISTER_ACCESS:  	equ 0x253B
+
+; Turbo control
+TURBO_CONTROL_REGISTER:		equ 0x07
+
+; Max. clock
+CLOCK_28MHZ:	equ 0b00000011
 
 
 ;===========================================================================
