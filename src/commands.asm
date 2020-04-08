@@ -47,14 +47,12 @@ cmd_call:
 	; Get pointer to subroutine
 	ld a,(receive_buffer.command)
 	out (BORDER),a
-	call write_uart_byte
-	jr cmd_loop
-
 	add a,a
 	ld hl,cmd_jump_table-2
 	add hl,a
 	ldi a,(hl)
 	ld h,(hl)
+	ld l,a
 	; safety check
 	or a,h
 	ret z	; return if jump address is zero
@@ -258,7 +256,7 @@ cmd_continue:
 ;  NA
 ;===========================================================================
 cmd_pause:
- ld a,YELLOW
+ ld a,MAGENTA
  out (BORDER),a
 
 	; Send response
