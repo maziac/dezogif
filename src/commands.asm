@@ -25,15 +25,15 @@ cmd_jump_table:
 .write_bank:		defw cmd_write_bank
 .continue:			defw cmd_continue
 .pause:				defw cmd_pause
-.add_breakpoint:	defw 0
-.remove_breakpoint:	defw 0
+.add_breakpoint:	defw cmd_add_breakpoint
+.remove_breakpoint:	defw cmd_remove_breakpoint
 .add_watchpoint:	defw 0	; not supported
 .remove_watchpoint:	defw 0	; not supported
-.read_mem:			defw 0
-.write_mem:			defw 0
-.get_slots:			defw 0
-.read_state:		defw 0
-.write_state:		defw 0
+.read_mem:			defw cmd_read_mem
+.write_mem:			defw cmd_write_mem
+.get_slots:			defw cmd_get_slots
+.read_state:		defw cmd_read_state
+.write_state:		defw cmd_write_state
 
 
 ;===========================================================================
@@ -46,8 +46,11 @@ cmd_jump_table:
 cmd_call:
 	; Get pointer to subroutine
 	ld a,(receive_buffer.command)
+	out (BORDER),a
+	jr cmd_call
+
 	add a,a
-	ld hl,cmd_jump_table
+	ld hl,cmd_jump_table-2
 	add hl,a
 	ldi a,(hl)
 	ld h,(hl)
@@ -117,6 +120,7 @@ cmd_read_regs:
 ;===========================================================================
 cmd_write_reg:
 	; Read rest of message
+	ld hl,receive_buffer.payload
 	ld de,3
 	call receive_bytes
 	; Execute command
@@ -191,8 +195,8 @@ cmd_write_reg:
 ;===========================================================================
 cmd_write_bank:
 	; Read bank number of message
-	ld de,1
-	call receive_bytes
+	call read_uart_byte
+	ld (receive_buffer.bank_number),a
 	; Execute command
 	call cmd_write_bank.inner
 	; Send response
@@ -234,6 +238,7 @@ cmd_write_bank:
 ;===========================================================================
 cmd_continue:
 	; Read breakpoints from message
+	ld hl,receive_buffer.payload
 	ld de,6
 	call receive_bytes
 	; Send response
@@ -252,6 +257,9 @@ cmd_continue:
 ;  NA
 ;===========================================================================
 cmd_pause:
+ ld a,YELLOW
+ out (BORDER),a
+
 	; Send response
 	ld de,1
 	jp send_length_and_seqno
@@ -267,6 +275,7 @@ cmd_pause:
 ;===========================================================================
 cmd_add_breakpoint:
 	; Read breakpoint from message
+	ld hl,receive_buffer.payload
 	ld de,2
 	call receive_bytes
 	; Consume condition (conditions not implemented)
@@ -297,6 +306,7 @@ cmd_add_breakpoint:
 ;===========================================================================
 cmd_remove_breakpoint:
 	; Read breakpoint ID from message
+	ld hl,receive_buffer.payload
 	ld de,2
 	call receive_bytes
 
@@ -315,6 +325,7 @@ cmd_remove_breakpoint:
 ;===========================================================================
 cmd_read_mem:
 	; Read address and size from message
+	ld hl,receive_buffer.payload
 	ld de,5
 	call receive_bytes
 
@@ -347,6 +358,7 @@ cmd_read_mem:
 ;===========================================================================
 cmd_write_mem:
 	; Read address and size from message
+	ld hl,receive_buffer.payload
 	ld de,5
 	call receive_bytes
 

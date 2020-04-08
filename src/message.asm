@@ -137,8 +137,10 @@ start_cmd_loop:
 	ld a,RTM_28MHZ
 	nextreg REG_TURBO_MODE,a
 cmd_loop:
-	; Receive
-	call receive_message
+	; Receive length sequence number and command
+	ld hl,receive_buffer
+	ld de,receive_buffer.payload-receive_buffer
+	call receive_bytes
 	; Handle command
 	call cmd_call
 	; Wait on next command
@@ -177,7 +179,7 @@ receive_bytes:
 	jr nz,.loop
 	ret
 
-
+/*
 ;===========================================================================
 ; Once the first byte has been detected this function should be called.
 ; The subroutine does not return before all bytes of the message have been
@@ -214,6 +216,7 @@ receive_message:
 	; Next
 	dec de
 	jr .loop
+*/
 
 
 ;===========================================================================

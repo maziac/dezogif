@@ -25,9 +25,6 @@
 ;===========================================================================
 
 
-; Border (for testing)
-BORDER:     equ 0xFE
-
     
 
 ;===========================================================================
@@ -61,6 +58,9 @@ main:
 main_loop:
     ; Check if byte available.
     call dbg_check_for_message
+
+    inc a
+    out (BORDER),a
 
     ; Some code
     ld bc,0xb1c1
