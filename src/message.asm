@@ -134,8 +134,8 @@ start_cmd_loop:
 	call save_registers
 	; SP is now at debug_stack_top
 	; Maximize clock speed
-	ld a,CLOCK_28MHZ
-	nextreg TURBO_CONTROL_REGISTER,a
+	ld a,RTM_28MHZ
+	nextreg REG_TURBO_MODE,a
 cmd_loop:
 	; Receive
 	call receive_message

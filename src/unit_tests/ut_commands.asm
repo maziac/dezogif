@@ -265,7 +265,7 @@ cmd_write_reg.UT_wrong_register:
 ; The test simulates the receive_bytes function call.
 UT_cmd_write_bank:
 	; Remember current bank for slot
-	ld a,.slot+0x50
+	ld a,.slot+REG_MMU
 	call read_tbblue_reg	; Result in A
 	push af	; remember
 
@@ -288,7 +288,7 @@ UT_cmd_write_bank:
 	call cmd_write_bank.inner
 
 	; Check that slot/bank has been restored
-	ld a,.slot+0x50
+	ld a,.slot+REG_MMU
 	call read_tbblue_reg	; Result in A
 	pop de		; Get original bank in D 
 	push de
@@ -296,7 +296,7 @@ UT_cmd_write_bank:
 
 	; Page in the memory bank
 .slot:	equ ((cmd_write_bank+2*0x2000)>>13)&0x07
-	nextreg .slot+0x50,28
+	nextreg .slot+REG_MMU,28
 	
 	ld hl,.slot<<13	; Start address
 	ld a,(hl)
@@ -314,7 +314,7 @@ UT_cmd_write_bank:
 	call cmd_write_bank.inner
 
 	; Page in the memory bank
-	nextreg .slot+0x50,28
+	nextreg .slot+REG_MMU,28
 	
 	ld hl,.slot<<13	; Start address
 	ld a,(hl)
@@ -326,7 +326,7 @@ UT_cmd_write_bank:
 
 	; Restore slot/bank (D)
 	pop de
-	ld a,.slot+0x50
+	ld a,.slot+REG_MMU
 	call write_tbblue_reg	; A=register, D=value
 	ret
 

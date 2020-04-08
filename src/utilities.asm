@@ -9,18 +9,7 @@
 ; Constants
 ;===========================================================================
 
-; Feature control registers
-TBBLUE_REGISTER_SELECT:   	equ 0x243B
-TBBLUE_REGISTER_ACCESS:  	equ 0x253B
 
-; Turbo control
-TURBO_CONTROL_REGISTER:		equ 0x07
-
-; Display timing register
-DISPLAY_TIMING_REGISTER:	equ 0x11
-
-; Max. clock
-CLOCK_28MHZ:	equ 0b00000011
 
 
 ;===========================================================================
@@ -40,11 +29,11 @@ CLOCK_28MHZ:	equ 0b00000011
 ;===========================================================================
 read_slot_bank:
 	; Select register
-	add a,0x50	; Slot
-	ld bc,TBBLUE_REGISTER_SELECT
+	add a,REG_MMU	; Slot
+	ld bc,IO_NEXTREG_REG
 	out (c),a
 	; Read bank
-	ld b,TBBLUE_REGISTER_ACCESS>>8
+	ld b,IO_NEXTREG_DAT>>8
 	in a,(c)
 	ret
 
@@ -60,11 +49,11 @@ read_slot_bank:
 ;===========================================================================
 write_slot_bank:
 	; Select register
-	add a,0x50	; Slot
-	ld bc,TBBLUE_REGISTER_SELECT
+	add a,REG_MMU	; Slot
+	ld bc,IO_NEXTREG_REG
 	out (c),a
 	; write bank
-	ld b,TBBLUE_REGISTER_ACCESS>>8
+	ld b,IO_NEXTREG_DAT>>8
 	out (c),d
 	ret
 */
@@ -81,7 +70,7 @@ write_slot_bank:
 ;===========================================================================
 read_tbblue_reg:
 	; Select register in A
-	ld bc,TBBLUE_REGISTER_SELECT
+	ld bc,IO_NEXTREG_REG
 	out (c),a
 	; Read register
 	inc b	; TBBLUE_REGISTER_ACCESS

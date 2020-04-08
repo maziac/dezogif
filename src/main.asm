@@ -12,6 +12,7 @@
 ; Include modules
 ;===========================================================================
 
+    include "zxnext/zxnext_regs.inc"
     include "utilities.asm"
     include "uart.asm"
     include "message.asm"

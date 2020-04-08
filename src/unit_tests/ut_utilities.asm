@@ -14,17 +14,17 @@
 UT_write_read_slot:
 .free_slot:	equ ((UT_write_read_slot+2*0x2000)>>13)&0x07
 	; Remember currently used bank
-	ld a,.free_slot+0x50
+	ld a,.free_slot+REG_MMU
 	call read_tbblue_reg
 	push af		; Remember
 
 	; Write
-	ld a,.free_slot+0x50
+	ld a,.free_slot+REG_MMU
 	ld d,29	; bank 29
 	call write_tbblue_reg 
 
 	; Read
-	ld a,.free_slot+0x50
+	ld a,.free_slot+REG_MMU
 	call read_tbblue_reg 
 
 	; Test
@@ -32,7 +32,7 @@ UT_write_read_slot:
 
 	; Restore previous used bank
 	pop de
-	ld a,.free_slot+0x50
+	ld a,.free_slot+REG_MMU
 	call write_tbblue_reg 
 
     ret 

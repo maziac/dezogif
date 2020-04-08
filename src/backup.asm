@@ -89,7 +89,7 @@ save_registers:
 	push af
 
 	; Save clock speed
-	ld a,TURBO_CONTROL_REGISTER
+	ld a,REG_TURBO_MODE
 	call read_tbblue_reg
 	ld (backup.speed),a
 
@@ -133,7 +133,7 @@ restore_registers:
 
 	; Restore clock speed
 	ld a,(backup.speed)
-	nextreg TURBO_CONTROL_REGISTER,a
+	nextreg REG_TURBO_MODE,a
 
 	; Restore AF
 	pop af

@@ -203,13 +203,13 @@ cmd_write_bank:
 	; Choose the right slot: don't use a slot where this program is located.
 .slot:	equ ((cmd_write_bank+2*0x2000)>>13)&0x07
 	; Remember current bank for slot
-	ld a,.slot+0x50
+	ld a,.slot+REG_MMU
 	call read_tbblue_reg	; Result in A
 	push af	; remember
 
 	; Change bank for slot 
 	ld a,(receive_buffer.bank_number)
-	nextreg .slot+0x50,a
+	nextreg .slot+REG_MMU,a
 
 	; Read bytes from UART and put into bank
 	ld hl,.slot<<13	; Start address
@@ -218,7 +218,7 @@ cmd_write_bank:
 
 	; Restore slot/bank (D)
 	pop de
-	ld a,.slot+0x50
+	ld a,.slot+REG_MMU
 	jp write_tbblue_reg	; A=register, D=value
 
 
@@ -368,4 +368,13 @@ cmd_write_mem:
 ;  NA
 ;===========================================================================
 cmd_get_slots:
+	; Send response
+	ld de,9
+	call send_length_and_seqno
+
 .inner:
+	; Get bank for slot
+	ld a,REG_MMU
+	call read_tbblue_reg	; Result in A
+
+	ret

@@ -149,7 +149,7 @@ write_uart_byte:
 ;===========================================================================
 set_uart_baudrate:
     ; Get display timing
-    ld a,DISPLAY_TIMING_REGISTER
+    ld a,REG_VIDEO_TIMING
     call read_tbblue_reg
 	and 3			;video timing is in bottom 4 bits!
 
