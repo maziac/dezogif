@@ -67,9 +67,11 @@ receive_buffer:
 	defs 1
 .register_value:	; For CMD_READ_REGS
 .bp1_address:		; For CMD_CONTINUE
+.mem_start:			; For CMD_READ_MEM
 	defs 1
 	defs 1
 .bp2_enable:		; For CMD_CONTINUE
+.mem_size:			; For CMD_READ_MEM
 	defs 1
 .bp2_address:		; For CMD_CONTINUE
 	defs 1

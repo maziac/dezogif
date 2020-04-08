@@ -307,3 +307,65 @@ cmd_remove_breakpoint:
 	jp send_length_and_seqno
 
 
+;===========================================================================
+; CMD_READ_MEM
+; Reads a memory area.
+; Changes:
+;  NA
+;===========================================================================
+cmd_read_mem:
+	; Read address and size from message
+	ld de,5
+	call receive_bytes
+
+	; Send response
+	ld de,(receive_buffer.mem_size)
+	add de,1
+	call send_length_and_seqno
+
+.inner:
+	; Loop all memory bytes
+	ld hl,(receive_buffer.mem_start)
+	ld de,(receive_buffer.mem_size)
+	inc d
+.loop:
+	ldi a,(hl)
+	; Send
+	call write_uart_byte
+	dec e
+	jr nz,.loop
+	dec d
+	jr nz,.loop
+	ret
+
+
+;===========================================================================
+; CMD_WRITE_MEM
+; Writes a memory area.
+; Changes:
+;  NA
+;===========================================================================
+cmd_write_mem:
+	; Read address and size from message
+	ld de,5
+	call receive_bytes
+
+.inner:
+	; Read bytes from UART and put into memory
+	ld hl,(receive_buffer.mem_start)
+	ld de,(receive_buffer.mem_size)
+	call receive_bytes
+
+	; Send response
+	ld de,1
+	jp send_length_and_seqno
+
+
+;===========================================================================
+; CMD_GET_SLOTS
+; Returns the 8k-banks/slot association.
+; Changes:
+;  NA
+;===========================================================================
+cmd_get_slots:
+.inner:

@@ -7,9 +7,18 @@
 
     MODULE ut_commands
 
-; Data area for testing
-test_stack:	defw 0
 
+; Data area for testing
+test_stack:		defw 0
+	
+	defb 0	; WPMEM
+test_memory_src:	defb 1, 2, 3, 4, 5
+test_memory_src_end:
+	defb 0	; WPMEM
+
+test_memory_dst:	defb 0, 0, 0, 0, 0
+test_memory_dst_end:
+	defb 0	; WPMEM
 
 ; Helper function that inits all backup values to 0xFF.
 cmd_init:
@@ -337,6 +346,70 @@ redirected_receive_bytes:
 	pop af
 	ret
 
+
+
+; Test reading memory.
+UT_cmd_read_mem:
+	; Redirect write_uart_byte funtion call
+	ld hl,write_uart_byte
+	ldi (hl),0xC3	; JP
+	ldi (hl),redirected_write_uart_byte&0xFF
+	ld (hl),redirected_write_uart_byte>>8
+
+	; Pointer to write to
+	ld ix,test_memory_dst
+
+	; Test
+	ld hl,test_memory_src
+	ld (receive_buffer.mem_start),hl
+	ld hl,test_memory_src_end-test_memory_src
+	ld (receive_buffer.mem_size),hl
+	call cmd_read_mem.inner
+
+	; Compare src against dst
+	ld hl,test_memory_src
+	ld de,test_memory_dst
+	ld b,test_memory_src_end-test_memory_src
+.loop:
+	ldi a,(de)
+	TEST_A (HL)
+	inc hl
+	djnz .loop
+
+	ret
+
+; Simulated write_uart_byte.
+redirected_write_uart_byte:
+	ld (ix),a
+	inc ix
+	ret
+
+
+
+; Test writing memory.
+UT_cmd_write_mem:
+	; Redirect receive_bytes funtion call
+	ld hl,receive_bytes
+	ldi (hl),0xC3	; JP
+	ldi (hl),redirected_receive_bytes&0xFF
+	ld (hl),redirected_receive_bytes>>8
+
+	; Set fill byte
+	ld a,0x5C
+	ld (redirected_receive_bytes.fill_data),a
+
+	; Test
+	ld hl,test_memory_dst
+	ld (receive_buffer.mem_start),hl
+	ld hl,test_memory_dst_end-test_memory_dst
+	ld (receive_buffer.mem_size),hl
+	call cmd_write_mem.inner
+
+	TEST_MEMORY_BYTE test_memory_dst, 0x5C
+	TEST_MEMORY_BYTE test_memory_dst_end-1, 0x5C
+	
+	ret
+	
 
     ENDMODULE
     
