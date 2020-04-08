@@ -116,6 +116,10 @@ cmd_read_regs:
 ;  NA
 ;===========================================================================
 cmd_write_reg:
+	; Read rest of message
+	ld de,3
+	call receive_bytes
+	; Execute command
 	call cmd_write_reg.inner
 	; Send response
 	ld de,1
@@ -186,6 +190,10 @@ cmd_write_reg:
 ;  NA
 ;===========================================================================
 cmd_write_bank:
+	; Read bank number of message
+	ld de,1
+	call receive_bytes
+	; Execute command
 	call cmd_write_bank.inner
 	; Send response
 	ld de,1
@@ -198,6 +206,15 @@ cmd_write_bank:
 	ld a,.slot+0x50
 	call read_tbblue_reg	; Result in A
 	push af	; remember
+
+	; Change bank for slot 
+	ld a,(receive_buffer.bank_number)
+	nextreg .slot+0x50,a
+
+	; Read bytes from UART and put into bank
+	ld hl,.slot<<13	; Start address
+	ld de,0x2000	; Bank size
+	call receive_bytes
 
 	; Restore slot/bank (D)
 	pop de

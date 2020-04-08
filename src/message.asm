@@ -140,6 +140,33 @@ timeout:
 	ld sp,debug_stack_top
 	jp cmd_loop
 
+
+;===========================================================================
+; Receives a number of bytes from the UART.
+; The received bytes are written at HL.
+; Parameter:
+;  HL = pointer to the buffer to write to.
+;  BC = number of bytes to receive.
+; Returns:
+;  -
+; Changes:
+;  A, HL, DE, BC
+;===========================================================================
+receive_bytes:
+	inc e
+	inc d
+.loop:
+	; Get byte
+	call read_uart_byte
+	; Store
+	ldi (hl),a
+	dec e
+	jr nz,.loop
+	dec d
+	jr nz,.loop
+	ret
+
+
 ;===========================================================================
 ; Once the first byte has been detected this function should be called.
 ; The subroutine does not return before all bytes of the message have been
