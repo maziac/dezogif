@@ -73,8 +73,13 @@ save_registers.UT_save:
     TEST_MEMORY_BYTE backup.i, 0x81
     ;TEST_MEMORY_BYTE backup.r, 0x82   Useless to test
  
+    ; Test stack pointer
+    ld hl,(sp_backup)       ; Remember
+    ld (sp_backup),SP       ; Store to check
+    TEST_MEMORY_WORD sp_backup, debug_stack_top
+
     ; Deinit
-    ld sp,(sp_backup)
+    ld sp,hl
     ret 
 
 

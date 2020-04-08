@@ -53,11 +53,8 @@ main:
     out (BORDER),a
 
   IF 0
-    ; Set some baudrate
-    ld bc,PORT_UART_RX
-    ld a,10
-    out (c),a
-    out (c),a
+    ; Set baudrate
+    call set_uart_baudrate
   ENDIF
 
 main_loop:

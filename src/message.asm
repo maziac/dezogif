@@ -120,6 +120,7 @@ dbg_check_for_message:
 start_cmd_loop:
 	; Backup all registers after 'af', SP = points to backup.af
 	call save_registers
+	; SP is now at debug_stack_top
 	; Maximize clock speed
 	ld a,CLOCK_28MHZ
 	nextreg TURBO_CONTROL_REGISTER,a
@@ -131,6 +132,13 @@ cmd_loop:
 	; Wait on next command
 	jr cmd_loop
 	
+
+; Called if a UART timeout occurs.
+; As this could happen from everywhere the call stack is reset
+; and then the cmd_loop is entered again.
+timeout:
+	ld sp,debug_stack_top
+	jp cmd_loop
 
 ;===========================================================================
 ; Once the first byte has been detected this function should be called.

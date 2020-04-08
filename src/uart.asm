@@ -6,12 +6,31 @@
 ; - Check the port for received byte.
 ; - Get received byte.
 ; - Send one byte.
+;
+; Speed:
+; The routine runs at 28MHz. I.e. 7MHz for 4 T-States.
+; Or 7 million simple instructions per second.
+; Baudrate:
+; The baudrate maximum is 1958400. Which is approx. 200kBytes per second.
+; That means download of a 64k Z80 program would take up to 0.25 seconds.
+; 
+; The minimum required time for reading 1 byte at max. clock speed is
+; about 3us. Transmission time is 5us.
+; Timeout is set to 393us.
+;
+; 
+;
 ;===========================================================================
 
     
 ;===========================================================================
 ; Constants
 ;===========================================================================
+
+
+; UART baudrate
+BAUDRATE:   equ 1958400
+
 
 ; UART TX. Write=transmit data, Read=status
 PORT_UART_TX:   equ 0x133b
@@ -30,6 +49,18 @@ UART_TX_READY:      equ 1   ; 0=ready for next byte, 1=byte is being transmitted
 ; Data. 
 ;===========================================================================
 
+; Baudrate timing calculation table
+baudrate_table:
+	defw 28000000/BAUDRATE
+    defw 28571429/BAUDRATE
+    defw 29464286/BAUDRATE
+    defw 30000000/BAUDRATE
+    defw 31000000/BAUDRATE
+    defw 32000000/BAUDRATE
+    defw 33000000/BAUDRATE
+    defw 27000000/BAUDRATE
+
+
 
 ;===========================================================================
 ; Checks if an RX byte is available.
@@ -38,6 +69,9 @@ UART_TX_READY:      equ 1   ; 0=ready for next byte, 1=byte is being transmitted
 ;   Z  = no byte available
 ; Changes:
 ;   A
+; Duration:
+;   36 T-states
+;   10.3us at 3.5MHz
 ;===========================================================================
 check_uart_rx:
     ; Check if byte available.
@@ -53,14 +87,25 @@ check_uart_rx:
 ;   A = the received byte.
 ; Changes:
 ;   BC
+; Duration:
+;   66 T-states minimum
+;   2.4us at 28MHz
 ;===========================================================================
 read_uart_byte:
+    ld e,0
 	ld bc,PORT_UART_TX
 .wait_loop:
 	in a,(c)					; Read status bits
     bit UART_RX_FIFO_EMPTY,a
-    jr z,.wait_loop
+    jr nz,.byte_received
+    dec e
+    jr nz,.wait_loop
+    
+    ; "Timeout"
+    ; Waited for 256*43 T-states=393us
+    jp timeout
 
+.byte_received:
     ; At least 1 byte received, read it
     ld b,PORT_UART_RX>>8	; The low byte stays the same
     in a,(c)
@@ -89,4 +134,44 @@ write_uart_byte:
     ; Transmit byte
 	pop af
     out (c),a
+	ret
+
+
+
+;===========================================================================
+; Sets the UART baud rate.
+; Source code is taken from NDS, https://github.com/Ckirby101/NDS-NextDevSystem.
+; See also https://dl.dropboxusercontent.com/s/a4c4k9fsh2aahga/UsingUART2andWIFI.txt?dl=0
+; Returns:
+;  -
+; Changes:
+;  A, BC, DE, HL
+;===========================================================================
+set_uart_baudrate:
+    ; Get display timing
+    ld a,DISPLAY_TIMING_REGISTER
+    call read_tbblue_reg
+	and 3			;video timing is in bottom 4 bits!
+
+    ; Get baudrate presace lavues from table
+	ld hl,baudrate_table
+	add hl,a
+	ld e,(hl)
+	inc hl
+	ld d,(hl)
+
+    ; Write 1rst byte of prescaler
+	ld	bc,PORT_UART_RX ; Writing=set baudrate
+	ld a,e
+	and 0b01111111
+	out	(c),a		;set lower 7 bits
+
+    ; Write 2nd byte of prescaler
+	ld a,e
+	sla a
+	ld a,d
+	rla
+	or 0b10000000
+	out	(c),a		;set to upper bits
+
 	ret

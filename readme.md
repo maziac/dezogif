@@ -36,4 +36,9 @@ This goes on until the UART driver receives a CONTINUE command.
 The UART driver will restore all registers and return to the debugged program's main loop.
 
 
+# Acknowledgements
+
+Many thanks to Chris Kirby. I have used his NDS code https://github.com/Ckirby101/NDS-NextDevSystem as starting point and used e.g. his routine to set the baudrate.
+
+
 

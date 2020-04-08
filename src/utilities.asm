@@ -16,6 +16,9 @@ TBBLUE_REGISTER_ACCESS:  	equ 0x253B
 ; Turbo control
 TURBO_CONTROL_REGISTER:		equ 0x07
 
+; Display timing register
+DISPLAY_TIMING_REGISTER:	equ 0x11
+
 ; Max. clock
 CLOCK_28MHZ:	equ 0b00000011
 
@@ -81,7 +84,7 @@ read_tbblue_reg:
 	ld bc,TBBLUE_REGISTER_SELECT
 	out (c),a
 	; Read register
-	ld b,TBBLUE_REGISTER_ACCESS>>8
+	inc b	; TBBLUE_REGISTER_ACCESS
 	in a,(c)
 	ret
 
