@@ -137,6 +137,7 @@ start_cmd_loop:
 	ld a,RTM_28MHZ
 	nextreg REG_TURBO_MODE,a
 cmd_loop:
+
 	; Receive length sequence number and command
 	ld hl,receive_buffer
 	ld de,receive_buffer.payload-receive_buffer
@@ -169,10 +170,13 @@ timeout:
 receive_bytes:
 	inc d
 .loop:
+	push de
 	; Get byte
 	call read_uart_byte
 	; Store
 	ldi (hl),a
+	;out (BORDER),a
+	pop de
 	dec e
 	jr nz,.loop
 	dec d

@@ -47,7 +47,8 @@ cmd_call:
 	; Get pointer to subroutine
 	ld a,(receive_buffer.command)
 	out (BORDER),a
-	jr cmd_call
+	call write_uart_byte
+	jr cmd_loop
 
 	add a,a
 	ld hl,cmd_jump_table-2

@@ -86,7 +86,7 @@ check_uart_rx:
 ; Returns:
 ;   A = the received byte.
 ; Changes:
-;   BC
+;   BC, E
 ; Duration:
 ;   66 T-states minimum
 ;   2.4us at 28MHz
@@ -107,7 +107,7 @@ read_uart_byte:
 
 .byte_received:
     ; At least 1 byte received, read it
-    ld b,PORT_UART_RX>>8	; The low byte stays the same
+    inc b	; The low byte stays the same
     in a,(c)
 	ret 
 
