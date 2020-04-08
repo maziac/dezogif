@@ -195,15 +195,14 @@ cmd_write_bank:
 	; Choose the right slot: don't use a slot where this program is located.
 .slot:	equ ((cmd_write_bank+2*0x2000)>>13)&0x07
 	; Remember current bank for slot
-	ld a,.slot
-	call read_slot_bank
+	ld a,.slot+0x50
+	call read_tbblue_reg	; Result in A
 	push af	; remember
 
 	; Restore slot/bank (D)
 	pop de
-	ld a,.slot
-	jp write_slot_bank 
-
+	ld a,.slot+0x50
+	jp write_tbblue_reg	; A=register, D=value
 
 
 

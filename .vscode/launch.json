@@ -49,6 +49,7 @@
             "remoteType": "zsim",
             "zsim": {
                 "Z80N": true,
+                "tbblueMemoryManagementSlots": true
             },
             "resetOnLaunch": true,
             "skipInterrupt": true,
