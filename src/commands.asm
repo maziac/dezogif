@@ -142,17 +142,28 @@ cmd_write_reg:
 	neg ; A is 12 to 2
 	add a,a	; a*2: 24 to 4
 	ld hl,backup.hl2-4
-	add a,a
 	add hl,a
 	jr .store_dreg
 .next2:
 	; Single register
 	jr nz,.next4
-	; IM
-	ld hl,backup.im
-.store_reg:
-	ld (hl),e
+	; IM is directly set
+	inc e
+	dec e
+	jr nz,.not_im0
+	im 0
 	ret
+.not_im0:
+	dec e
+	jr nz,.not_im1
+	im 1
+	ret
+.not_im1:
+	dec e
+	ret nz	; IM number wrong
+	im 2
+	ret
+
 .next4:	
 	sub 35-13
 	ret nc	; Otherwise unknown
@@ -162,9 +173,10 @@ cmd_write_reg:
 	xor 0x01	; The endianess need to be corrected.
 	ld hl,backup.hl2
 	add hl,a
-	jr .store_reg
-
-
+	; Store register
+	ld (hl),e
+	ret
+	
 
 ;===========================================================================
 ; CMD_CONTINUE
