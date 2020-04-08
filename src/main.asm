@@ -12,6 +12,7 @@
 ; Include modules
 ;===========================================================================
 
+    include "utilities.asm"
     include "uart.asm"
     include "message.asm"
     include "commands.asm"

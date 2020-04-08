@@ -34,7 +34,7 @@ cmd_read_regs.UT_pc:
 	ld (receive_buffer.register_number),a
 	
     ; Test
-    call cmd_write_reg.test
+    call cmd_write_reg.inner
 
 	ld hl,(backup.sp)
 	ldi a,(hl)
@@ -53,7 +53,7 @@ cmd_set_dreg:
 	ld (receive_buffer.register_value),hl	; value
 	ld (receive_buffer.register_number),a	; register number
     ; set
-    call cmd_write_reg.test
+    call cmd_write_reg.inner
     ret 
 
 
@@ -133,7 +133,7 @@ cmd_set_reg:
 	ld (receive_buffer.register_value),hl	; value
 	ld (receive_buffer.register_number),a	; register number
     ; Set first byte
-    call cmd_write_reg.test
+    call cmd_write_reg.inner
 	; Set second byte
 	pop af
 	pop hl
@@ -143,7 +143,7 @@ cmd_set_reg:
 	inc a
 	ld (receive_buffer.register_number),a	; register number
     ; Set first byte
-    call cmd_write_reg.test
+    call cmd_write_reg.inner
     ret 
 
 
@@ -217,19 +217,19 @@ cmd_read_regs.UT_im:
 	; IM 0
 	ld hl,0
 	ld (receive_buffer.register_value),hl	; value
-	call cmd_write_reg.test
+	call cmd_write_reg.inner
 	; IM 1
 	ld hl,1
 	ld (receive_buffer.register_value),hl	; value
-	call cmd_write_reg.test
+	call cmd_write_reg.inner
 	; IM 2
 	ld hl,2
 	ld (receive_buffer.register_value),hl	; value
-	call cmd_write_reg.test
+	call cmd_write_reg.inner
 	; Wrong mode
 	ld hl,3
 	ld (receive_buffer.register_value),hl	; value
-	call cmd_write_reg.test
+	call cmd_write_reg.inner
 	ret
 
 
@@ -240,12 +240,12 @@ cmd_read_regs.UT_wrong_register:
 	ld (receive_buffer.register_number),a
 	ld hl,0xCC55
 	ld (receive_buffer.register_value),hl	; value
-	call cmd_write_reg.test
+	call cmd_write_reg.inner
 	ld a,0xFF	; Last non existing register
 	ld (receive_buffer.register_number),a
 	ld hl,0xCC55
 	ld (receive_buffer.register_value),hl	; value
-	call cmd_write_reg.test
+	call cmd_write_reg.inner
 	ret
 
 

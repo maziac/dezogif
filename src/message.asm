@@ -60,9 +60,11 @@ receive_buffer:
 	defb 0
 .payload:
 .register_number:	; For CMD_READ_REGS
+.bank_number:		; For CMD_WRITE_BANK
 	defs 1
 .register_value:	; For CMD_READ_REGS
-	defs 2
+	defs 1
+	defs 1
 	defs 100
     defb 0  ; WPMEM
 

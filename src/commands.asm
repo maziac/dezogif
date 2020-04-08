@@ -116,12 +116,12 @@ cmd_read_regs:
 ;  NA
 ;===========================================================================
 cmd_write_reg:
-	call cmd_write_reg.test
+	call cmd_write_reg.inner
 	; Send response
-	ld de,5
+	ld de,1
 	jp send_length_and_seqno
 	
-.test:	; jump label for unit tests
+.inner:	; jump label for unit tests
 	; Get value in DE
 	ld hl,receive_buffer.register_value+1
 	ldd d,(hl)
@@ -185,12 +185,26 @@ cmd_write_reg:
 ; Changes:
 ;  NA
 ;===========================================================================
-cmd_write_reg:
+cmd_write_bank:
+	call cmd_write_bank.inner
 	; Send response
 	ld de,1
-	call send_length_and_seqno
+	jp send_length_and_seqno
 
-	ret
+.inner:
+	; Choose the right slot: don't use a slot where this program is located.
+.slot:	equ ((cmd_write_bank+2*0x2000)>>13)&0x07
+	; Remember current bank for slot
+	ld a,.slot
+	call read_slot_bank
+	push af	; remember
+
+	; Restore slot/bank (D)
+	pop de
+	ld a,.slot
+	jp write_slot_bank 
+
+
 
 
 ;===========================================================================
