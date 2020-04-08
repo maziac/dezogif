@@ -233,6 +233,9 @@ cmd_write_bank:
 ;  NA
 ;===========================================================================
 cmd_continue:
+	; Read breakpoints from message
+	ld de,6
+	call receive_bytes
 	; Send response
 	ld de,1
 	call send_length_and_seqno
@@ -249,6 +252,56 @@ cmd_continue:
 ;  NA
 ;===========================================================================
 cmd_pause:
+	; Send response
+	ld de,1
+	jp send_length_and_seqno
+
+
+
+;===========================================================================
+; CMD_ADD_BREAKPOINT
+; Adds a breakpoint. Returns the breakpoint ID in the response.
+; If no breakpoint is left 0 is returned.
+; Changes:
+;  NA
+;===========================================================================
+cmd_add_breakpoint:
+	; Read breakpoint from message
+	ld de,2
+	call receive_bytes
+	; Consume condition (conditions not implemented)
+.loop:
+	call read_uart_byte
+	or a
+	jr nz,.loop
+
+	; TODO: to be implemented
+
+	; Send response
+	ld de,3
+	call send_length_and_seqno
+
+	; BP ID = 0 for now
+	xor a
+	call write_uart_byte
+	xor a
+	jp write_uart_byte
+
+
+
+;===========================================================================
+; CMD_REMOVE_BREAKPOINT
+; Removes a breakpoint.
+; Changes:
+;  NA
+;===========================================================================
+cmd_remove_breakpoint:
+	; Read breakpoint ID from message
+	ld de,2
+	call receive_bytes
+
+	; TODO: to be implemented
+
 	; Send response
 	ld de,1
 	jp send_length_and_seqno

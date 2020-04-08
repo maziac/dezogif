@@ -61,11 +61,21 @@ receive_buffer:
 .payload:
 .register_number:	; For CMD_READ_REGS
 .bank_number:		; For CMD_WRITE_BANK
+.bp1_enable:		; For CMD_CONTINUE
+.bp_address:		; For CMD_ADD_BREAKPOINT
+.bp_id:				; For CMD_REMOVE_BREAKPOINT
 	defs 1
 .register_value:	; For CMD_READ_REGS
+.bp1_address:		; For CMD_CONTINUE
 	defs 1
 	defs 1
-	defs 100
+.bp2_enable:		; For CMD_CONTINUE
+	defs 1
+.bp2_address:		; For CMD_CONTINUE
+	defs 1
+	defs 1
+
+	defs 100	; TODO: Remove. Soviel braichen wir nicht.
     defb 0  ; WPMEM
 
 
