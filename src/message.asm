@@ -146,14 +146,13 @@ timeout:
 ; The received bytes are written at HL.
 ; Parameter:
 ;  HL = pointer to the buffer to write to.
-;  BC = number of bytes to receive.
+;  DE = number of bytes to receive.
 ; Returns:
 ;  -
 ; Changes:
 ;  A, HL, DE, BC
 ;===========================================================================
 receive_bytes:
-	inc e
 	inc d
 .loop:
 	; Get byte

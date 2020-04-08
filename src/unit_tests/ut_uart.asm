@@ -16,7 +16,7 @@ sp_backup:  defw    0
 ; Test that subroutine returns correctly.
 UT_read_uart_byte_timeout:
 	ld (sp_backup),sp
-	; Change timeout jump
+	; Redirect timeout jump
 	ld hl,timeout
 	ldi (hl),0xC3	; JP
 	ldi (hl),.timeout&0xFF

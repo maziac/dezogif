@@ -249,5 +249,94 @@ cmd_write_reg.UT_wrong_register:
 	ret
 
 
+
+
+
+; Test writing data to a memory bank.
+; The test simulates the receive_bytes function call.
+UT_cmd_write_bank:
+	; Remember current bank for slot
+	ld a,.slot+0x50
+	call read_tbblue_reg	; Result in A
+	push af	; remember
+
+	; Redirect receive_bytes funtion call
+	ld hl,receive_bytes
+	ldi (hl),0xC3	; JP
+	ldi (hl),redirected_receive_bytes&0xFF
+	ld (hl),redirected_receive_bytes>>8
+
+	; Set bank to use
+	ld a,28
+	ld (receive_buffer.bank_number),a 
+
+
+	; Set fill byte
+	ld a,0x55
+	ld (redirected_receive_bytes.fill_data),a
+
+	; Test A
+	call cmd_write_bank.inner
+
+	; Check that slot/bank has been restored
+	ld a,.slot+0x50
+	call read_tbblue_reg	; Result in A
+	pop de		; Get original bank in D 
+	push de
+	TEST_A D
+
+	; Page in the memory bank
+.slot:	equ ((cmd_write_bank+2*0x2000)>>13)&0x07
+	nextreg .slot+0x50,28
+	
+	ld hl,.slot<<13	; Start address
+	ld a,(hl)
+	TEST_A 0x55
+	add hl,0x2000-1
+	ld a,(hl)
+	TEST_A 0x55
+	
+
+	; Set fill byte
+	ld a,0xAA
+	ld (redirected_receive_bytes.fill_data),a
+
+	; Test A
+	call cmd_write_bank.inner
+
+	; Page in the memory bank
+	nextreg .slot+0x50,28
+	
+	ld hl,.slot<<13	; Start address
+	ld a,(hl)
+	TEST_A 0xAA
+	add hl,0x2000-1
+	ld a,(hl)
+	TEST_A 0xAA
+	
+
+	; Restore slot/bank (D)
+	pop de
+	ld a,.slot+0x50
+	call write_tbblue_reg	; A=register, D=value
+	ret
+
+; Simulated receive bytes.
+; Writes a fix value into bank.
+redirected_receive_bytes:
+	push af
+	inc d
+.fill_data:	equ $+1
+	ld a,0
+.loop:
+	ldi (hl),a
+	dec e
+	jr nz,.loop
+	dec d
+	jr nz,.loop
+	pop af
+	ret
+
+
     ENDMODULE
     
