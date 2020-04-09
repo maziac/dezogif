@@ -81,6 +81,7 @@ receive_buffer:
     defb 0  ; WPMEM
 
 
+
 ;===========================================================================
 ; Initializes the receive buffer.
 ; Changes:
@@ -141,11 +142,15 @@ cmd_loop:
 	ld hl,receive_buffer
 	ld de,receive_buffer.payload-receive_buffer
 	call receive_bytes
+	;ld a,BLUE
+	;out (BORDER),a
 	; Handle command
 	call cmd_call
 	; Wait on next command
+	call wait_for_uart_rx
 	jr cmd_loop
 	
+
 
 ; Called if a UART timeout occurs.
 ; As this could happen from everywhere the call stack is reset

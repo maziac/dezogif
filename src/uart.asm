@@ -62,6 +62,43 @@ baudrate_table:
 
 
 
+; Color is changed after each received message.
+border_color:	defb BLACK
+
+
+;===========================================================================
+; Waits until an RX byte is available.
+; Changes the border color slowly to indicate waiting state (like for tape
+; loading).
+; Changes:
+;   A
+;===========================================================================
+wait_for_uart_rx:
+.color_change:
+    ; Change border color
+    ld a,(border_color)
+	inc a
+	ld (border_color),a
+	out (BORDER),a
+    ; Counter
+    ld de,0
+    ld b,20
+.loop:
+    ; Check if byte available.
+	ld a,PORT_UART_TX>>8
+	in a,(PORT_UART_TX&0xFF)	; Read status bits
+    bit UART_RX_FIFO_EMPTY,a
+    ret nz      ; RET if byte available
+    
+    ; Decrement counter for changing the color
+    dec e
+    jr nz,.loop
+    dec d
+    jr nz,.loop
+    djnz .loop
+    ; change color
+    jr .color_change
+
 
 ;===========================================================================
 ; Waits until an RX byte is available and returns it.
@@ -79,6 +116,8 @@ read_uart_byte:
 .wait_loop:
 	in a,(c)					; Read status bits
     bit UART_RX_FIFO_EMPTY,a
+;    ld a,e
+;    out (BORDER),a
     jr nz,.byte_received
     dec e
     jr nz,.wait_loop
