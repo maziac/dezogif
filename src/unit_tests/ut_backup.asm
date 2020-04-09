@@ -27,9 +27,8 @@ save_registers.UT_returns:
 
 ; Test that all registers are saved correctly.
 save_registers.UT_save:
-    ; Init
+    ; Remember SP
     ld (sp_backup),sp
-    ld sp,backup.af
 
     ; Prepare registers
     exx 
@@ -41,6 +40,7 @@ save_registers.UT_save:
     ex af,af'
     exx
 
+    ld a,0x1A
     ld bc,0x1B1C
     ld de,0x1D1E
     ld hl,0x1112
@@ -59,6 +59,7 @@ save_registers.UT_save:
     ; Test
     call save_registers
 
+    TEST_MEMORY_BYTE backup.af+1, 0x1A
     TEST_MEMORY_WORD backup.bc, 0x1B1C
     TEST_MEMORY_WORD backup.de, 0x1D1E
     TEST_MEMORY_WORD backup.hl, 0x1112
@@ -75,7 +76,7 @@ save_registers.UT_save:
  
     ; Test stack pointer
     ld hl,(sp_backup)       ; Remember
-    ld (sp_backup),SP       ; Store to check
+    ld (sp_backup),sp       ; Store to check
     TEST_MEMORY_WORD sp_backup, debug_stack_top
 
     ; Deinit

@@ -62,24 +62,6 @@ baudrate_table:
 
 
 
-;===========================================================================
-; Checks if an RX byte is available.
-; Returns:
-;   NZ = byte available
-;   Z  = no byte available
-; Changes:
-;   A
-; Duration:
-;   36 T-states
-;   10.3us at 3.5MHz
-;===========================================================================
-check_uart_rx:
-    ; Check if byte available.
-	ld a,PORT_UART_TX>>8
-	in a,(PORT_UART_TX&0xFF)	; Read status bits
-    bit UART_RX_FIFO_EMPTY,a
-	ret 
-
 
 ;===========================================================================
 ; Waits until an RX byte is available and returns it.

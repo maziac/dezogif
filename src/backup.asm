@@ -43,18 +43,33 @@ backup_top:
 			defb 0	; WPMEM
 
 ;===========================================================================
-; Save all registers except AF. AF has been already stored.
+; Save all registers.
+; Also changes stack pointer.
 ; Parameters:
 ;  SP = points to backup.af
 ; Returns:
-;  SP = debug_stack_top
+;  SP = debug_stack_top after RET
 ; ===========================================================================
 save_registers:
-	pop af  ; Save return address
+	; Save
+	ld (backup.hl),hl
+	pop hl  ; Save return address to HL
+	
+	; Save stack pointer (is already corrected because of 'pop hl')
+	ld (backup.sp),sp
 
+	; Use new stack
+	ld sp,backup.af+2
+
+	; Save registers
+	push af
 	push bc
 	push de
-	push hl
+	
+	;push hl
+	dec sp		; Instead of PUSH HL (hl is already pushed)
+	dec sp
+
 	push ix
 	push iy
 
@@ -84,9 +99,10 @@ save_registers:
 	; Switch back registers
 	ex af,af'
 	exx
+	; End of register saving through pushing
 
  	; Restore return address
-	push af
+	push hl
 
 	; Save clock speed
 	ld a,REG_TURBO_MODE

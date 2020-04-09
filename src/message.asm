@@ -100,26 +100,23 @@ init_receive_buffer:
 ; Checks if a new messages has been received.
 ; If not then it returns without changing any register or flag.
 ; If yes the message is received and interpreted.
+; Uses 2 words on the stack, one for calling the subroutine and one
+; additional for pushing AF.
 ; Changes:
 ;  -
+; Duration:
+;  T-States=81 (with CALL), 2.32us@3.5MHz
 ;===========================================================================
-dbg_check_for_message:
-	; Save
-	ld (backup.hl),hl
-	ld (backup.sp),sp
-	pop hl	; Get return address=current PC 
-	ld (backup.pc),hl ; TODO: Instead I could use ((backup.sp))
-	ld sp,backup.af+2
-	push af
-    call check_uart_rx
-    ; Check if message needs to be parsed
-	jr nz,start_cmd_loop
-	; No message -> return
-	pop af 
-	ld sp,(backup.sp)
-	ld hl,(backup.hl)
-	ret 
-
+dbg_check_for_message:			; T=17 for calling
+	; Save AF
+    push af						; T=11
+	ld a,PORT_UART_TX>>8		; T= 7
+	in a,(PORT_UART_TX&0xFF)	; T=11, Read status bits
+    bit UART_RX_FIFO_EMPTY,a	; T= 8
+    jr nz,start_cmd_loop		; T= 7
+	; Restore AF 
+    pop af						; T=10
+	ret			 				; T=10
 
 ;===========================================================================
 ; Starts the command loop. I.e. backups all registers.
@@ -130,7 +127,9 @@ dbg_check_for_message:
 ;  -, At the end the registers are restored.
 ;===========================================================================
 start_cmd_loop:
-	; Backup all registers after 'af', SP = points to backup.af
+	; Restore AF
+	pop af
+	; Backup all registers 
 	call save_registers
 	; SP is now at debug_stack_top
 	; Maximize clock speed
