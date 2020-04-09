@@ -329,11 +329,6 @@ cmd_read_mem:
 	call receive_bytes
 
 	; Send response
-	ld de,(receive_buffer.mem_size)
-	add de,1
-	add hl,de
-	call send_length_and_seqno
-
 	ld hl,(receive_buffer.mem_size)
 	ld de,1		; Add 1 for the sequence number
 	add hl,de
@@ -347,14 +342,13 @@ cmd_read_mem:
 	; Loop all memory bytes
 	ld hl,(receive_buffer.mem_start)
 	ld de,(receive_buffer.mem_size)
-	inc d
 .loop:
 	ldi a,(hl)
 	; Send
 	call write_uart_byte
-	dec e
-	jr nz,.loop
-	dec d
+	dec de
+	ld a,e
+	or d
 	jr nz,.loop
 	ret
 
@@ -366,15 +360,19 @@ cmd_read_mem:
 ;  NA
 ;===========================================================================
 cmd_write_mem:
-	; Read address and size from message
+	; Read address from message
 	ld hl,receive_buffer.payload
-	ld de,5
+	ld de,3
 	call receive_bytes
 
 .inner:
+	; Read length and subtract 5
+	ld hl,(receive_buffer.length)
+	ld de,-5
+	add hl,de
+	ex de,hl
 	; Read bytes from UART and put into memory
 	ld hl,(receive_buffer.mem_start)
-	ld de,(receive_buffer.mem_size)
 	call receive_bytes
 
 	; Send response

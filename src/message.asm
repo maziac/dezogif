@@ -172,7 +172,6 @@ timeout:
 ;  A, HL, DE, BC
 ;===========================================================================
 receive_bytes:
-	inc d
 .loop:
 	push de
 	; Get byte
@@ -181,9 +180,9 @@ receive_bytes:
 	ldi (hl),a
 	;out (BORDER),a
 	pop de
-	dec e
-	jr nz,.loop
-	dec d
+	dec de
+	ld a,e
+	or d
 	jr nz,.loop
 	ret
 

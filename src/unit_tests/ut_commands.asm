@@ -334,14 +334,13 @@ UT_cmd_write_bank:
 ; Writes a fix value into bank.
 redirected_receive_bytes:
 	push af
-	inc d
-.fill_data:	equ $+1
-	ld a,0
 .loop:
-	ldi (hl),a
-	dec e
-	jr nz,.loop
-	dec d
+.fill_data:	equ $+1
+	ld (hl),0
+	inc hl
+	dec de
+	ld a,e
+	or d
 	jr nz,.loop
 	pop af
 	ret
@@ -400,8 +399,8 @@ UT_cmd_write_mem:
 	; Test
 	ld hl,test_memory_dst
 	ld (receive_buffer.mem_start),hl
-	ld hl,test_memory_dst_end-test_memory_dst
-	ld (receive_buffer.mem_size),hl
+	ld hl,test_memory_dst_end-test_memory_dst+5
+	ld (receive_buffer.length),hl
 	call cmd_write_mem.inner
 
 	TEST_MEMORY_BYTE test_memory_dst, 0x5C
