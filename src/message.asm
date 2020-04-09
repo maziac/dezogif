@@ -53,7 +53,7 @@ CMD.WRITE_STATE:		equ 	15
 ; The UART data is put here before being interpreted.
 receive_buffer: 
 .length:
-	defw 0
+	defw 0, 0		; 4 bytes length
 .seq_no:
 	defb 0
 .command:
@@ -267,20 +267,46 @@ send_message:  ; TODO: maybe not required.
 ;===========================================================================
 ; Sends the length and the sequence number.
 ; The sequence number is taken directly from the receive_buffer.
+; Important: Use only for lengths up to 65536.
 ; Parameter:
-;  DE = length (including sequence number).
+;  DE = Length.
+; Returns:
+;  -
+; Changes:
+;  A, DE, BC, HL=0
+;===========================================================================
+send_length_and_seqno: 
+	; Store Length MSB=0
+	ld hl,0
+	; jp send_4bytes_length_and_seqno
+	; Flow through
+
+;===========================================================================
+; Sends a 4 bytes length and the sequence number.
+; The sequence number is taken directly from the receive_buffer.
+; Important: Use only for lengths up to 65536.
+; Parameter:
+;  HL/DE = Length. HL=MSB, DE=LSB
 ; Returns:
 ;  -
 ; Changes:
 ;  A, DE, BC
 ;===========================================================================
-send_length_and_seqno: 
+send_4bytes_length_and_seqno: 
 	; First length byte
 	ld a,e
 	; Write to UART
 	call write_uart_byte
 	; Second length byte
 	ld a,d
+	; Write to UART
+	call write_uart_byte
+	; Third length byte
+	ld a,l
+	; Write to UART
+	call write_uart_byte
+	; Fourth length byte
+	ld a,h
 	; Write to UART
 	call write_uart_byte
 	; Sequence number

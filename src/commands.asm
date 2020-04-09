@@ -331,7 +331,17 @@ cmd_read_mem:
 	; Send response
 	ld de,(receive_buffer.mem_size)
 	add de,1
+	add hl,de
 	call send_length_and_seqno
+
+	ld hl,(receive_buffer.mem_size)
+	ld de,1		; Add 1 for the sequence number
+	add hl,de
+	ex hl,de
+	jr c,.hl_correct	; If C then hl already contains 1.
+	ld l,0	; If NC then we need to reset HL to 0.
+.hl_correct:
+	call send_4bytes_length_and_seqno
 
 .inner:
 	; Loop all memory bytes
@@ -409,9 +419,8 @@ cmd_read_state:
 
 	; Send response
 	ld de,1
-	call send_length_and_seqno
+	jp send_length_and_seqno
 
-	ret
 
 ;===========================================================================
 ; CMD_WRITE_STATE
