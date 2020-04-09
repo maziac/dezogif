@@ -78,6 +78,7 @@ wait_for_uart_rx:
     ; Change border color
     ld a,(border_color)
 	inc a
+    and 0x07
 	ld (border_color),a
 	out (BORDER),a
     ; Counter

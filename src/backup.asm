@@ -38,7 +38,8 @@ backup:
 .af:		defw 0
 .sp:		defw 0
 .pc:		defw 0
-backup.speed:	defb 0
+.speed:	defb 0
+.border_color:	defb 0
 backup_top:
 			defb 0	; WPMEM
 
@@ -109,6 +110,10 @@ save_registers:
 	call read_tbblue_reg
 	ld (backup.speed),a
 
+	; Save border
+	in a,(BORDER)
+	ld (backup.border_color),a
+
 	ret 
 
 
@@ -146,6 +151,10 @@ restore_registers:
 	pop hl
 	pop de
 	pop bc
+
+	; Restore border color
+	ld a,(backup.border_color)
+	out (BORDER),a
 
 	; Restore clock speed
 	ld a,(backup.speed)
