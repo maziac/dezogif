@@ -7,13 +7,8 @@
         {
             "type": "dezog",
             "request": "launch",
-            "name": "zsim (ZEsarUX)",
+            "name": "zsim",
             "remoteType": "zsim",
-            "zrcp": {
-                "hostname": "localhost",
-                "port": 10000,
-                "socketTimeout": 50
-            },
             "zsim": {
                 "Z80N": true,
             },
@@ -22,7 +17,9 @@
                     "path": "out/dbg_uart_if.list",
                     "asm": "sjasmplus",
                     "mainFile": "main.asm",
-                    "srcDirs" : [ "src" ]
+                    "srcDirs": [
+                        "src"
+                    ]
                 }
             ],
             "startAutomatically": false,
@@ -39,7 +36,84 @@
             "load": "out/dbg_uart_if.nex",
             "smallValuesMaximum": 513,
             "tmpDir": ".tmp"
-       },
+        },
+
+
+        {
+            "type": "dezog",
+            "request": "launch",
+            "name": "ZEsarUX",
+            "remoteType": "zrcp",
+            "zrcp": {
+                "hostname": "localhost",
+                "port": 10000,
+                "socketTimeout": 50
+            },
+            "zsim": {
+                "Z80N": true,
+            },
+            "listFiles": [
+                {
+                    "path": "out/dbg_uart_if.list",
+                    "asm": "sjasmplus",
+                    "mainFile": "main.asm",
+                    "srcDirs": [
+                        "src"
+                    ]
+                }
+            ],
+            "startAutomatically": false,
+            "skipInterrupt": true,
+            "commandsAfterLaunch": [
+                //"-sprites",
+                //"-patterns"
+            ],
+            "disassemblerArgs": {
+                "esxdosRst": true
+            },
+            "rootFolder": "${workspaceFolder}",
+            "topOfStack": "stack_top",
+            "load": "out/dbg_uart_if.nex",
+            "smallValuesMaximum": 513,
+            "tmpDir": ".tmp"
+        },
+
+        {
+            "type": "dezog",
+            "request": "launch",
+            "name": "CSpect",
+            "remoteType": "cspect",
+            "cspect": {
+                "hostname": "localhost",
+                "port": 11000,
+                "socketTimeout": 50
+            },
+            "listFiles": [
+                {
+                    "path": "out/dbg_uart_if.list",
+                    "asm": "sjasmplus",
+                    "mainFile": "main.asm",
+                    "srcDirs": [
+                        "src"
+                    ]
+                }
+            ],
+            "startAutomatically": false,
+            "skipInterrupt": true,
+            "commandsAfterLaunch": [
+                //"-sprites",
+                //"-patterns"
+            ],
+            "disassemblerArgs": {
+                "esxdosRst": true
+            },
+            "rootFolder": "${workspaceFolder}",
+            "topOfStack": "stack_top",
+            "load": "out/dbg_uart_if.nex",
+            "smallValuesMaximum": 513,
+            "tmpDir": ".tmp"
+        },
+
 
         {
             "type": "dezog",

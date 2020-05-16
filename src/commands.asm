@@ -17,11 +17,15 @@
 ; Data. 
 ;===========================================================================
 
+; DZRP version 1.0.0
+DZRP_VERSION:	defb 1, 0, 0
+
+
 ; Command number <-> subroutine association
 cmd_jump_table:
 .get_config:		defw cmd_get_config
-.read_regs:			defw cmd_read_regs
-.write_regs:		defw cmd_write_reg
+.read_regs:			defw cmd_get_regs
+.write_regs:		defw cmd_set_reg
 .write_bank:		defw cmd_write_bank
 .continue:			defw cmd_continue
 .pause:				defw cmd_pause
@@ -34,6 +38,12 @@ cmd_jump_table:
 .get_slots:			defw cmd_get_slots
 .read_state:		defw cmd_read_state
 .write_state:		defw cmd_write_state
+.get_tbblue_reg:	defw cmd_get_tbblue_reg
+.get_sprites_palette:	defw get_sprites_palette
+.get_sprites:		defw get_sprites
+.get_sprites_patterns:	defw get_sprites_patterns
+.get_sprites_clip_window_and_control:	defw get_sprites_clip_window_and_control
+.set_border:		defw get_set_border
 
 
 ;===========================================================================
@@ -71,9 +81,15 @@ cmd_get_config:
 	ld de,2
 	call send_length_and_seqno
 	; Send config
-	ld a,0b00000001
+	ld hl,DZRP_VERSION
+	ld e,3
+.loop:
+	ld a,(hl)
+	call write_uart_byte
+	dec e
+	jr nz,.loop
+	xor a	; no error
 	jp write_uart_byte
-
 
 
 ;===========================================================================
@@ -82,7 +98,7 @@ cmd_get_config:
 ; Changes:
 ;  NA
 ;===========================================================================
-cmd_read_regs:
+cmd_get_regs:
 	; Send response
 	ld de,29
 	call send_length_and_seqno
@@ -117,13 +133,13 @@ cmd_read_regs:
 ; Changes:
 ;  NA
 ;===========================================================================
-cmd_write_reg:
+cmd_set_reg:
 	; Read rest of message
 	ld hl,receive_buffer.payload
 	ld de,3
 	call receive_bytes
 	; Execute command
-	call cmd_write_reg.inner
+	call cmd_set_reg.inner
 	; Send response
 	ld de,1
 	jp send_length_and_seqno
@@ -236,9 +252,9 @@ cmd_write_bank:
 ;  NA
 ;===========================================================================
 cmd_continue:
-	; Read breakpoints from message
+	; Read breakpoints etc. from message
 	ld hl,receive_buffer.payload
-	ld de,6
+	ld de,11
 	call receive_bytes
 	; Send response
 	ld de,1
@@ -434,3 +450,67 @@ cmd_write_state:
 	jp send_length_and_seqno
 
 
+;===========================================================================
+; CMD_GET_TBBLUE_REG
+; Reads the tbblue register.
+; Changes:
+;  NA
+;===========================================================================
+cmd_get_tbblue_reg:
+; TODO: Implement
+	ret
+
+
+;===========================================================================
+; CMD_GET_SPRITES_PALETTE
+; Returns the values of the requested palette.
+; Changes:
+;  NA
+;===========================================================================
+get_sprites_palette:
+; TODO: Implement
+	ret
+
+
+;===========================================================================
+; CMD_GET_SPRITES
+; Returns the requested sprites (attributes).
+; Changes:
+;  NA
+;===========================================================================
+get_sprites:
+; TODO: Implement
+	ret
+
+
+;===========================================================================
+; CMD_GET_SPRITE_PATTERNS
+; Returns the requested sprite patterns.
+; Changes:
+;  NA
+;===========================================================================
+get_sprites_patterns:
+; TODO: Implement
+	ret
+
+
+;===========================================================================
+; CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL
+; Returns the sprites clip window and the control byte (regsiter (0x15).
+; Changes:
+;  NA
+;===========================================================================
+get_sprites_clip_window_and_control:
+; TODO: Implement
+	ret
+
+
+;===========================================================================
+; CMD_SET_BORDER
+; Sets the border color.
+; Changes:
+;  NA
+;===========================================================================
+get_set_border:
+; TODO: Implement
+	ret

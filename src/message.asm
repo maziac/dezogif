@@ -77,7 +77,7 @@ receive_buffer:
 	defs 1
 	defs 1
 
-	defs 100	; TODO: Remove. Soviel braichen wir nicht.
+	defs 100	; TODO: Remove. Soviel brauchen wir nicht.
     defb 0  ; WPMEM
 
 
