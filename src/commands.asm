@@ -624,5 +624,9 @@ cmd_get_sprites_clip_window_and_control:
 ;  NA
 ;===========================================================================
 cmd_set_border:
-; TODO: Implement
-	ret
+	; Read register number
+	ld a,(receive_buffer.border_color)
+	out (BORDER),a
+	; Send response
+	ld de,1
+	jp send_length_and_seqno

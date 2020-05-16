@@ -59,6 +59,7 @@ receive_buffer:
 .command:
 	defb 0
 .payload:
+.border_color:		; For CMD_SET_BORDER
 .palette_index:		; For CMD_GET_SPRITES_PALETTE
 .register_number:	; For CMD_READ_REGS
 .bank_number:		; For CMD_WRITE_BANK
@@ -80,47 +81,6 @@ receive_buffer:
 
 	defs 100	; TODO: Remove. Soviel brauchen wir nicht.
     defb 0  ; WPMEM
-
-
-/*
-receive_buffer: 
-.length:
-	defw 0, 0		; 4 bytes length
-.seq_no:
-	defb 0
-.command:
-	defb 0
-.payload:
-	defs 100
-
-receive_buffer: 	; For CMD_READ_REGS
-.length:
-	defw 0, 0		; 4 bytes length
-.seq_no:
-	defb 0
-.command:
-	defb 0
-.register_number:	; For CMD_READ_REGS
-	defb 0
-
-
-receive_buffer:		; For CMD_CONTINUE
-.length:
-	defw 0, 0		; 4 bytes length
-.seq_no:
-	defb 0
-.command:
-	defb 0
-.bp1_enable:		; For CMD_CONTINUE
-	defb 0
-.bp1_address:		; For CMD_CONTINUE
-	defw 0
-.bp2_enable:		; For CMD_CONTINUE
-	defb 0
-.bp2_address:		; For CMD_CONTINUE
-	defw 0
-
-*/
 
 
 ;===========================================================================
