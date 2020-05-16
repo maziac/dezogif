@@ -98,7 +98,8 @@
                     ]
                 }
             ],
-            "startAutomatically": false,
+            //"startAutomatically": false,
+            "startAutomatically": true,
             "skipInterrupt": true,
             "commandsAfterLaunch": [
                 //"-sprites",

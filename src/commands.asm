@@ -82,7 +82,7 @@ cmd_get_config:
 	ld de,3
 	call receive_bytes
 	; Send length and seq-no
-	ld de,2
+	ld de,5
 	call send_length_and_seqno
 	; Send config
 	ld hl,DZRP_VERSION
@@ -467,7 +467,7 @@ cmd_get_tbblue_reg:
 	ld de,2
 	call send_length_and_seqno
 	; Read register number
-	ld a,(receive_buffer.register_number)
+	call read_uart_byte	; Register number
 	call read_tbblue_reg	; Result in A
 	; Send 
 	jp write_uart_byte
@@ -480,7 +480,6 @@ cmd_get_tbblue_reg:
 ;  NA
 ;===========================================================================
 cmd_get_sprites_palette:
-; TODO: Implement
 	; Save current values
 	ld a,REG_PALETTE_CONTROL
 	call read_tbblue_reg	; Result in A
@@ -502,15 +501,18 @@ cmd_get_sprites_palette:
 	ld a,d	; eUlaCtrlReg
 	and 0x0F
 	or 0b00100000
-	ld hl,receive_buffer.palette_index
-	bit 0,(hl)
+	ld e,a
+	; Get palette index
+	call read_uart_byte
+	bit 0,a
+	ld a,e
  	jr z,.palette_0
 	or 0b01000000	; Select palette 1
 .palette_0:
 	;ld d,a
 	;ld a,REG_PALETTE_CONTROL
 	;call write_tbblue_reg
-	WRITE_TBBLUE_REG REG_PALETTE_CONTROL,d
+	NEXTREG REG_PALETTE_CONTROL,a
 
 /*
            // Store current values
@@ -629,7 +631,7 @@ cmd_get_sprites_clip_window_and_control:
 ;===========================================================================
 cmd_set_border:
 	; Read register number
-	ld a,(receive_buffer.border_color)
+	call read_uart_byte
 	out (BORDER),a
 	; Send response
 	ld de,1

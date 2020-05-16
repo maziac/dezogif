@@ -59,8 +59,8 @@ receive_buffer:
 .command:
 	defb 0
 .payload:
-.border_color:		; For CMD_SET_BORDER
-.palette_index:		; For CMD_GET_SPRITES_PALETTE
+;.border_color:		; For CMD_SET_BORDER
+;.palette_index:		; For CMD_GET_SPRITES_PALETTE
 .register_number:	; For CMD_READ_REGS
 .bank_number:		; For CMD_WRITE_BANK
 .bp1_enable:		; For CMD_CONTINUE
