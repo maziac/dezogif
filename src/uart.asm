@@ -67,11 +67,31 @@ border_color:	defb BLACK
 
 
 ;===========================================================================
+; Clears the receive FIFO.
+; Changes:
+;   A
+;===========================================================================
+clear_rx_buffer:
+    ld e,0
+.read_loop:
+	ld bc,PORT_UART_TX
+	in a,(c)					; Read status bits
+    bit UART_RX_FIFO_EMPTY,a
+    ret z   ; Return if buffer empty
+
+    ; At least 1 byte received, read it
+    inc b	; The low byte stays the same
+    in a,(c)
+    dec b
+    jr .read_loop
+
+
+;===========================================================================
 ; Waits until an RX byte is available.
 ; Changes the border color slowly to indicate waiting state (like for tape
 ; loading).
 ; Changes:
-;   A
+;   A, DE, B
 ;===========================================================================
 wait_for_uart_rx:
 .color_change:

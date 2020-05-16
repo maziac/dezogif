@@ -77,6 +77,10 @@ cmd_call:
 ;  NA
 ;===========================================================================
 cmd_get_config:
+	; Read version number
+	ld hl,receive_buffer.payload
+	ld de,3
+	call receive_bytes
 	; Send length and seq-no
 	ld de,2
 	call send_length_and_seqno

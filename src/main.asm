@@ -5,7 +5,7 @@
     DEVICE ZXSPECTRUMNEXT
 
 
-    ORG 0x8000
+    ORG 0x4000
 
 
 ;===========================================================================
@@ -55,6 +55,9 @@ main:
     call set_uart_baudrate
   ENDIF
 
+    ; Init
+    call clear_rx_buffer
+    
 main_loop:
     ; Check if byte available.
     call dbg_check_for_message
