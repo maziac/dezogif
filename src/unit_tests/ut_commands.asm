@@ -326,8 +326,9 @@ UT_cmd_write_bank:
 
 	; Restore slot/bank (D)
 	pop de
-	ld a,.slot+REG_MMU
-	call write_tbblue_reg	; A=register, D=value
+	;ld a,.slot+REG_MMU
+	;call write_tbblue_reg	; A=register, D=value
+	WRITE_TBBLUE_REG .slot+REG_MMU,d
 	ret
 
 ; Simulated receive bytes.

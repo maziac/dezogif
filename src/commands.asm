@@ -39,11 +39,11 @@ cmd_jump_table:
 .read_state:		defw cmd_read_state
 .write_state:		defw cmd_write_state
 .get_tbblue_reg:	defw cmd_get_tbblue_reg
-.get_sprites_palette:	defw get_sprites_palette
-.get_sprites:		defw get_sprites
-.get_sprites_patterns:	defw get_sprites_patterns
-.get_sprites_clip_window_and_control:	defw get_sprites_clip_window_and_control
-.set_border:		defw get_set_border
+.get_sprites_palette:	defw cmd_get_sprites_palette
+.get_sprites:		defw cmd_get_sprites
+.get_sprites_patterns:	defw cmd_get_sprites_patterns
+.get_sprites_clip_window_and_control:	defw cmd_get_sprites_clip_window_and_control
+.set_border:		defw cmd_set_border
 
 
 ;===========================================================================
@@ -237,8 +237,10 @@ cmd_write_bank:
 
 	; Restore slot/bank (D)
 	pop de
-	ld a,.slot+REG_MMU
-	jp write_tbblue_reg	; A=register, D=value
+	;ld a,.slot+REG_MMU
+	;jp write_tbblue_reg	; A=register, D=value
+	WRITE_TBBLUE_REG .slot+REG_MMU,d
+	ret
 
 
 
@@ -457,8 +459,14 @@ cmd_write_state:
 ;  NA
 ;===========================================================================
 cmd_get_tbblue_reg:
-; TODO: Implement
-	ret
+	; Send response
+	ld de,2
+	call send_length_and_seqno
+	; Read register number
+	ld a,(receive_buffer.register_number)
+	call read_tbblue_reg	; Result in A
+	; Send 
+	jp write_uart_byte
 
 
 ;===========================================================================
@@ -467,10 +475,114 @@ cmd_get_tbblue_reg:
 ; Changes:
 ;  NA
 ;===========================================================================
-get_sprites_palette:
+cmd_get_sprites_palette:
 ; TODO: Implement
-	ret
+	; Save current values
+	ld a,REG_PALETTE_CONTROL
+	call read_tbblue_reg	; Result in A
+	ld d,a	; eUlaCtrlReg
+	ld a,REG_PALETTE_INDEX
+	call read_tbblue_reg	; Result in A
+	ld e,a	; indexReg
+	ld a,REG_PALETTE_VALUE_8
+	call read_tbblue_reg	; Result in A
+	ld l,a	; colorReg
+	ld a,REG_MACHINE_TYPE
+	call read_tbblue_reg	; Result in A
+    ld h,a	; machineReg
+	; Save
+	push hl		; h = machineReg, l = colorReg
+	push de 	; d = eUlaCtrlReg, e = indexReg
 
+	; Select sprites
+	ld a,d	; eUlaCtrlReg
+	and 0x0F
+	or 0b00100000
+	ld hl,receive_buffer.palette_index
+	bit 0,(hl)
+ 	jr z,.palette_0
+	or 0b01000000	; Select palette 1
+.palette_0:
+	;ld d,a
+	;ld a,REG_PALETTE_CONTROL
+	;call write_tbblue_reg
+	WRITE_TBBLUE_REG REG_PALETTE_CONTROL,d
+
+/*
+           // Store current values
+            var cspect = Main.CSpect;
+            byte eUlaCtrlReg = cspect.GetNextRegister(REG_PALETTE_CONTROL);
+            byte indexReg = cspect.GetNextRegister(REG_PALETTE_INDEX);
+            byte colorReg = cspect.GetNextRegister(REG_PALETTE_VALUE_8);
+            // Bit 7: 0=first (8bit color), 1=second (9th bit color)
+            byte machineReg = cspect.GetNextRegister(REG_MACHINE_TYPE);
+            // Select sprites
+            byte selSprites = (byte)((eUlaCtrlReg & 0x0F) | 0b0010_0000 | (paletteIndex << 6));
+            cspect.SetNextRegister(0x43, selSprites); // Resets also 0x44
+  */
+  
+	// Read palette
+	ld d,0	; Index
+.loop:
+	; Set index
+	; d = index
+;	ld a,REG_PALETTE_INDEX
+;	call write_tbblue_reg ; Result in A
+	WRITE_TBBLUE_REG REG_PALETTE_INDEX,d
+	// Read color
+	ld a,REG_PALETTE_VALUE_8
+	call read_tbblue_reg ; Result in A
+	call write_uart_byte
+	ld a,REG_PALETTE_VALUE_16  ; color9th
+	call read_tbblue_reg ; Result in A
+	call write_uart_byte
+	inc d 
+	jr nz,.loop		; Loop 256x
+
+    /*
+             // Read palette
+            for (int i = 0; i < 256; i++)
+            {
+                // Set index
+                cspect.SetNextRegister(REG_PALETTE_INDEX, (byte)i);
+                // Read color
+                byte colorMain = cspect.GetNextRegister(REG_PALETTE_VALUE_8);
+                SetByte(colorMain);
+                byte color9th = cspect.GetNextRegister(REG_PALETTE_VALUE_16);
+                SetByte(color9th);
+                //Log.WriteLine("Palette index={0}: 8bit={1}, 9th bit={2}", i, colorMain, color9th);
+            }
+	*/
+
+	// Restore values
+	pop de 		; d = eUlaCtrlReg, e = indexReg
+	pop hl		; h = machineReg, l = colorReg
+	; d = eUlaCtrlReg
+	WRITE_TBBLUE_REG REG_PALETTE_CONTROL,d
+	; e = indexReg
+	WRITE_TBBLUE_REG REG_PALETTE_INDEX,e
+
+	; If bit 7 set, increase 0x44 index.
+	bit 7,h
+	ret z
+
+	; Write it to increase the index
+	; l = colorReg
+	WRITE_TBBLUE_REG REG_PALETTE_VALUE_16,e
+	ret 
+
+	/*
+            // Restore values
+            cspect.SetNextRegister(REG_PALETTE_CONTROL, eUlaCtrlReg);
+            cspect.SetNextRegister(REG_PALETTE_INDEX, indexReg);
+            if ((machineReg & 0x80) != 0)
+            {
+                // Bit 7 set, increase 0x44 index.
+                // Write it to increase the index
+                cspect.SetNextRegister(REG_PALETTE_VALUE_16, colorReg);
+            }
+	*/
+	
 
 ;===========================================================================
 ; CMD_GET_SPRITES
@@ -478,7 +590,7 @@ get_sprites_palette:
 ; Changes:
 ;  NA
 ;===========================================================================
-get_sprites:
+cmd_get_sprites:
 ; TODO: Implement
 	ret
 
@@ -489,7 +601,7 @@ get_sprites:
 ; Changes:
 ;  NA
 ;===========================================================================
-get_sprites_patterns:
+cmd_get_sprites_patterns:
 ; TODO: Implement
 	ret
 
@@ -500,7 +612,7 @@ get_sprites_patterns:
 ; Changes:
 ;  NA
 ;===========================================================================
-get_sprites_clip_window_and_control:
+cmd_get_sprites_clip_window_and_control:
 ; TODO: Implement
 	ret
 
@@ -511,6 +623,6 @@ get_sprites_clip_window_and_control:
 ; Changes:
 ;  NA
 ;===========================================================================
-get_set_border:
+cmd_set_border:
 ; TODO: Implement
 	ret

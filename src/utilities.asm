@@ -58,9 +58,27 @@ read_tbblue_reg:
 ; Changes:
 ;   A
 ;===========================================================================
+/*
 write_tbblue_reg:
 	ld (.register+2),a
 	ld a,d
 .register:
 	nextreg 0,a
 	ret
+*/
+
+;===========================================================================
+; Macro to write a Z80 register to a specific next register.
+; E.g. use:  WRITE_TBBLUE_REG 0x13,d
+; Writes register to to 0x13.
+; Uses 5 bytes.
+; Parameters:
+;   tbblue_reg = A ZX Next register
+;   z80_reg = a Z80 register, e.g. d, e, c etc.
+; Changes:
+;   A
+;===========================================================================
+	MACRO WRITE_TBBLUE_REG tbblue_reg, z80_reg 
+	ld a,z80_reg
+	nextreg tbblue_reg,a
+	ENDM

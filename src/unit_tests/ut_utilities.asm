@@ -19,9 +19,10 @@ UT_write_read_slot:
 	push af		; Remember
 
 	; Write
-	ld a,.free_slot+REG_MMU
-	ld d,29	; bank 29
-	call write_tbblue_reg 
+	;ld a,.free_slot+REG_MMU
+	;ld d,29	; bank 29
+	;call write_tbblue_reg 
+	WRITE_TBBLUE_REG .free_slot+REG_MMU,29	; bank 29
 
 	; Read
 	ld a,.free_slot+REG_MMU
@@ -32,8 +33,9 @@ UT_write_read_slot:
 
 	; Restore previous used bank
 	pop de
-	ld a,.free_slot+REG_MMU
-	call write_tbblue_reg 
+	;ld a,.free_slot+REG_MMU
+	;call write_tbblue_reg 
+	WRITE_TBBLUE_REG .free_slot+REG_MMU,d
 
     ret 
 

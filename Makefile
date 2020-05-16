@@ -35,8 +35,7 @@ clean:
 	rm -f $(OUT)/*
 
 
-# The game framework is compiled such that the binary can be included in
-# other projects.
+# Build main program
 main:	$(PRG_BIN)
 
 $(PRG_BIN):	$(ASM_FILES) Makefile $(OUT)/
