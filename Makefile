@@ -39,14 +39,14 @@ clean:
 main:	$(PRG_BIN)
 
 $(PRG_BIN):	$(ASM_FILES) Makefile $(OUT)/
-	$(ASM) --inc=$(SRC) --lst=$(LIST_OUT) --fullpath -DBIN_FILE=\"$(PRG_BIN)\" $(MAIN_ASM)
+	$(ASM) --inc=$(SRC) --lstlab --lst=$(LIST_OUT) --fullpath -DBIN_FILE=\"$(PRG_BIN)\" $(MAIN_ASM)
 
 
 # Build the unit tests
 unit_tests:	$(UT_BIN)
 
 $(UT_BIN):	$(UT_ASM_FILES) Makefile $(OUT)/
-	$(ASM) --inc=$(SRC) --lst=$(UT).list --fullpath -DBIN_FILE=\"$(UT_BIN)\" $(UT_ASM)
+	$(ASM) --inc=$(SRC) --lstlab --lst=$(UT).list --fullpath -DBIN_FILE=\"$(UT_BIN)\" $(UT_ASM)
 
 
 # Create 'out' folder:
