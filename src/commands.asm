@@ -53,8 +53,7 @@ cmd_jump_table:
 ; Changes:
 ;  NA
 ;===========================================================================
-cmd_call:
-	; Get pointer to subroutine
+cmd_call:	; Get pointer to subroutine
 	ld a,(receive_buffer.command)
 	out (BORDER),a
 	add a,a
@@ -77,6 +76,7 @@ cmd_call:
 ;  NA
 ;===========================================================================
 cmd_init:
+	; LOGPOINT [COMMAND] cmd_init
 	; Read version number
 	ld hl,receive_buffer.payload
 	ld de,3
@@ -103,6 +103,7 @@ cmd_init:
 ;  NA
 ;===========================================================================
 cmd_get_regs:
+	; LOGPOINT [COMMAND] cmd_get_regs
 	; Send response
 	ld de,29
 	call send_length_and_seqno
@@ -138,6 +139,7 @@ cmd_get_regs:
 ;  NA
 ;===========================================================================
 cmd_set_reg:
+	; LOGPOINT [COMMAND] cmd_set_reg
 	; Read rest of message
 	ld hl,receive_buffer.payload
 	ld de,3
@@ -213,6 +215,7 @@ cmd_set_reg:
 ;  NA
 ;===========================================================================
 cmd_write_bank:
+	; LOGPOINT [COMMAND] cmd_write_bank
 	; Execute command
 	call cmd_write_bank.inner
 	; Send response
@@ -235,6 +238,7 @@ cmd_write_bank:
 	; Read bytes from UART and put into bank
 	ld hl,.slot<<13	; Start address
 	ld de,0x2000	; Bank size
+ ld de,1000
 	call receive_bytes
 
 	; Restore slot/bank (D)
@@ -256,6 +260,7 @@ cmd_write_bank:
 ;  NA
 ;===========================================================================
 cmd_continue:
+	; LOGPOINT [COMMAND] cmd_continue
 	; Read breakpoints etc. from message
 	ld hl,receive_buffer.payload
 	ld de,11
@@ -276,6 +281,7 @@ cmd_continue:
 ;  NA
 ;===========================================================================
 cmd_pause:
+	; LOGPOINT [COMMAND] cmd_pause
  ld a,MAGENTA
  out (BORDER),a
 
@@ -293,6 +299,7 @@ cmd_pause:
 ;  NA
 ;===========================================================================
 cmd_add_breakpoint:
+	; LOGPOINT [COMMAND] cmd_add_breakpoint
 	; Read breakpoint from message
 	ld hl,receive_buffer.payload
 	ld de,2
@@ -324,6 +331,7 @@ cmd_add_breakpoint:
 ;  NA
 ;===========================================================================
 cmd_remove_breakpoint:
+	; LOGPOINT [COMMAND] cmd_remove_breakpoint
 	; Read breakpoint ID from message
 	ld hl,receive_buffer.payload
 	ld de,2
@@ -343,6 +351,7 @@ cmd_remove_breakpoint:
 ;  NA
 ;===========================================================================
 cmd_read_mem:
+	; LOGPOINT [COMMAND] cmd_read_mem
 	; Read address and size from message
 	ld hl,receive_buffer.payload
 	ld de,5
@@ -380,6 +389,7 @@ cmd_read_mem:
 ;  NA
 ;===========================================================================
 cmd_write_mem:
+	; LOGPOINT [COMMAND] cmd_write_mem
 	; Read address from message
 	ld hl,receive_buffer.payload
 	ld de,3
@@ -407,6 +417,7 @@ cmd_write_mem:
 ;  NA
 ;===========================================================================
 cmd_get_slots:
+	; LOGPOINT [COMMAND] cmd_get_slots
 	; Send response
 	ld de,9
 	call send_length_and_seqno
@@ -433,6 +444,7 @@ cmd_get_slots:
 ;  NA
 ;===========================================================================
 cmd_read_state:
+	; LOGPOINT [COMMAND] cmd_read_state
 	; TODO: Implement to save/restore state
 
 	; Send response
@@ -447,6 +459,7 @@ cmd_read_state:
 ;  NA
 ;===========================================================================
 cmd_write_state:
+	; LOGPOINT [COMMAND] cmd_write_state
 	; TODO: Implement to save/restore state
 
 	; Send response
@@ -461,6 +474,7 @@ cmd_write_state:
 ;  NA
 ;===========================================================================
 cmd_get_tbblue_reg:
+	; LOGPOINT [COMMAND] cmd_get_tbblue_reg
 	; Send response
 	ld de,2
 	call send_length_and_seqno
@@ -478,6 +492,7 @@ cmd_get_tbblue_reg:
 ;  NA
 ;===========================================================================
 cmd_get_sprites_palette:
+	; LOGPOINT [COMMAND] cmd_get_sprites_palette
 	; Save current values
 	ld a,REG_PALETTE_CONTROL
 	call read_tbblue_reg	; Result in A
@@ -596,6 +611,7 @@ cmd_get_sprites_palette:
 ;===========================================================================
 cmd_get_sprites:
 ; TODO: Implement
+	; LOGPOINT [COMMAND] cmd_get_sprites
 	ret
 
 
@@ -607,6 +623,7 @@ cmd_get_sprites:
 ;===========================================================================
 cmd_get_sprites_patterns:
 ; TODO: Implement
+	; LOGPOINT [COMMAND] cmd_get_sprites_patterns
 	ret
 
 
@@ -618,6 +635,7 @@ cmd_get_sprites_patterns:
 ;===========================================================================
 cmd_get_sprites_clip_window_and_control:
 ; TODO: Implement
+	; LOGPOINT [COMMAND] cmd_get_sprites_clip_window_and_control
 	ret
 
 
@@ -628,6 +646,7 @@ cmd_get_sprites_clip_window_and_control:
 ;  NA
 ;===========================================================================
 cmd_set_border:
+	; LOGPOINT [COMMAND] cmd_set_border
 	; Read register number
 	call read_uart_byte
 	out (BORDER),a

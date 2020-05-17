@@ -145,6 +145,7 @@ read_uart_byte:
     
     ; "Timeout"
     ; Waited for 256*43 T-states=393us
+    nop ; LOGPOINT read_uart_byte: ERROR=TIMEOUT
     jp timeout
 
 .byte_received:

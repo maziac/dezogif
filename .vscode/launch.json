@@ -102,6 +102,7 @@
             "startAutomatically": true,
             "skipInterrupt": true,
             "commandsAfterLaunch": [
+                "-logpoint enable"
                 //"-sprites",
                 //"-patterns"
             ],
