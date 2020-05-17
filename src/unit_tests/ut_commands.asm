@@ -21,7 +21,7 @@ test_memory_dst_end:
 	defb 0	; WPMEM
 
 ; Helper function that inits all backup values to 0xFF.
-cmd_init:
+cmd_data_init:
 	ld hl,backup
 	ld de,backup+1
 	ld (hl),0xFF
@@ -33,7 +33,7 @@ cmd_init:
 ; Test that register is set correctly.
 cmd_write_reg.UT_pc:
 	; Init values
-	call cmd_init
+	call cmd_data_init
     ; Init
 	ld hl,test_stack
 	ld (backup.sp),hl
@@ -69,7 +69,7 @@ cmd_set_dreg:
 ; Test that register SP to HL' are set correctly.
 cmd_write_reg.UT_SP_to_HL2:
 	; Init values
-	call cmd_init
+	call cmd_data_init
 	; First set all double registers
     ; SP
 	ld hl,0x1819
@@ -159,7 +159,7 @@ cmd_set_reg:
 ; Test that register A to H' are set correctly.
 cmd_write_reg.UT_A_to_H2:
 	; Init values
-	call cmd_init
+	call cmd_data_init
 	; First set all single registers
     ; AF
 	ld hl,0x1A1F

@@ -23,7 +23,7 @@ DZRP_VERSION:	defb 1, 0, 0
 
 ; Command number <-> subroutine association
 cmd_jump_table:
-.get_config:		defw cmd_get_config
+.get_config:		defw cmd_init
 .read_regs:			defw cmd_get_regs
 .write_regs:		defw cmd_set_reg
 .write_bank:		defw cmd_write_bank
@@ -76,7 +76,7 @@ cmd_call:
 ; Changes:
 ;  NA
 ;===========================================================================
-cmd_get_config:
+cmd_init:
 	; Read version number
 	ld hl,receive_buffer.payload
 	ld de,3
@@ -88,7 +88,7 @@ cmd_get_config:
 	ld hl,DZRP_VERSION
 	ld e,3
 .loop:
-	ld a,(hl)
+	ldi a,(hl)
 	call write_uart_byte
 	dec e
 	jr nz,.loop
@@ -213,9 +213,6 @@ cmd_set_reg:
 ;  NA
 ;===========================================================================
 cmd_write_bank:
-	; Read bank number of message
-	call read_uart_byte
-	ld (receive_buffer.bank_number),a
 	; Execute command
 	call cmd_write_bank.inner
 	; Send response
@@ -231,7 +228,8 @@ cmd_write_bank:
 	push af	; remember
 
 	; Change bank for slot 
-	ld a,(receive_buffer.bank_number)
+	; Read bank number of message
+	call read_uart_byte
 	nextreg .slot+REG_MMU,a
 
 	; Read bytes from UART and put into bank
