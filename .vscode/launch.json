@@ -98,8 +98,8 @@
                     ]
                 }
             ],
-            //"startAutomatically": false,
-            "startAutomatically": true,
+            "startAutomatically": false,
+            //"startAutomatically": true,
             "skipInterrupt": true,
             "commandsAfterLaunch": [
                 "-logpoint enable"

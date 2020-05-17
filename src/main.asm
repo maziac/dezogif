@@ -4,8 +4,12 @@
 
     DEVICE ZXSPECTRUMNEXT
 
+; The 8k memory bank to store the code to.
+USED_BANK:  EQU 95  ; Last 8k bank on unexpanded ZXNext
+USED_SLOT:  EQU 1   ; 0x2000
 
-    ORG 0x4000
+    MMU USED_SLOT, USED_BANK 
+    ORG USED_SLOT*0x2000
 
 
 ;===========================================================================
@@ -91,10 +95,25 @@ stack_top:
 
 
 
+
+;===========================================================================
+; After loading the program starts here. Moves the bank to the destination 
+; slot and jumps there.
+;===========================================================================
+    ORG 0xC000 
+start_entry_point:
+    ; At startup this program is mapped at 0xC000
+    ; Now move the bank to 0x4000
+    nextreg REG_MMU+USED_SLOT,USED_BANK
+    ; Now the right bank is mapped into the slot, jump to the slot and continue
+    jp main
+
+
     ; Save NEX file
-    SAVENEX OPEN BIN_FILE, main, stack_top
+    SAVENEX OPEN BIN_FILE, start_entry_point, stack_top
     SAVENEX CORE 2, 0, 0        ; Next core 2.0.0 required as minimum
     ;SAVENEX CFG 0               ; black border
     ;SAVENEX BAR 0, 0            ; no load bar
     SAVENEX AUTO
+    ;SAVENEX BANK 20
     SAVENEX CLOSE
