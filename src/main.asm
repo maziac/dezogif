@@ -8,7 +8,7 @@
 USED_BANK:  EQU 95  ; Last 8k bank on unexpanded ZXNext
 USED_SLOT:  EQU 1   ; 0x2000
 
-    MMU USED_SLOT, USED_BANK 
+    MMU USED_SLOT e, USED_BANK ; e -> Everything should fit inot one page, error if not.
     ORG USED_SLOT*0x2000
 
 
@@ -110,7 +110,7 @@ start_entry_point:
 
 
     ; Save NEX file
-    SAVENEX OPEN BIN_FILE, start_entry_point, stack_top
+    SAVENEX OPEN BIN_FILE, start_entry_point, stack_top // 0xC000    //stack_top: CSpect has a problem (crashes the program immediately when it is run) is stack points to stack_top which is inside the 
     SAVENEX CORE 2, 0, 0        ; Next core 2.0.0 required as minimum
     ;SAVENEX CFG 0               ; black border
     ;SAVENEX BAR 0, 0            ; no load bar

@@ -317,3 +317,42 @@ send_4bytes_length_and_seqno:
 	ld a,(receive_buffer.seq_no)
 	jp write_uart_byte
 
+
+;===========================================================================
+; Sends a NTF_PAUSE notification
+; Parameter:
+;  D = break reason:
+;	  0 = no reason (e.g. a step-over)
+;	  1 = manual break
+;	  2 = breakpoint hit
+; HL = breakpoint address that was hit (if D!=0)
+; Returns:
+;  -
+; Changes:
+;  A, E, BC
+;===========================================================================
+send_ntf_pause:
+	; First length byte
+	ld a,6
+	call write_uart_byte
+	; Rest of length + seqno=0
+	xor a
+	ld e,4
+.loop:
+	call write_uart_byte
+	dec e
+	jr nz,.loop
+	; NTF_PAUSE id
+	ld a,1	; NTF_PAUSE
+	call write_uart_byte
+	; Breakpoint reason
+	ld a,d
+	call write_uart_byte
+	; Breakpoint
+	ld a,l
+	call write_uart_byte
+	ld a,h
+	call write_uart_byte
+	xor a
+	jp write_uart_byte
+

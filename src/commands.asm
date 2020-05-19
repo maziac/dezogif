@@ -41,7 +41,7 @@ cmd_jump_table:
 .get_tbblue_reg:	defw cmd_get_tbblue_reg
 .get_sprites_palette:	defw cmd_get_sprites_palette
 .get_sprites:		defw cmd_get_sprites
-.get_sprites_patterns:	defw cmd_get_sprites_patterns
+.get_sprite_patterns:	defw cmd_get_sprite_patterns
 .get_sprites_clip_window_and_control:	defw cmd_get_sprites_clip_window_and_control
 .set_border:		defw cmd_set_border
 
@@ -93,7 +93,9 @@ cmd_init:
 	dec e
 	jr nz,.loop
 	xor a	; no error
-	jp write_uart_byte
+	call write_uart_byte
+	nop
+	ret
 
 
 ;===========================================================================
@@ -238,7 +240,6 @@ cmd_write_bank:
 	; Read bytes from UART and put into bank
 	ld hl,.slot<<13	; Start address
 	ld de,0x2000	; Bank size
- ld de,1000
 	call receive_bytes
 
 	; Restore slot/bank (D)
@@ -269,6 +270,7 @@ cmd_continue:
 	ld de,1
 	call send_length_and_seqno
 	; Restore registers
+	ret ; TODO REMOVE
 	jp restore_registers
 
 
@@ -287,8 +289,16 @@ cmd_pause:
 
 	; Send response
 	ld de,1
-	jp send_length_and_seqno
+	;jp send_length_and_seqno
 
+	; TODO REMOVE
+	call send_length_and_seqno
+	
+	; Send fake break notification
+	ld d,0	; no reason
+	ld hl,0 ; bp address
+	call send_ntf_pause
+	ret
 
 
 ;===========================================================================
@@ -621,7 +631,7 @@ cmd_get_sprites:
 ; Changes:
 ;  NA
 ;===========================================================================
-cmd_get_sprites_patterns:
+cmd_get_sprite_patterns:
 ; TODO: Implement
 	; LOGPOINT [COMMAND] cmd_get_sprites_patterns
 	ret
