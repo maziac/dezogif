@@ -18,7 +18,11 @@
 ;===========================================================================
 
 ; DZRP version 1.0.0
-DZRP_VERSION:	defb 1, 0, 0
+DZRP_VERSION:	defb 1, 1, 0
+
+; The own program name and version
+PROGRAM_NAME:	defb "dbg_uart_if v0.1.0", 0
+.end
 
 
 ; Command number <-> subroutine association
@@ -81,20 +85,33 @@ cmd_init:
 	ld hl,receive_buffer.payload
 	ld de,3
 	call receive_bytes
+	; Read remote program name
+.read_loop
+	call read_uart_byte
+	or a
+	jr nz,.read_loop
+
 	; Send length and seq-no
-	ld de,5
+	ld de,PROGRAM_NAME.end-PROGRAM_NAME + 5
 	call send_length_and_seqno
+	; No error
+	xor a
+	call write_uart_byte
 	; Send config
 	ld hl,DZRP_VERSION
 	ld e,3
-.loop:
+.write_dzrp_version_loop:
 	ldi a,(hl)
 	call write_uart_byte
 	dec e
-	jr nz,.loop
-	xor a	; no error
+	jr nz,.write_dzrp_version_loop
+	; Send own program name and version
+	ld hl,PROGRAM_NAME
+.write_prg_name_loop:
+	ldi a,(hl)
 	call write_uart_byte
-	nop
+	or a
+	jr nz,.write_prg_name_loop
 	ret
 
 
