@@ -17,7 +17,7 @@
 ; Data. 
 ;===========================================================================
 
-; DZRP version 1.0.0
+; DZRP version 1.1.0
 DZRP_VERSION:	defb 1, 1, 0
 
 ; The own program name and version
@@ -197,19 +197,23 @@ cmd_set_reg:
 	; Single register
 	jr nz,.next4
 	; IM is directly set
+	ld hl,backup.im
 	inc e
 	dec e
 	jr nz,.not_im0
+	ld (hl),0
 	im 0
 	ret
 .not_im0:
 	dec e
 	jr nz,.not_im1
+	ld (hl),1
 	im 1
 	ret
 .not_im1:
 	dec e
 	ret nz	; IM number wrong
+	ld (hl),2
 	im 2
 	ret
 
