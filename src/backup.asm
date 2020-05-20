@@ -24,8 +24,8 @@ debug_stack_top:
 backup:
 .im:		defb 0	; TODO: cannot be saved
 .reserved:	defb 0
-.i:			defb 0
 .r:			defb 0
+.i:			defb 0
 .hl2:		defw 0
 .de2:		defw 0
 .bc2:		defw 0
@@ -84,9 +84,9 @@ save_registers:
 	push hl
 
 	; I and R register
-	ld a,i
-	ld l,a
 	ld a,r
+	ld l,a
+	ld a,i
 	ld h,a
 	push hl
 	
@@ -124,14 +124,14 @@ save_registers:
 ; ===========================================================================
 restore_registers:
 	; Skip IM
-	ld sp,backup.i
+	ld sp,backup.r
 
 	; I and R register
 	pop hl
 	ld a,l
-	ld i,a
-	ld a,h
 	ld r,a
+	ld a,h
+	ld i,a
 	
 	; Switch registers
 	exx

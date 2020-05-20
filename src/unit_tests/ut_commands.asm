@@ -157,49 +157,53 @@ cmd_set_reg:
 
 
 ; Test that register A to H' are set correctly.
-cmd_write_reg.UT_A_to_H2:
+cmd_write_reg.UT_A_to_IR:
 	; Init values
 	call cmd_data_init
 	; First set all single registers
     ; AF
 	ld hl,0x1A1F
-	ld a,15	; AF
+	ld a,14	; AF
 	call cmd_set_reg
     ; BC
 	ld hl,0x1B1C
-	ld a,17	; BC
+	ld a,16	; BC
 	call cmd_set_reg
     ; DE
 	ld hl,0x1D1E
-	ld a,19	; DE
+	ld a,18	; DE
 	call cmd_set_reg
     ; HL
 	ld hl,0x1112
-	ld a,21	; HL
+	ld a,20	; HL
 	call cmd_set_reg
     ; IX
 	ld hl,0x1314
-	ld a,23	; IX
+	ld a,22	; IX
 	call cmd_set_reg
     ; IY
 	ld hl,0x1516
-	ld a,25	; IY
+	ld a,24	; IY
 	call cmd_set_reg
     ; AF2
 	ld hl,0x2A2F
-	ld a,27	; AF2
+	ld a,26	; AF2
 	call cmd_set_reg
      ; BC2
 	ld hl,0x2B2C
-	ld a,29	; BC2
+	ld a,28	; BC2
 	call cmd_set_reg
     ; DE2
 	ld hl,0x2D2E
-	ld a,31	; DE2
+	ld a,30	; DE2
 	call cmd_set_reg
     ; HL2
 	ld hl,0x2122
-	ld a,33	; HL2
+	ld a,32	; HL2
+	call cmd_set_reg
+    ; IR
+	ld hl,0x9876
+	ld a,34	; R
 	call cmd_set_reg
 
 	; Then test the contents to see that nothing has been overwritten
@@ -213,6 +217,8 @@ cmd_write_reg.UT_A_to_H2:
 	TEST_MEMORY_WORD backup.bc2, 0x2B2C
 	TEST_MEMORY_WORD backup.de2, 0x2D2E
 	TEST_MEMORY_WORD backup.hl2, 0x2122
+	TEST_MEMORY_BYTE backup.r, 0x76
+	TEST_MEMORY_BYTE backup.i, 0x98
 	ret
 
 

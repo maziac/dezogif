@@ -223,24 +223,15 @@ cmd_set_reg:
 	; Here: F=-22, A=-21, ...., I'=-1
 	ret nc	; Otherwise unknown
 	; Single register. A is -22 to -1
-; LOGPOINT [COMMAND] a=${a}
-
 	neg ; A is 22 to 1; I'=1, R'=2, D'=3, E'=4
-; LOGPOINT [COMMAND] a=${a}
 	dec a
-; LOGPOINT [COMMAND] a=${a}
 	; A is 21 to 0; I'=0, R'=1, D'=2, E'=3
 	xor 0x01	; The endianess need to be corrected.
-; LOGPOINT [COMMAND] a=${a}
 	; A is 21 to 0; R'=0, I'=1, E'=2, D'=3
-	ld hl,backup.i
-	; LOGPOINT [COMMAND] hl=0x${hl:hex}, a=${a}
-	
+	ld hl,backup.r
 	add hl,a
 	; Store register
 	ld (hl),e
-
-	; LOGPOINT [COMMAND] hl=0x${hl:hex}, (hl)=${(hl):hex}
 	ret
 
 
