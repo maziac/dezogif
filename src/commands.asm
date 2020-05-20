@@ -218,16 +218,29 @@ cmd_set_reg:
 	ret
 
 .next4:	
-	sub 35-13
+	; Here: F=1, A=2, ...., I'=22
+	sub 23
+	; Here: F=-22, A=-21, ...., I'=-1
 	ret nc	; Otherwise unknown
-	; Single register. A is -20 to -1
-	neg ; A is 20 to 1
-	dec a	; A is 19 to 0
+	; Single register. A is -22 to -1
+; LOGPOINT [COMMAND] a=${a}
+
+	neg ; A is 22 to 1; I'=1, R'=2, D'=3, E'=4
+; LOGPOINT [COMMAND] a=${a}
+	dec a
+; LOGPOINT [COMMAND] a=${a}
+	; A is 21 to 0; I'=0, R'=1, D'=2, E'=3
 	xor 0x01	; The endianess need to be corrected.
-	ld hl,backup.hl2
+; LOGPOINT [COMMAND] a=${a}
+	; A is 21 to 0; R'=0, I'=1, E'=2, D'=3
+	ld hl,backup.i
+	; LOGPOINT [COMMAND] hl=0x${hl:hex}, a=${a}
+	
 	add hl,a
 	; Store register
 	ld (hl),e
+
+	; LOGPOINT [COMMAND] hl=0x${hl:hex}, (hl)=${(hl):hex}
 	ret
 
 
