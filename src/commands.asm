@@ -528,6 +528,9 @@ cmd_get_tbblue_reg:
 ;===========================================================================
 cmd_get_sprites_palette:
 	; LOGPOINT [COMMAND] cmd_get_sprites_palette
+	; Start response
+	ld de,513
+	call send_length_and_seqno
 	; Save current values
 	ld a,REG_PALETTE_CONTROL
 	call read_tbblue_reg	; Result in A
