@@ -45,10 +45,7 @@ cmd_write_reg.UT_pc:
     ; Test
     call cmd_set_reg.inner
 
-	ld hl,(backup.sp)
-	ldi a,(hl)
-	ld h,(hl)
-	ld l,a
+	ld hl,(backup.pc)
 	TEST_DREG hl, 0x1112
 
     ret 

@@ -168,23 +168,18 @@ cmd_set_reg:
 	ldd e,(hl)
 	; Which register
 	ld a,(hl)	; hl=receive_buffer.register_number
-	or a
-	jr nz,.next1
-	; PC
-	ld hl,(backup.sp)
-.store_dreg:
+	sub 13
+	jr nc,.next2
+
+	; Double register. A is -13 to -2
+	neg ; A is 13 to 2
+	add a,a	; a*2: 26 to 4
+	ld hl,backup.hl2-4
+	add hl,a
 	ldi (hl),e
 	ld (hl),d
 	ret
-.next1:
-	sub 13
-	jr nc,.next2
-	; Double register. A is -12 to -2
-	neg ; A is 12 to 2
-	add a,a	; a*2: 24 to 4
-	ld hl,backup.hl2-4
-	add hl,a
-	jr .store_dreg
+
 .next2:
 	; Single register
 	jr nz,.next4
