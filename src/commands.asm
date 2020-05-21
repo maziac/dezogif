@@ -300,7 +300,7 @@ cmd_pause:
 
 	; Send response
 	ld de,1
-	;jp send_length_and_seqno
+	jp send_length_and_seqno
 
 	; TODO REMOVE
 	call send_length_and_seqno

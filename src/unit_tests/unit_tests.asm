@@ -17,6 +17,7 @@
     include "message.asm"
     include "commands.asm"
     include "backup.asm"
+    include "breakpoints.asm"
 
      
     include "unit_tests/unit_tests.inc"  

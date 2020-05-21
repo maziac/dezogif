@@ -25,6 +25,7 @@ USED_ROM_BANK:  EQU 94  ; Bank used to copy the ROM (0x0000) to and change the R
     include "message.asm"
     include "commands.asm"
     include "backup.asm"
+    include "breakpoints.asm"
 
     
 ;===========================================================================
@@ -94,18 +95,6 @@ main_loop:
     call dbg_check_for_message
     jr main_loop
 
-
-
-;===========================================================================
-; Called by RST 0.
-; I.e. thispoint is reached when the program runs into a RST 0.
-; I.e. this indicates that a breakpoint was hit.
-; The location just after the breakpoint can be found from the SP.
-; I.e. it was pushed on stack because of the RST.
-;===========================================================================
-enter_breakpoint:
-    
-    jp enter_cmd_loop
 
 
 
