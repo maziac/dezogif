@@ -55,7 +55,10 @@ save_registers:
 	; Save
 	ld (backup.hl),hl
 	pop hl  ; Save return address to HL
-	; HL contains PC now
+	ld (.ret_jump+1),hl	; self.modifying code, used instead of a return
+
+	; Get caller address (+3) of dbg_check_for message or enter_breakpoint
+	pop hl	
 	ld (backup.pc),hl
 	
 	; Save stack pointer (is already corrected because of 'pop hl')
@@ -70,7 +73,7 @@ save_registers:
 	push de
 	
 	;push hl
-	dec sp		; Instead of PUSH HL (hl is already pushed)
+	dec sp		; Instead of PUSH HL (hl is already saved)
 	dec sp
 
 	push ix
@@ -104,9 +107,6 @@ save_registers:
 	exx
 	; End of register saving through pushing
 
- 	; Restore return address
-	push hl
-
 	; Save clock speed
 	ld a,REG_TURBO_MODE
 	call read_tbblue_reg
@@ -116,7 +116,9 @@ save_registers:
 	in a,(BORDER)
 	ld (backup.border_color),a
 
-	ret 
+.ret_jump:
+	jp 0x0000	; Self-modifying code
+	
 
 
 ;===========================================================================

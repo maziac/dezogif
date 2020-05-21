@@ -92,14 +92,6 @@ main:
 main_loop:
     ; Check if byte available.
     call dbg_check_for_message
-
-    inc a
-    out (BORDER),a
-
-    ; Some code
-    ld bc,0xb1c1
-    ld de,0xd1e1
-
     jr main_loop
 
 
@@ -112,7 +104,9 @@ main_loop:
 ; I.e. it was pushed on stack because of the RST.
 ;===========================================================================
 enter_breakpoint:
-    ret
+    
+    jp enter_cmd_loop
+
 
 
 ;===========================================================================

@@ -115,10 +115,13 @@ dbg_check_for_message:			; T=17 for calling
 	ld a,PORT_UART_TX>>8		; T= 7
 	in a,(PORT_UART_TX&0xFF)	; T=11, Read status bits
     bit UART_RX_FIFO_EMPTY,a	; T= 8
-    jr nz,start_cmd_loop		; T= 7
+    jr nz,.start_cmd_loop		; T= 7
 	; Restore AF 
     pop af						; T=10
 	ret			 				; T=10
+.start_cmd_loop:
+	; Restore AF
+	pop af
 
 ;===========================================================================
 ; Starts the command loop. I.e. backups all registers.
@@ -128,9 +131,7 @@ dbg_check_for_message:			; T=17 for calling
 ; Changes:
 ;  -, At the end the registers are restored.
 ;===========================================================================
-start_cmd_loop:
-	; Restore AF
-	pop af
+enter_cmd_loop:
 	; Backup all registers 
 	call save_registers
 	; SP is now at debug_stack_top
@@ -138,7 +139,6 @@ start_cmd_loop:
 	ld a,RTM_28MHZ
 	nextreg REG_TURBO_MODE,a
 cmd_loop:
-
 	; Receive length sequence number and command
 	ld hl,receive_buffer
 	ld de,receive_buffer.payload-receive_buffer

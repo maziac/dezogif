@@ -282,7 +282,6 @@ cmd_continue:
 	ld de,1
 	call send_length_and_seqno
 	; Restore registers
-	ret ; TODO REMOVE
 	jp restore_registers
 
 
