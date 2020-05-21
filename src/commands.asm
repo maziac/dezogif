@@ -126,18 +126,10 @@ cmd_get_regs:
 	; Send response
 	ld de,29
 	call send_length_and_seqno
-	; Get PC
-	ld hl,(backup.sp)
-	ldi a,(hl)
-	; Write LOW(PC) to UART
-	call write_uart_byte
-	; Write HIGH(PC) to UART
-	ld a,(hl)
-	call write_uart_byte
-	; Loop other values
-	ld hl,backup.sp
+	; Loop all values
+	ld hl,backup.pc  TEST
 	ld de,-3
-	ld b,13
+	ld b,14
 .loop:
 	push bc
 	ldi a,(hl)

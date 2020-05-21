@@ -58,6 +58,7 @@ save_registers.UT_save:
 
     ; Test
     call save_registers
+.pc_value:
 
     TEST_MEMORY_BYTE backup.af+1, 0x1A
     TEST_MEMORY_WORD backup.bc, 0x1B1C
@@ -73,6 +74,8 @@ save_registers.UT_save:
 
     TEST_MEMORY_BYTE backup.i, 0x81
     ;TEST_MEMORY_BYTE backup.r, 0x82   Useless to test
+
+    TEST_MEMORY_WORD backup.pc, .pc_value
  
     ; Test stack pointer
     ld hl,(sp_backup)       ; Remember
@@ -88,7 +91,9 @@ save_registers.UT_save:
 save_registers.UT_restore:
     ; Init
     ld hl,.continue     ; The jump address
-    push hl     ; Continue us used a return address
+    ld (backup.pc),hl   ; Continue at used a return address
+    ld hl,0
+    push hl             ; Add an entry on the stack to offer enough space for the PC (return value)
     ld (backup.sp),sp
     ld sp,backup.af
 
@@ -122,8 +127,6 @@ save_registers.UT_restore:
     ld a,0x1A
     ld (backup.af+1),a
  
-    ; TODO: Do I neet to test backup.pc?
-
     ; Test
     jp restore_registers
 

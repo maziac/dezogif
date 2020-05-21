@@ -55,6 +55,8 @@ save_registers:
 	; Save
 	ld (backup.hl),hl
 	pop hl  ; Save return address to HL
+	; HL contains PC now
+	ld (backup.pc),hl
 	
 	; Save stack pointer (is already corrected because of 'pop hl')
 	ld (backup.sp),sp
@@ -118,7 +120,7 @@ save_registers:
 
 
 ;===========================================================================
-; Restore all registers and jumps to the stored PC.
+; Restore all registers and jump to the stored PC.
 ; Parameters:
 ;  SP = points to debug_stack_top-2 (i.e. the return address)
 ; ===========================================================================
@@ -148,7 +150,7 @@ restore_registers:
 
 	pop iy
 	pop ix
-	pop hl
+	pop hl		; Will be loaded later again
 	pop de
 	pop bc
 
@@ -163,6 +165,13 @@ restore_registers:
 	; Restore AF
 	pop af
 
-	; Jump to the address put on the stack before	
+	; Correct PC on stack (might have been changed by DeZog)
 	ld sp,(backup.sp)
+	ld hl,(backup.pc)
+	ex (sp),hl
+	
+	; Load correct value of HL
+	ld hl,(backup.hl)
+
+	; Jump to the address on the stack, i.e. the PC
 	ret 
