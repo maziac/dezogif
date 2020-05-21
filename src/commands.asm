@@ -331,7 +331,9 @@ cmd_add_breakpoint:
 	or a
 	jr nz,.loop
 
-	; TODO: to be implemented
+	; Set breakpoint
+	ld hl,(payload_add_breakpoint.bp_address)
+	call set_breakpoint
 
 	; Send response
 	ld de,3

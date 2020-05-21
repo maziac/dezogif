@@ -49,6 +49,12 @@ CMD.WRITE_STATE:		equ 	15
 ; Pointer to the next receive position.
 ;receive_ptr:    defw 0
 
+; CMD_ADD_BREAKPOINT
+	STRUCT PAYLOAD_ADD_BREAKPOINT
+bp_address:	defw 0
+	ENDS
+payload_add_breakpoint:	PAYLOAD_ADD_BREAKPOINT = receive_buffer.payload
+
 
 ; The UART data is put here before being interpreted.
 receive_buffer: 
@@ -64,7 +70,6 @@ receive_buffer:
 .register_number:	; For CMD_READ_REGS
 .bank_number:		; For CMD_WRITE_BANK
 .bp1_enable:		; For CMD_CONTINUE
-.bp_address:		; For CMD_ADD_BREAKPOINT
 .bp_id:				; For CMD_REMOVE_BREAKPOINT
 	defs 1
 .register_value:	; For CMD_READ_REGS

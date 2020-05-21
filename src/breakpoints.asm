@@ -11,7 +11,12 @@ BREAK_REASON:
 .NO_REASON:			EQU 0
 .MANUAL_BREAK:		EQU 1
 .BREAKPOINT_HIT:	EQU 2
-    
+
+
+; The breakpoint RST command.
+BP_INSTRUCTION:		EQU 0xC7		; RST 0
+
+
 ;===========================================================================
 ; Called by RST 0.
 ; I.e. thispoint is reached when the program runs into a RST 0.
@@ -39,4 +44,14 @@ enter_breakpoint:
 	; LOGPOINTx NTF SENT
 
     jp cmd_loop
+
+  
+;===========================================================================
+; Sets a new breakpoint.
+; Parameters:
+;  HL = breakpoint address
+;===========================================================================
+set_breakpoint:
+	ld (hl),BP_INSTRUCTION
+	ret
 
