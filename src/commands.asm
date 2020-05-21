@@ -127,7 +127,7 @@ cmd_get_regs:
 	ld de,29
 	call send_length_and_seqno
 	; Loop all values
-	ld hl,backup.pc  TEST
+	ld hl,backup.pc
 	ld de,-3
 	ld b,14
 .loop:
