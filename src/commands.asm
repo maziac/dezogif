@@ -281,8 +281,8 @@ cmd_continue:
 	; Send response
 	ld de,1
 	call send_length_and_seqno
-	; Restore registers
-	jp restore_registers
+	; Restore registers and check for breakpoint state
+	jp enter_breakpoint.continue
 
 
 ;===========================================================================

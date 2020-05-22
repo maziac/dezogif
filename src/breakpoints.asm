@@ -114,15 +114,9 @@ enter_breakpoint:
 
 	; Add temporary breakpoint just after the original opcode
 	ld (tmp_breakpoint_address_1_1),hl 
-	inc hl
-	ld a,(hl)	; Get original opcode
-	ld (tmp_breakpoint_address_1_2),hl 
-	ld (tmp_breakpoint_opcode),a 
-	ld (hl),BP_INSTRUCTION
 	ld a,STATE.ENTERED_BREAKPOINT
 	ld (state),a
-
-    jp cmd_loop
+	jp cmd_loop
 
 .not_found:
 	; Should not happen, i.e. we breaked at a location for which no breakpoint exists.
@@ -143,10 +137,28 @@ enter_breakpoint:
 	; Continue 
 	jp restore_registers
 
-  
+.continue:
+	ld a,(state)
+	or a
+	jr z,.just_restore
+
+	; In the middle of a breakpoint action
+  	ld hl,(tmp_breakpoint_address_1_1)
+	inc hl
+	ld a,(hl)	; Get original opcode
+	ld (tmp_breakpoint_address_1_2),hl 
+	ld (tmp_breakpoint_opcode),a 
+	ld (hl),BP_INSTRUCTION
+
+.just_restore:
+    jp restore_registers
+
+
 ;===========================================================================
 ; Sets a new breakpoint.
 ; Exchanges the location with a RST opcode and puts the breakpoint in a list.
+; If we are in the middle of a breakpoint execution (STATE.ENTERED_BREAKPOINT)
+; then we need to check first it opcode is already temporary exchanged.
 ; Parameters:
 ;  HL = breakpoint address
 ; Returns:
