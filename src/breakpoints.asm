@@ -22,7 +22,7 @@ BREAK_REASON:
 BP_INSTRUCTION:		EQU 0xC7		; RST 0
 
 ; The number of possible breakpoints.
-BREAKPOINT_LIST_COUNT:	EQU 3 
+BREAKPOINT_LIST_COUNT:	EQU 20 
 
 
 ; The breakpoint structure to save.
@@ -41,7 +41,7 @@ opcode				defb	; The substituted opcode
 ;breakpoint_list:	DUP BREAKPOINT_LIST_COUNT 
 ;                        BREAKPOINT
 ;                    EDUP
-breakpoint_list:	BLOCK BREAKPOINT_LIST_COUNT * BREAKPOINT, 0
+breakpoint_list:	defs BREAKPOINT_LIST_COUNT * BREAKPOINT, 0
 .end
 
 ;===========================================================================
