@@ -212,5 +212,78 @@ UT_remove_breakpoint.UT_middle:
     ret 
 
 
+
+; Tests the instruction length calculation of 1 byte instructions.
+UT_get_instruction_length.UT_1byte_instruction:
+	; Test
+	ld hl,.test_code
+	ld b,.test_code_end-.test_code
+.loop:
+	push hl, bc
+	call get_instruction_length
+	TEST_A 1
+	pop bc, hl 
+	inc hl
+	djnz .loop
+    ret
+
+; Some 1 byte instructions for testing.
+.test_code:
+	ld a,c
+	ld a,b
+	nop 
+	ld c,a
+	inc a
+	inc d
+	dec e
+	sub a
+	or l
+.test_code_end
+
+
+; Tests the instruction length calculation of 2 byte instructions.
+UT_get_instruction_length.UT_2byte_instruction:
+	; Test
+	ld hl,.test_code
+	ld b,(.test_code_end-.test_code)/2
+.loop:
+	push hl, bc
+	call get_instruction_length
+	TEST_A 2
+	pop bc, hl 
+	inc hl : inc hl
+	djnz .loop
+    ret
+
+; Some 2 byte instructions for testing.
+.test_code:
+	ld a,6
+	ld c,9
+	or 9
+	neg
+	in (c)
+.test_code_end
+
+
+; Tests the instruction length calculation of 3 byte instructions.
+UT_get_instruction_length.UT_3byte_instruction:
+	; Test
+	ld hl,.test_code
+	ld b,(.test_code_end-.test_code)/3
+.loop:
+	push hl, bc
+	call get_instruction_length
+	TEST_A 3
+	pop bc, hl 
+	inc hl : inc hl : inc hl
+	djnz .loop
+    ret
+
+; Some 2 byte instructions for testing.
+.test_code:
+	ld ixl,6
+	ld iyh,19
+.test_code_end
+
     ENDMODULE
     

@@ -136,8 +136,6 @@ remove_breakpoint:
 	ret
 
 
-; TODO: UNIT TESTS for breakpoints:
-
 ;===========================================================================
 ; Returns a free breakpoint location in the list.
 ; Returns:
@@ -199,4 +197,49 @@ find_breakpoint:
 	; let HL point to the beginning of the struct
 	add hl,-BREAKPOINT.address
 	ret
+
+
+
+;===========================================================================
+; Returns the length of tthe instruction at HL.
+; Parameter:
+;  HL = address of the instruction
+; Returns:
+;  A = length [1-4]
+;===========================================================================
+get_instruction_length:
+	ld a,5
+	ld (.b_value+1),a
+	ld de,.instruction+3
+	; Fill sandbox
+	ld a,(.fill_instruction)
+	ldd (de),a : ldd (de),a : ldd (de),a
+	
+.loop:
+	; (hl)->(de)
+	ldi
+	push hl, de
+	ld hl,.b_value+1
+	dec (hl)
+	
+	; sandbox ------
+.b_value:
+	ld b,4
+.instruction:
+	nop
+	dec b
+	dec b
+	dec b
+	; --------------
+
+	pop de, hl
+	djnz .loop
+
+	; Found. Check which one.
+	add de,-.instruction
+	; e = instruction length
+	ld a,e
+	ret
+.fill_instruction:
+	dec b	
 
