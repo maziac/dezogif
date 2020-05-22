@@ -334,15 +334,18 @@ cmd_add_breakpoint:
 	; Set breakpoint
 	ld hl,(payload_add_breakpoint.bp_address)
 	call add_breakpoint
+	push hl
 
 	; Send response
 	ld de,3
 	call send_length_and_seqno
 
-	; BP ID = 0 for now
-	xor a
+	; Returning BP ID	
+	pop hl	; bp ID
+	; TODO: returning 0 (no breakpoint available) needs to be tested inside DeZog
+	ld a,l
 	call write_uart_byte
-	xor a
+	ld a,h
 	jp write_uart_byte
 
 
@@ -360,7 +363,9 @@ cmd_remove_breakpoint:
 	ld de,2
 	call receive_bytes
 
-	; TODO: to be implemented
+	; Set breakpoint
+	ld hl,(payload_remove_breakpoint.bp_id)
+	call remove_breakpoint
 
 	; Send response
 	ld de,1

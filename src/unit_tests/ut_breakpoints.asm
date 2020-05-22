@@ -134,6 +134,7 @@ UT_add_breakpoint.UT_simple:
 	call add_breakpoint
 
 	TEST_FLAG_Z
+	TEST_DREG hl, breakpoint_list
 
 	; Test memory
 	TEST_MEMORY_WORD breakpoint_list+BREAKPOINT.address, breakpoint_test_address
@@ -159,10 +160,13 @@ UT_add_breakpoint.UT_fill_list:
 	pop bc 
 	djnz .loop
 	
+	TEST_DREG hl, breakpoint_list+(BREAKPOINT_LIST_COUNT-1)*BREAKPOINT
+
 	; Test one more, should not work
 	ld hl, breakpoint_test_address
 	call add_breakpoint
 	TEST_FLAG_NZ
+	TEST_DREG hl,0
     ret 
 
 
@@ -177,10 +181,10 @@ UT_remove_breakpoint.UT_simple:
 	ld (hl),0xA5
 	ld hl, breakpoint_test_address
 	call add_breakpoint
+	; HL contains BP ID
 
 	; Test
-	ld hl,breakpoint_test_address
-	call remove_breakpoint
+	call remove_breakpoint  ; by ID
 	
 	; Test memory
 	TEST_MEMORY_WORD breakpoint_list+BREAKPOINT.address, 0
@@ -201,7 +205,7 @@ UT_remove_breakpoint.UT_middle:
 	ld (hl),de
 
 	; Test
-	ld hl,breakpoint_test_address
+	ld hl,breakpoint_list+BREAKPOINT	; hl is breakpoint ID
 	call remove_breakpoint
 	
 	; Test memory
@@ -212,7 +216,7 @@ UT_remove_breakpoint.UT_middle:
     ret 
 
 
-
+/*
 ; Tests the instruction length calculation of 1 byte instructions.
 UT_get_instruction_length.UT_1byte_instruction:
 	; Test
@@ -284,6 +288,7 @@ UT_get_instruction_length.UT_3byte_instruction:
 	ld ixl,6
 	ld iyh,19
 .test_code_end
+*/
 
     ENDMODULE
     

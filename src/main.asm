@@ -51,6 +51,10 @@ main:
     ; Setup stack
     ld sp,stack_top
 
+    ; Init state
+    xor a
+    ld (state),a
+
     ; Backup slot 6
     ld a,REG_MMU+6
     call read_tbblue_reg    ; returns the bank in A

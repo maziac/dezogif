@@ -11,11 +11,17 @@
 ; Constants
 ;===========================================================================
 
+; States
+STATE:
+.NORMAL				EQU 0
+.ENTERED_BREAKPOINT	EQU 1
+
+
 ; The breakpoint reasons.
 BREAK_REASON:	
-.NO_REASON:			EQU 0
-.MANUAL_BREAK:		EQU 1
-.BREAKPOINT_HIT:	EQU 2
+.NO_REASON			EQU 0
+.MANUAL_BREAK		EQU 0
+.BREAKPOINT_HIT		EQU 2
 
 
 ; The breakpoint RST command.
@@ -38,11 +44,23 @@ opcode				defb	; The substituted opcode
 ; Data. 
 ;===========================================================================
 
+; The overall state
+state:		defb 0
+
+
 ;breakpoint_list:	DUP BREAKPOINT_LIST_COUNT 
 ;                        BREAKPOINT
 ;                    EDUP
 breakpoint_list:	defs BREAKPOINT_LIST_COUNT * BREAKPOINT, 0
 .end
+
+; Temporary storage for the breakpoint during ENTERED_BREAKPOINT state.
+tmp_breakpoint_address_1_1:	defw	0
+; Temporary storage for the breakpoint after the original breakpoint during ENTERED_BREAKPOINT state.
+tmp_breakpoint_address_1_2:	defw	0
+; Temporary storage for opcode at tmp_breakpoint_address_1_2.
+tmp_breakpoint_opcode:	defb	0
+
 
 ;===========================================================================
 ; Clears all breakpoints.
@@ -64,21 +82,66 @@ enter_breakpoint:
 	call save_registers
 	; SP is now at debug_stack_top
 
+	; Check state
+	ld a,(state)
+	or a	; 0 = NORMAL
+	jr nz,.restore_breakpoint
+
+	; Breakpoint entered
+
 	; Maximize clock speed
 	ld a,RTM_28MHZ
 	nextreg REG_TURBO_MODE,a
-
-	; LOGPOINTx NTF PREPARE
 
     ; Send pause notification
 	ld d,BREAK_REASON.BREAKPOINT_HIT
 	ld hl,(backup.pc)
 	dec hl	; RST opcode has length of 1
+	ld (backup.pc),hl 	; TODO: Maybe do the decrement at save_registers already
 	call send_ntf_pause
-	
-	; LOGPOINTx NTF SENT
+	;jp cmd_loop
+
+	; Substitute breakpoint with original opcode
+	ld hl,(backup.pc)	; Get breakpoint address
+	call find_breakpoint
+	jr nz,.not_found
+	; hl contains bp id
+	inc hl : inc hl : inc hl	; move to opcode
+	ld a,(hl)
+	ld hl,(backup.pc)	; Get breakpoint address
+	; Restore original opcode
+	ld (hl),a
+
+	; Add temporary breakpoint just after the original opcode
+	ld (tmp_breakpoint_address_1_1),hl 
+	inc hl
+	ld a,(hl)	; Get original opcode
+	ld (tmp_breakpoint_address_1_2),hl 
+	ld (tmp_breakpoint_opcode),a 
+	ld (hl),BP_INSTRUCTION
+	ld a,STATE.ENTERED_BREAKPOINT
+	ld (state),a
 
     jp cmd_loop
+
+.not_found:
+	; Should not happen, i.e. we breaked at a location for which no breakpoint exists.
+	jp cmd_loop	; Put a breakpoint here; ASSERT
+
+.restore_breakpoint:
+	; In the middle of a breakpoint action. The temporary breakpoint has been hit.
+	; Restore temporary opcode
+	ld hl,(tmp_breakpoint_address_1_2)
+	ld a,(tmp_breakpoint_opcode)	; Get original opcode
+	ld (hl),a
+	; Set the breakpoint again at previous location
+	ld hl,(tmp_breakpoint_address_1_1)
+	ld (hl),BP_INSTRUCTION
+	; change state to normal
+	xor a
+	ld (state),a
+	; Continue 
+	jp restore_registers
 
   
 ;===========================================================================
@@ -87,6 +150,8 @@ enter_breakpoint:
 ; Parameters:
 ;  HL = breakpoint address
 ; Returns:
+;  HL = Location of added breakpoint. Is used as breakpoint ID.
+;       0 if no breakpoint available anymore.
 ;  Z = Breakpoint added
 ;  NZ = Breakpoint not added. List is full.
 ;===========================================================================
@@ -95,7 +160,7 @@ add_breakpoint:
 	; Find free breakpoint from list
 	call get_free_breakpoint
 	pop de	; breakpoint address
-	ret nz 	; no free location found
+	jr nz,.no_free_location 	; no free location found
 	
 	; Insert in list
 	ldi (hl),1	; occupied, instruction_length
@@ -106,33 +171,40 @@ add_breakpoint:
 	ld (hl),a	; Store in breakpoint structure
 	ld a,BP_INSTRUCTION
 	ld (de),a
+	; Correct hl to start of breaklpoint location
+	add hl,-BREAKPOINT.opcode
 	ret
-
+.no_free_location:
+	ld hl,0
+	ret
  
 ;===========================================================================
 ; Removes a breakpoint.
-; Exchanges the location with a original opcode and removesputs the breakpoint 
+; Exchanges the location with a original opcode and removes the breakpoint 
 ; from the list.
 ; Parameters:
-;  HL = breakpoint address
+;  HL = Breakpoint ID. This is the location (address) inside the breakpoint_list.
+; Changes:
+;  A, HL, DE
 ;===========================================================================
 remove_breakpoint:
-	push hl
-	; Find breakpoint in the list
-	call find_breakpoint
-	ret nz 	; breakpoint not found
-	
-	; HL contains location
-	; Clear
+	; Check if location contains a breakpoint
 	xor a
-	ldi (hl),a : ldi (hl),a : ldi (hl),a
+	cp (hl)
+	ret z	; Returns immediately if no active breakpoint
+
+	; Clear breakpoint
+	xor a
+	ldi (hl),a
+	; Get breakpoint address
+	ld de,(hl)
+	ldi (hl),a : ldi (hl),a
 	; Get the original opcode
 	ld a,(hl)
 	ld (hl),0	; and clear
 
 	; Restore original opcode
-	pop hl
-	ld (hl),a
+	ld (de),a
 	ret
 
 
@@ -144,6 +216,7 @@ remove_breakpoint:
 ;  Z = location found
 ;  NZ = no free location found
 ;===========================================================================
+; TODO: Check if used at all.
 get_free_breakpoint:
 	ld hl,breakpoint_list
 	ld de,BREAKPOINT	; size of struct
@@ -199,7 +272,8 @@ find_breakpoint:
 	ret
 
 
-
+/*
+Doesn't work:
 ;===========================================================================
 ; Returns the length of tthe instruction at HL.
 ; Parameter:
@@ -242,4 +316,4 @@ get_instruction_length:
 	ret
 .fill_instruction:
 	dec b	
-
+*/

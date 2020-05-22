@@ -51,9 +51,15 @@ CMD.WRITE_STATE:		equ 	15
 
 ; CMD_ADD_BREAKPOINT
 	STRUCT PAYLOAD_ADD_BREAKPOINT
-bp_address	defw 0
+bp_address	defw
 	ENDS
 payload_add_breakpoint:	PAYLOAD_ADD_BREAKPOINT = receive_buffer.payload
+
+; CMD_REMOVE_BREAKPOINT
+	STRUCT PAYLOAD_REMOVE_BREAKPOINT
+bp_id	defw
+	ENDS
+payload_remove_breakpoint:	PAYLOAD_REMOVE_BREAKPOINT = receive_buffer.payload
 
 
 ; The UART data is put here before being interpreted.
