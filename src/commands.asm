@@ -333,7 +333,7 @@ cmd_add_breakpoint:
 
 	; Set breakpoint
 	ld hl,(payload_add_breakpoint.bp_address)
-	call set_breakpoint
+	call add_breakpoint
 
 	; Send response
 	ld de,3

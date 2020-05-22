@@ -78,7 +78,55 @@ write_tbblue_reg:
 ; Changes:
 ;   A
 ;===========================================================================
-	MACRO WRITE_TBBLUE_REG tbblue_reg, z80_reg 
-	ld a,z80_reg
-	nextreg tbblue_reg,a
+	MACRO WRITE_TBBLUE_REG tbblue_reg?, z80_reg? 
+	ld a,z80_reg?
+	nextreg tbblue_reg?,a
+	ENDM
+
+
+;===========================================================================
+; Macro to copy a memory area from src to dest.
+; Parameters:
+;	dest = Pointer to destination
+;   src = Pointer to source
+;   count = The number of bytes to copy.
+; Changes:
+;   BC, DE, HL
+;===========================================================================
+	MACRO MEMCOPY dest?, src?, count?
+	ld bc,count?
+    ld hl,src?
+    ld de,dest?
+    ldir
+	ENDM
+
+
+;===========================================================================
+; Macro to fill a memory area with a certain value.
+; Parameters:
+;	dest = Pointer to destination
+;   value = The byte value used to fill the area.
+;   count = The number of bytes to fill.
+; Changes:
+;   BC, DE, HL
+;===========================================================================
+	MACRO MEMFILL dest?, value?, count?
+	ld bc,count?-1
+    ld hl,dest?
+	ld (hl),value?
+    ld de,dest?+1
+    ldir
+	ENDM
+
+
+;===========================================================================
+; Macro to clear a memory area with zeroes.a certain value.
+; Parameters:
+;	dest = Pointer to destination
+;   count = The number of bytes to clear.
+; Changes:
+;   BC, DE, HL
+;===========================================================================
+	MACRO MEMCLEAR dest?, count?
+	MEMFILL dest?, 0, count?
 	ENDM

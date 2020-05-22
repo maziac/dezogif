@@ -51,7 +51,7 @@ CMD.WRITE_STATE:		equ 	15
 
 ; CMD_ADD_BREAKPOINT
 	STRUCT PAYLOAD_ADD_BREAKPOINT
-bp_address:	defw 0
+bp_address	defw 0
 	ENDS
 payload_add_breakpoint:	PAYLOAD_ADD_BREAKPOINT = receive_buffer.payload
 

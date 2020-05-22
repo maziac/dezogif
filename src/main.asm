@@ -58,10 +58,7 @@ main:
     ; Switch in the bank at 0xC000
     nextreg REG_MMU+6,USED_ROM_BANK
     ; Copy the ROM at 0x0000 to bank USED_ROM_BANK
-    ld bc,0x2000
-    ld hl,0x0000
-    ld de,0xC000
-    ldir
+    MEMCOPY 0xC000, 0x0000, 0x2000
 
     ; Overwrite the RST 0 address with a jump
     ld hl,0xC000
