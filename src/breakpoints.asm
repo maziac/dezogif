@@ -96,24 +96,14 @@ enter_breakpoint:
     ; Send pause notification
 	ld d,BREAK_REASON.BREAKPOINT_HIT
 	ld hl,(backup.pc)
-	;dec hl	; RST opcode has length of 1
-	;ld (backup.pc),hl 	; TODO: Maybe do the decrement at save_registers already
 	call send_ntf_pause
 	;jp cmd_loop
 
-	; Substitute breakpoint with original opcode
-	ld hl,(backup.pc)	; Get breakpoint address
-	call find_breakpoint
-	jr nz,.not_found
-	; hl contains bp id
-	inc hl : inc hl : inc hl	; move to opcode
-	ld a,(hl)
-	ld hl,(backup.pc)	; Get breakpoint address
-	; Restore original opcode
-	ld (hl),a
-
-	; Add temporary breakpoint just after the original opcode
+	; Get breakpoint address
+	ld hl,(backup.pc)	
+	; And save
 	ld (tmp_breakpoint_address_1_1),hl 
+	; Change state
 	ld a,STATE.ENTERED_BREAKPOINT
 	ld (state),a
 	jp cmd_loop
@@ -142,9 +132,21 @@ enter_breakpoint:
 	or a
 	jr z,.just_restore
 
-	; In the middle of a breakpoint action
-  	ld hl,(tmp_breakpoint_address_1_1)
-	inc hl
+	; Substitute breakpoint with original opcode
+	; Get breakpoint address
+	ld hl,(tmp_breakpoint_address_1_1)
+	call find_breakpoint
+	jr nz,.not_found
+	; hl contains bp id
+	ldi a,(hl)	; Get opcode length
+	inc hl : inc hl	; move to opcode
+	ld c,(hl)
+	ld hl,(tmp_breakpoint_address_1_1)	; Get breakpoint address
+	; Restore original opcode
+	ld (hl),c
+
+	; Add temporary breakpoint just after the original opcode
+	add hl,a	; Add opcode length
 	ld a,(hl)	; Get original opcode
 	ld (tmp_breakpoint_address_1_2),hl 
 	ld (tmp_breakpoint_opcode),a 
