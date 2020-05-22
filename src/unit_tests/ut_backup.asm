@@ -57,8 +57,8 @@ UT_save_registers.UT_save:
     pop af
 
     ; Test
+    push 0x9765    ; Push a test value used as PC
     call save_registers
-.pc_value:
 
     TEST_MEMORY_BYTE backup.af+1, 0x1A
     TEST_MEMORY_WORD backup.bc, 0x1B1C
@@ -75,7 +75,7 @@ UT_save_registers.UT_save:
     TEST_MEMORY_BYTE backup.i, 0x81
     ;TEST_MEMORY_BYTE backup.r, 0x82   Useless to test
 
-    TEST_MEMORY_WORD backup.pc, .pc_value
+    TEST_MEMORY_WORD backup.pc, 0x9765
  
     ; Test stack pointer
     ld hl,(sp_backup)       ; Remember
