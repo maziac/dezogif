@@ -31,7 +31,7 @@ cmd_data_init:
 
 
 ; Test that register is set correctly.
-cmd_write_reg.UT_pc:
+UT_cmd_write_reg.UT_pc:
 	; Init values
 	call cmd_data_init
     ; Init
@@ -64,7 +64,7 @@ cmd_set_dreg:
 
 
 ; Test that register SP to HL' are set correctly.
-cmd_write_reg.UT_SP_to_HL2:
+UT_cmd_write_reg.UT_SP_to_HL2:
 	; Init values
 	call cmd_data_init
 	; First set all double registers
@@ -154,7 +154,7 @@ set_reg:
 
 
 ; Test that register A to H' are set correctly.
-cmd_write_reg.UT_A_to_IR:
+UT_cmd_write_reg.UT_A_to_IR:
 	; Init values
 	call cmd_data_init
 	; First set all single registers
@@ -223,7 +223,7 @@ cmd_write_reg.UT_A_to_IR:
 ; Test setting of interrupt modes.
 ; A real check is not possible, IM cannot be read.
 ; The check only allows a visual check that all lines have been covered.
-cmd_write_reg.UT_im:
+UT_cmd_write_reg.UT_im:
 	ld a,13	; IM register
 	ld (receive_buffer.register_number),a
 	; IM 0
@@ -247,7 +247,7 @@ cmd_write_reg.UT_im:
 
 ; Test writing a wrong register index.
 ; The check is simply that no crash happens.
-cmd_write_reg.UT_wrong_register:
+UT_cmd_write_reg.UT_wrong_register:
 	ld a,35	; First non existing register
 	ld (receive_buffer.register_number),a
 	ld hl,0xCC55

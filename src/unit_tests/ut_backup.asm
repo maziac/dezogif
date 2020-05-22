@@ -12,7 +12,7 @@ sp_backup:  defw    0
 
 
 ; Test that subroutine returns correctly.
-save_registers.UT_returns:
+UT_save_registers.UT_returns:
     ; Init
     ld (sp_backup),sp
     ld sp,backup.af
@@ -26,7 +26,7 @@ save_registers.UT_returns:
 
 
 ; Test that all registers are saved correctly.
-save_registers.UT_save:
+UT_save_registers.UT_save:
     ; Remember SP
     ld (sp_backup),sp
 
@@ -88,7 +88,7 @@ save_registers.UT_save:
 
 
 ; Test that all registers are restored correctly.
-save_registers.UT_restore:
+UT_save_registers.UT_restore:
     ; Init
     ld hl,.continue     ; The jump address
     ld (backup.pc),hl   ; Continue at used a return address

@@ -22,7 +22,7 @@ BREAK_REASON:
 BP_INSTRUCTION:		EQU 0xC7		; RST 0
 
 ; The number of possible breakpoints.
-BREAKPOINT_LIST_COUNT:	EQU 20 
+BREAKPOINT_LIST_COUNT:	EQU 3 
 
 
 ; The breakpoint structure to save.
@@ -94,10 +94,10 @@ add_breakpoint:
 	push hl
 	; Find free breakpoint from list
 	call get_free_breakpoint
+	pop de	; breakpoint address
 	ret nz 	; no free location found
 	
 	; Insert in list
-	pop de	; breakpoint address
 	ldi (hl),1	; occupied, instruction_length
 	ldi (hl),de ; the breakpoint address
 	
@@ -157,9 +157,7 @@ get_free_breakpoint:
 	add hl,de
 	djnz .loop
 	; not found, HL = 0
-	; TODO: brauche ich hl=0 ?
-	ld h,a
-	ld l,a
+	inc a	; Force NZ
 	ret
 
 
