@@ -1,6 +1,48 @@
 ;===========================================================================
 ; breakpoints.asm
 ;
+; For a SW breakpoint a RST 0 is substituted with the opcode so that a
+; breakpoint can be recognized.
+; Breakpoints work in 2 main phases:
+; If the breakpoint occurs another temporary breakpoint is set after the
+; instruction.
+; This second breakpoint is necessary to execute the substituted instruction,
+; to break after it to resotre the original breakpoint.
+; Here is a raw state diagram:
+/*
+             ╔═════════════════════════════╗                           
+             ║                             ║                           
+             ║        STATE.NORMAL         ║                           
+             ║          (Running)          ║                           
+             ║                             ║                           
+             ║                             ║                           
+             ╚═════════════════════════════╝                           
+                 │                   ▲                                 
+                 │                   │                                 
+                 │                   │                                 
+                 │         ┌─────────┴──────────┐                      
+                 │         │  Restore opcode 2  │                      
+                 │         └────────────────────┘                      
+                 │                   ▲                                 
+                 │                   │ Temporary breakpoint hit        
+                 │                   │                                 
+  Breakpoint hit │         ┌─────────┴──────────┐                      
+                 │         │ Set temporary BPs, │                      
+                 │         │   Restore opcode   │                      
+                 │         └────────────────────┘                      
+                 │                   ▲                                 
+                 │                   │ Continue                        
+                 ▼                   │                                 
+            ╔════════════════════════════╗                             
+            ║                            ║                             
+            ║                            ║                             
+            ║  STATE.ENTERED_BREAKPOINT  ║                             
+            ║                            ║                             
+            ║                            ║                             
+            ╚════════════════════════════╝                             
+*/
+;
+;
 ; Notes:
 ; - address 0x0000 is special. Here is the RST command. So it is not possible
 ;   to se t a breakpoint here. The value 0x0000 is also used as undefined.
