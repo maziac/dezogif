@@ -81,6 +81,13 @@ address				defw	; The location of the breakpoint
 opcode				defb	; The substituted opcode
 	ENDS
 
+; The temporary breakpoint structure.
+	STRUCT TMP_BREAKPOINT
+bp_address			defw	; The location of the "real" breakpoint	
+tmp_bp_address		defw	; The location of the temporary breakpoint (Afterinstruction)
+opcode				defb	; The substituted opcode
+	ENDS
+
 
 ;===========================================================================
 ; Data. 
@@ -96,12 +103,10 @@ state:		defb 0
 breakpoint_list:	defs BREAKPOINT_LIST_COUNT * BREAKPOINT, 0
 .end
 
-; Temporary storage for the breakpoint during ENTERED_BREAKPOINT state.
-tmp_breakpoint_address_1_1:	defw	0
-; Temporary storage for the breakpoint after the original breakpoint during ENTERED_BREAKPOINT state.
-tmp_breakpoint_address_1_2:	defw	0
-; Temporary storage for opcode at tmp_breakpoint_address_1_2.
-tmp_breakpoint_opcode:	defb	0
+; Temporary storage for the breakpoint during ENTERED_BREAKPOINT state
+; and for step-over etc.
+tmp_breakpoint_1:	TMP_BREAKPOINT
+tmp_breakpoint_2:	TMP_BREAKPOINT
 
 
 ;===========================================================================
@@ -114,7 +119,7 @@ clear_breakpoints:
 
 ;===========================================================================
 ; Called by RST 0.
-; I.e. thispoint is reached when the program runs into a RST 0.
+; I.e. this point is reached when the program runs into a RST 0.
 ; I.e. this indicates that a breakpoint was hit.
 ; The location just after the breakpoint can be found from the SP.
 ; I.e. it was pushed on stack because of the RST.
@@ -143,46 +148,31 @@ enter_breakpoint:
 	; Get breakpoint address
 	ld hl,(backup.pc)	
 	; And save
-	ld (tmp_breakpoint_address_1_1),hl 
+	ld (tmp_breakpoint_1.bp_address),hl 
 	; Change state
 	ld a,STATE.ENTERED_BREAKPOINT
 	ld (state),a
-	jp cmd_loop
-
-.restore_breakpoint:
-	; In the middle of a breakpoint action. The temporary breakpoint has been hit.
-	; Restore temporary opcode
-	ld hl,(tmp_breakpoint_address_1_2)
-	ld a,(tmp_breakpoint_opcode)	; Get original opcode
-	ld (hl),a
-	; Set the breakpoint again at previous location
-	ld hl,(tmp_breakpoint_address_1_1)
-	ld (hl),BP_INSTRUCTION
-	; change state to normal
-	xor a
-	ld (state),a
-	; Continue with cmd_continue
-	jp cmd_continue.start
+	jp cmd_loop		; continues later at .continue
 
 .continue:
 	; Substitute breakpoint with original opcode
 	; Get breakpoint address
-	ld hl,(tmp_breakpoint_address_1_1)
+	ld hl,(tmp_breakpoint_1.bp_address)
 	call find_breakpoint
 	jr nz,.temporary_continue_bp
 	; hl contains bp id
 	ldi a,(hl)	; Get opcode length
 	inc hl : inc hl	; move to opcode
 	ld c,(hl)
-	ld hl,(tmp_breakpoint_address_1_1)	; Get breakpoint address
+	ld hl,(tmp_breakpoint_1.bp_address)	; Get breakpoint address
 	; Restore original opcode
 	ld (hl),c
 
 	; Add temporary breakpoint just after the original opcode
 	add hl,a	; Add opcode length
 	ld a,(hl)	; Get original opcode
-	ld (tmp_breakpoint_address_1_2),hl 
-	ld (tmp_breakpoint_opcode),a 
+	ld (tmp_breakpoint_1.tmp_bp_address),hl 
+	ld (tmp_breakpoint_1.opcode),a 
 	ld (hl),BP_INSTRUCTION
     jp restore_registers
 
@@ -190,6 +180,22 @@ enter_breakpoint:
 	; No "real" breakpoint has been found, so it was a breakpoint set by the
 	; cmd_continue, e.g. a ste-over.
 	nop ; TODO
+
+
+.restore_breakpoint:
+	; In the middle of a breakpoint action. The temporary breakpoint has been hit.
+	; Restore temporary opcode
+	ld hl,(tmp_breakpoint_1.tmp_bp_address)
+	ld a,(tmp_breakpoint_1.opcode)	; Get original opcode
+	ld (hl),a
+	; Set the breakpoint again at previous location
+	ld hl,(tmp_breakpoint_1.bp_address)
+	ld (hl),BP_INSTRUCTION
+	; change state to normal
+	xor a
+	ld (state),a
+	; Continue with cmd_continue
+	jp cmd_continue.start
 
 
 ;===========================================================================
