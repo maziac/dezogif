@@ -139,7 +139,6 @@ enter_breakpoint:
 	ld d,BREAK_REASON.BREAKPOINT_HIT
 	ld hl,(backup.pc)
 	call send_ntf_pause
-	;jp cmd_loop
 
 	; Get breakpoint address
 	ld hl,(backup.pc)	
@@ -149,10 +148,6 @@ enter_breakpoint:
 	ld a,STATE.ENTERED_BREAKPOINT
 	ld (state),a
 	jp cmd_loop
-
-.not_found:
-	; Should not happen, i.e. we breaked at a location for which no breakpoint exists.
-	jp cmd_loop	; Put a breakpoint here; ASSERT
 
 .restore_breakpoint:
 	; In the middle of a breakpoint action. The temporary breakpoint has been hit.
@@ -166,19 +161,15 @@ enter_breakpoint:
 	; change state to normal
 	xor a
 	ld (state),a
-	; Continue 
-	jp restore_registers
+	; Continue with cmd_continue
+	jp cmd_continue.start
 
 .continue:
-	ld a,(state)
-	or a
-	jr z,.just_restore
-
 	; Substitute breakpoint with original opcode
 	; Get breakpoint address
 	ld hl,(tmp_breakpoint_address_1_1)
 	call find_breakpoint
-	jr nz,.not_found
+	jr nz,.temporary_continue_bp
 	; hl contains bp id
 	ldi a,(hl)	; Get opcode length
 	inc hl : inc hl	; move to opcode
@@ -193,9 +184,12 @@ enter_breakpoint:
 	ld (tmp_breakpoint_address_1_2),hl 
 	ld (tmp_breakpoint_opcode),a 
 	ld (hl),BP_INSTRUCTION
-
-.just_restore:
     jp restore_registers
+
+.temporary_continue_bp:
+	; No "real" breakpoint has been found, so it was a breakpoint set by the
+	; cmd_continue, e.g. a ste-over.
+	nop ; TODO
 
 
 ;===========================================================================

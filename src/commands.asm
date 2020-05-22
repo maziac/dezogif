@@ -281,9 +281,14 @@ cmd_continue:
 	; Send response
 	ld de,1
 	call send_length_and_seqno
-	; Restore registers and check for breakpoint state
-	jp enter_breakpoint.continue
 
+	; Checkif we are in the middle of a breakpoint
+	ld a,(state)
+	or a
+	; Restore registers and check for breakpoint state
+	jp nz,enter_breakpoint.continue
+.start:
+	jp restore_registers
 
 ;===========================================================================
 ; CMD_PAUSE
