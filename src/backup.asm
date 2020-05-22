@@ -57,8 +57,9 @@ save_registers:
 	pop hl  ; Save return address to HL
 	ld (.ret_jump+1),hl	; self.modifying code, used instead of a return
 
-	; Get caller address (+3) of dbg_check_for message or enter_breakpoint
+	; Get caller address (+1 for RST) of dbg_check_for message or enter_breakpoint
 	pop hl	
+	dec hl
 	ld (backup.pc),hl
 	
 	; Save stack pointer (is already corrected because of 'pop hl')

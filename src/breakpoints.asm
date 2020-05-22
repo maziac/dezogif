@@ -96,8 +96,8 @@ enter_breakpoint:
     ; Send pause notification
 	ld d,BREAK_REASON.BREAKPOINT_HIT
 	ld hl,(backup.pc)
-	dec hl	; RST opcode has length of 1
-	ld (backup.pc),hl 	; TODO: Maybe do the decrement at save_registers already
+	;dec hl	; RST opcode has length of 1
+	;ld (backup.pc),hl 	; TODO: Maybe do the decrement at save_registers already
 	call send_ntf_pause
 	;jp cmd_loop
 

@@ -57,7 +57,7 @@ UT_save_registers.UT_save:
     pop af
 
     ; Test
-    push 0x9765    ; Push a test value used as PC
+    push 0x9765+1    ; Push a test value used as PC (+1 for RST opcode length)
     call save_registers
 
     TEST_MEMORY_BYTE backup.af+1, 0x1A
