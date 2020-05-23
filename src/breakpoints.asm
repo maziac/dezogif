@@ -83,9 +83,9 @@ opcode				defb	; The substituted opcode
 
 ; The temporary breakpoint structure.
 	STRUCT TMP_BREAKPOINT
-bp_address			defw	; The location of the "real" breakpoint	
-tmp_bp_address		defw	; The location of the temporary breakpoint (Afterinstruction)
+tmp_bp_address		defw	; The location of the temporary breakpoint (after instruction)
 opcode				defb	; The substituted opcode
+bp_address			defw	; The location of the "real" breakpoint	
 	ENDS
 
 
@@ -196,6 +196,35 @@ enter_breakpoint:
 	ld (state),a
 	; Continue with cmd_continue
 	jp cmd_continue.start
+
+
+;===========================================================================
+; Clears the temporary breakpoints.
+; I.e. restore the original opcodes.
+; Temporary breakpoints are not enable if they point to location 0x0000.
+;===========================================================================
+clear_tmp_breakpoints:
+	ld hl,(tmp_breakpoint_1.tmp_bp_address)
+	ld l,a
+	or h
+	jr z,.second_bp
+	; Restore opcode
+	ld a,(tmp_breakpoint_1.opcode)
+	ld (hl),a
+.second_bp:
+	ld hl,(tmp_breakpoint_2.tmp_bp_address)
+	ld l,a
+	or h
+	jr z,.clear
+	; Restore opcode
+	ld a,(tmp_breakpoint_2.opcode)
+	ld (hl),a
+.clear:
+	; Clear both temporary breakpoints
+	MEMCLEAR tmp_breakpoint_1, 2*TMP_BREAKPOINT
+	ret
+; TODO: not yet used. Should be called whenever a continue was done.
+;TODO: unit test this.
 
 
 ;===========================================================================

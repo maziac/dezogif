@@ -54,6 +54,7 @@ main:
     ; Init state
     xor a
     ld (state),a
+    MEMCLEAR tmp_breakpoint_1, 2*TMP_BREAKPOINT
 
     ; Backup slot 6
     ld a,REG_MMU+6
