@@ -21,7 +21,7 @@
 DZRP_VERSION:	defb 1, 1, 0
 
 ; The own program name and version
-PROGRAM_NAME:	defb "dbg_uart_if v0.1.0", 0
+PROGRAM_NAME:	defb "dezogif v0.2.0", 0
 .end
 
 

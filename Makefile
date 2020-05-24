@@ -2,7 +2,7 @@
 
 
 # ZX Next Game Framework:
-PROJ = dbg_uart_if
+PROJ = dezogif
 
 ASM = sjasmplus
 SED = gsed
