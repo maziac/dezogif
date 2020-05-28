@@ -10,9 +10,13 @@
 
     ORG 0x7000
  
+; Need to be defined
+BAUDRATE:   equ 999999
+
 
     include "zxnext/zxnext_regs.inc"
     include "utilities.asm"
+    include "print.asm"
     include "uart.asm"
     include "message.asm"
     include "commands.asm"

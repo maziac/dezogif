@@ -24,6 +24,9 @@ NEXT_MEMORY_BANK_SELECT:	equ 0xDFFD
 ; SpecDrum DAC Output
 SPECDRUM_DAC_OUTPUT:    equ 0x00DF  ; High byte does not matter.
 
+; Kempston Joystick 2 and UART
+KEMPSTON_JOY_2:		equ	0x37
+
 
 REG_MACHINE_ID:	equ	0
 RMI_DE1A:	equ	1

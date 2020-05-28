@@ -29,7 +29,7 @@
 
 
 ; UART baudrate
-BAUDRATE:   equ 1958400
+;BAUDRATE:   equ 1958400
 
 
 ; UART TX. Write=transmit data, Read=status
@@ -37,6 +37,10 @@ PORT_UART_TX:   equ 0x133b
 
 ; UART RX. Read data.
 PORT_UART_RX:   equ 0x143b
+
+
+; UART selection.
+PORT_UART_CONTROL:   equ 0x153b
 
 ; UART Status Bits:
 UART_RX_FIFO_EMPTY: equ 0   ; 0=empty, 1=not empty
@@ -49,16 +53,17 @@ UART_TX_READY:      equ 1   ; 0=ready for next byte, 1=byte is being transmitted
 ; Data. 
 ;===========================================================================
 
-; Baudrate timing calculation table
+; Baudrate timing calculation table.
+; BAUDRATE must be 230400 at least otherwise a 1 byte table is not enough.
 baudrate_table:
-	defw 28000000/BAUDRATE
-    defw 28571429/BAUDRATE
-    defw 29464286/BAUDRATE
-    defw 30000000/BAUDRATE
-    defw 31000000/BAUDRATE
-    defw 32000000/BAUDRATE
-    defw 33000000/BAUDRATE
-    defw 27000000/BAUDRATE
+	defb 28000000/BAUDRATE
+    defb 28571429/BAUDRATE
+    defb 29464286/BAUDRATE
+    defb 30000000/BAUDRATE
+    defb 31000000/BAUDRATE
+    defb 32000000/BAUDRATE
+    defb 33000000/BAUDRATE
+    defb 27000000/BAUDRATE
 
 
 
@@ -69,10 +74,17 @@ border_color:	defb BLACK
 ;===========================================================================
 ; Clears the receive FIFO.
 ; Changes:
-;   A
+;   A, E, BC
 ;===========================================================================
-clear_rx_buffer:
-    ld e,0
+drain_rx_buffer:
+    ld b,0  ; Check 256x that there is no data
+.wait_loop:
+    push bc
+    call .read_loop
+    pop bc
+    djnz .wait_loop
+    ret
+
 .read_loop:
 	ld bc,PORT_UART_TX
 	in a,(c)					; Read status bits
@@ -87,6 +99,18 @@ clear_rx_buffer:
 
 
 ;===========================================================================
+; Just changes the border color.
+;===========================================================================
+change_border_color:
+    ld a,(border_color)
+    inc a
+    and 0x07
+    ld (border_color),a
+    out (BORDER),a
+    ret
+
+
+;===========================================================================
 ; Waits until an RX byte is available.
 ; Changes the border color slowly to indicate waiting state (like for tape
 ; loading).
@@ -96,11 +120,7 @@ clear_rx_buffer:
 wait_for_uart_rx:
 .color_change:
     ; Change border color
-    ld a,(border_color)
-	inc a
-    and 0x07
-	ld (border_color),a
-	out (BORDER),a
+    call change_border_color
     ; Counter
     ld de,0
     ld b,20
@@ -120,6 +140,19 @@ wait_for_uart_rx:
     ; change color
     jr .color_change
 
+
+;===========================================================================
+; Cheks if a byte is avaialble at the UART.
+; Returns:
+;   NZ = Byte available
+;   Z = No byte available
+;===========================================================================
+check_uart_byte_available:
+	ld bc,PORT_UART_TX
+.wait_loop:
+	in a,(c)					; Read status bits
+    bit UART_RX_FIFO_EMPTY,a
+    ret
 
 ;===========================================================================
 ; Waits until an RX byte is available and returns it.
@@ -191,30 +224,76 @@ write_uart_byte:
 ;  A, BC, DE, HL
 ;===========================================================================
 set_uart_baudrate:
+    ; Select UART and clear prescaler MSB
+    ld bc,PORT_UART_CONTROL
+	ld a,00010000b
+	out	(c),a
+
     ; Get display timing
     ld a,REG_VIDEO_TIMING
     call read_tbblue_reg
-	and 3			;video timing is in bottom 4 bits!
+	and 0111b			;video timing is in bottom 3 bits, e.g. HDMI=111b
 
-    ; Get baudrate presace lavues from table
+    ; Get baudrate prescale values from table
 	ld hl,baudrate_table
 	add hl,a
-	ld e,(hl)
-	inc hl
-	ld d,(hl)
+	ld a,(hl)
+    ; ignoring the high byte
 
-    ; Write 1rst byte of prescaler
-	ld	bc,PORT_UART_RX ; Writing=set baudrate
-	ld a,e
-	and 0b01111111
+    ; Write low byte of prescaler
+	ld bc,PORT_UART_RX ; Writing=set baudrate
+    ld l,a
+    and 0x7F
 	out	(c),a		;set lower 7 bits
 
     ; Write 2nd byte of prescaler
-	ld a,e
-	sla a
-	ld a,d
-	rla
-	or 0b10000000
-	out	(c),a		;set to upper bits
+    rlc l
+    ld a,0x40
+    rla 
+ 	out	(c),a		;set to upper bits
 
 	ret
+
+
+;===========================================================================
+; Sets up the ESP UART at joystick port.
+; TX = PIN 7 both joystick ports
+; RX = PIN 9 Joystick 2
+; These pins are not used on normal Joystick.
+; Only for Sega Genesis controller which cannot be used.
+; Parameters:
+;  E: 0x0=00b => no joystick port used
+;     0x1=01b => joyport 1
+;     0x2=10b => joyport 2
+; Changed:
+;  A, BC
+;===========================================================================
+set_uart_joystick:
+    ; Read reg 0x05 to preserve the 50/60 Hz setting and scandoubler
+    ld a,REG_PERIPHERAL_1
+    call read_tbblue_reg    ; Reading the joysticks returns the original joy mode, even if set to UART
+    ; Joy 1
+    bit 0,e
+    jr z,.no_joy1
+    or 11001000b
+.no_joy1:
+    ; Joy 2
+    bit 1,e
+    jr z,.no_joy2
+    or 00110010b
+.no_joy2:
+    ; Write to reg 0x05
+    nextreg REG_PERIPHERAL_1,a
+
+    ; Write to 0x37
+    ld a,10010000b  ; Right joystick (Joy 2)
+    bit 1,e
+    jr nz,.joy_2
+    ; Check for joy 1
+    bit 0,e
+    ret z   ; Neither 1 or 2
+    ; Joy 1
+    ld a,10000000b  ; Left joystick (Joy 1)
+.joy_2:
+    out (KEMPSTON_JOY_2),a
+    ret
