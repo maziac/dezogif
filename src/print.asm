@@ -9,7 +9,9 @@
 ; Constants
 ;===========================================================================
 
-VAR_ERRNR:				equ 0x5c3a	; ERRNR: iy points 
+COLOR_SCREEN:   equ 0x5800  ; Start of the color attribute screen
+
+VAR_ERRNR:	    equ 0x5c3a	; ERRNR: iy points 
 ROM_PRINT_RST10h:	equ 0x15F2	; This is the address of the printing routine called by rst 16h
     
 ; For printing

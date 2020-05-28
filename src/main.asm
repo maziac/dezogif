@@ -22,7 +22,6 @@ USED_ROM_BANK:  EQU 94  ; Bank used to copy the ROM (0x0000) to and change the R
 
     include "zxnext/zxnext_regs.inc"
     include "utilities.asm"
-    include "print.asm"
     include "uart.asm"
     include "message.asm"
     include "commands.asm"
@@ -50,34 +49,6 @@ BAUDRATE:   equ 921600
 ; Data. 
 ;===========================================================================
 
-INTRO_TEXT: 
-    defb OVER, 0
-    defb AT, 0, 0
-    defb "ZX Next UART loopback"
-    defb AT, 1, 0
-    defb "ESP UART Baudrate: "
-    STRINGIFY BAUDRATE
-    ;Line 2 used for joyport configuration
-    defb AT, 3, 0
-    defb "Tx=7, Rx=9"
-    defb AT, 5, 0
-    defb "Keys:"
-    defb AT, 6, 0
-    defb "1 = Joy 1"
-    defb AT, 7, 0
-    defb "2 = Joy 2"
-    defb AT, 8, 0
-    defb "3 = No joystick port"
-.end
-    defb EOS
-
-JOY1_TEXT:
-    defb AT, 2, 0, "Using Joy 1 (left)    ", EOS
-JOY2_TEXT:
-    defb AT, 2, 0, "Using Joy 2 (right)   ", EOS
-NOJOY_TEXT:
-    defb AT, 2, 0, "No joystick port used.", EOS
-
 
 
 ;===========================================================================
@@ -89,15 +60,39 @@ NOJOY_TEXT:
 ;===========================================================================
 set_text_and_joyport:
     call set_uart_joystick
-    ld hl,JOY2_TEXT
-    bit 1,e
-    jr nz,.print
-    ld hl,JOY1_TEXT
+    ; Make all text invisible: INK color = paper color
+    push de
+    ld a,(COLOR_SCREEN) ; Get current PAPER and INK color
+    ld c,a
+    and 11111000b
+    ld b,a
+    ld a,c
+    rrca : rrca : rrca
+    and 00000111b
+    or b
+    ; Fill all 3 lines
+    MEMFILL COLOR_SCREEN+32*JOY1_ROW, a, 3*32
+    pop de
+
+    ; Now make right line visible
+    ld d,JOY1_ROW
     bit 0,e
-    jr nz,.print
-    ld hl,NOJOY_TEXT
-.print:
-	jp print
+    jr nz,.show
+    inc d
+    bit 1,e
+    jr nz,.show
+    inc d
+.show:
+    ld e,32
+    mul de
+    add de,COLOR_SCREEN
+    ld bc,32-1
+    ld hl,de
+    inc de
+    ld a,(COLOR_SCREEN) ; Get current PAPER and INK color
+    ld (hl),a
+    ldir
+    ret 
 
 
 ;===========================================================================
@@ -182,14 +177,6 @@ main:
     ; Init
     call drain_rx_buffer
 
-    ; Clear screen
-	;ld iy,VAR_ERRNR
-    call ROM_CLS
-    
-    ; Print text    
-    ld hl,INTRO_TEXT
-	call print
-
     ; Set uart at joystick port
     ld e,2  ; Joy 2
     call set_text_and_joyport
@@ -250,17 +237,12 @@ stack_top:
 
 
 ;===========================================================================
-; After loading the program starts here. Moves the bank to the destination 
-; slot and jumps there.
+; After loading the program starts here. 
 ;===========================================================================
     ORG 0xC000 
-start_entry_point:
-    ; At startup this program is mapped at 0xC000
-    di
-    ; Switch in the bank at 0x4000
-    nextreg REG_MMU+USED_SLOT,USED_MAIN_BANK
-    ; Now the right bank is mapped into the slot, jump to the slot and continue
-    jp main
+
+    include "prequel.asm"
+    include "print.asm"
 
 
     ; Save NEX file
