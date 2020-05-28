@@ -14,7 +14,7 @@
             },
             "listFiles": [
                 {
-                    "path": "out/dbg_uart_if.list",
+                    "path": "out/dezogif.list",
                     "asm": "sjasmplus",
                     "mainFile": "main.asm",
                     "srcDirs": [
@@ -33,7 +33,7 @@
             },
             "rootFolder": "${workspaceFolder}",
             "topOfStack": "stack_top",
-            "load": "out/dbg_uart_if.nex",
+            "load": "out/dezogif.nex",
             "smallValuesMaximum": 513,
             "tmpDir": ".tmp"
         },
@@ -54,7 +54,7 @@
             },
             "listFiles": [
                 {
-                    "path": "out/dbg_uart_if.list",
+                    "path": "out/dezogif.list",
                     "asm": "sjasmplus",
                     "mainFile": "main.asm",
                     "srcDirs": [
@@ -73,7 +73,7 @@
             },
             "rootFolder": "${workspaceFolder}",
             "topOfStack": "stack_top",
-            "load": "out/dbg_uart_if.nex",
+            "load": "out/dezogif.nex",
             "smallValuesMaximum": 513,
             "tmpDir": ".tmp"
         },
@@ -90,7 +90,7 @@
             },
             "listFiles": [
                 {
-                    "path": "out/dbg_uart_if.list",
+                    "path": "out/dezogif.list",
                     "asm": "sjasmplus",
                     "mainFile": "main.asm",
                     "srcDirs": [
@@ -112,7 +112,7 @@
             },
             "rootFolder": "${workspaceFolder}",
             "topOfStack": "stack_top",
-            "load": "out/dbg_uart_if.nex",
+            "load": "out/dezogif.nex",
             "smallValuesMaximum": 513,
             "tmpDir": ".tmp"
         },
