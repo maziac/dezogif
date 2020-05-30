@@ -1,15 +1,18 @@
 # Makefile 
 
 
-# ZX Next Game Framework:
+# The DeZog Interface program:
 PROJ = dezogif
+
+# A ZX Next loopback program that uses the same sources.
+LOOPBACK_PROJ = zxloopback
 
 ASM = sjasmplus
 SED = gsed
 PRG_BIN = $(OUT)/$(PROJ).nex
+LOOPBACK_BIN = $(OUT)/$(LOOPBACK_PROJ).nex
 
 UT = $(OUT)/ut
-#UT_NEX_FORMAT = -DNEX_FORMAT
 UT_BIN = $(UT).nex
 
 SRC = src
@@ -18,15 +21,11 @@ MAIN_ASM = $(SRC)/main.asm
 ASM_FILES = $(wildcard $(SRC)/*.asm)
 UT_ASM = $(SRC)/unit_tests/unit_tests.asm 
 UT_ASM_FILES = $(wildcard $(SRC)/unit_tests/*.asm) $(ASM_FILES)
-#OBJS = $(BIN)/$(notdir $(ASM_FILES:.asm=.obj))
-#LABELS_OUT = $(OUT)/$(PROJ).labels
-# The assembler output listing file:
 LIST_OUT = $(OUT)/$(PROJ).list
-# Exports of marked labels
-#LABELS_EXPORT = $(SRC)/$(PROJ).inc
+LOOPBACK_LIST_OUT = $(OUT)/$(LOOPBACK_PROJ).list
 
 
-all:	default unit_tests
+all:	default loopback unit_tests
 
 default:	main
 
@@ -40,6 +39,13 @@ main:	$(PRG_BIN)
 
 $(PRG_BIN):	$(ASM_FILES) Makefile $(OUT)/
 	$(ASM) --inc=$(SRC) --lstlab --lst=$(LIST_OUT) --fullpath -DBIN_FILE=\"$(PRG_BIN)\" $(MAIN_ASM)
+
+
+# Build the loopback program
+loopback:	$(LOOPBACK_BIN)
+
+$(LOOPBACK_BIN):	$(ASM_FILES) Makefile $(OUT)/
+	$(ASM) -DLOOPBACK --inc=$(SRC) --lstlab --lst=$(LOOPBACK_LIST_OUT) --fullpath -DBIN_FILE=\"$(LOOPBACK_BIN)\" $(MAIN_ASM)
 
 
 # Build the unit tests

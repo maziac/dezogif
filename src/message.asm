@@ -168,9 +168,11 @@ cmd_loop:
 ; Called if a UART timeout occurs.
 ; As this could happen from everywhere the call stack is reset
 ; and then the cmd_loop is entered again.
-timeout:
+rx_timeout:
 	ld sp,debug_stack_top
 	jp cmd_loop
+; The receive timeout handler
+RX_TIMEOUT_HANDLER = rx_timeout
 
 
 ;===========================================================================

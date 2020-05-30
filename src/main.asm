@@ -4,16 +4,28 @@
 
     DEVICE ZXSPECTRUMNEXT
 
+; Program can be compiled as simple loopback program.
+ IFDEF LOOPBACK
+    MACRO PROGRAM_TITLE
+    defb "UART Loopback"
+    ENDM
+ ELSE
+    MACRO PROGRAM_TITLE
+    defb "ZX Next UART DeZog Interface"
+    ENDM
+ ENDIF
+
 ; The 8k memory bank to store the code to.
 USED_MAIN_BANK:  EQU 95  ; Last 8k bank on unexpanded ZXNext
 USED_SLOT:  EQU 1   ; 0x2000
+;USED_SLOT:  EQU 4   ; 0x8000
 
 USED_ROM_BANK:  EQU 94  ; Bank used to copy the ROM (0x0000) to and change the RST 0 address into a jump.
 
 
     MMU USED_SLOT e, USED_MAIN_BANK ; e -> Everything should fit inot one page, error if not.
     ORG USED_SLOT*0x2000
-
+    ;ORG 0x8000
 
     
 ;===========================================================================
@@ -27,6 +39,11 @@ USED_ROM_BANK:  EQU 94  ; Bank used to copy the ROM (0x0000) to and change the R
     include "commands.asm"
     include "backup.asm"
     include "breakpoints.asm"
+
+ IFDEF LOOPBACK
+    include "loopback.asm"
+ ENDIF
+ 
 
 
 
@@ -150,7 +167,8 @@ main:
     ld (state),a
     MEMCLEAR tmp_breakpoint_1, 2*TMP_BREAKPOINT
 
-    ; Backup slot 6
+ IF 0   ; TODO: Re-enable
+     ; Backup slot 6
     ld a,REG_MMU+6
     call read_tbblue_reg    ; returns the bank in A
 
@@ -167,6 +185,7 @@ main:
 
     ; Restore slot 6 bank
     nextreg REG_MMU+6,a
+ ENDIF
 
     ; Page in copied ROM bank to slot 0
     nextreg REG_MMU+0,USED_ROM_BANK
@@ -186,8 +205,14 @@ main:
 main_loop:
     push bc, de
 
+ IFDEF LOOPBACK
+    ; Special loopback functionality.
+    call uart_loopback
+ ELSE
+    ; Normal dezog functionality.
     ; Check if byte available.
     call dbg_check_for_message
+ ENDIF
 
 .no_uart_byte:
     ; Check keyboard
@@ -246,7 +271,7 @@ stack_top:
 
 
     ; Save NEX file
-    SAVENEX OPEN BIN_FILE, start_entry_point, stack_top // 0xC000    //stack_top: CSpect has a problem (crashes the program immediately when it is run) is stack points to stack_top which is inside the 
+    SAVENEX OPEN BIN_FILE, start_entry_point, stack_prequel.top // 0xC000    //stack_top: CSpect has a problem (crashes the program immediately when it is run) is stack points to stack_top which is inside the 
     SAVENEX CORE 2, 0, 0        ; Next core 2.0.0 required as minimum
     ;SAVENEX CFG 0               ; black border
     ;SAVENEX BAR 0, 0            ; no load bar

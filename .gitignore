@@ -3,4 +3,5 @@
 .vscode/settings.json
 .tmp/
 *.list
+*.lst
 *.nex

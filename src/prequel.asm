@@ -14,6 +14,8 @@
 start_entry_point:
     ; At startup this program is mapped at 0xC000
     di
+
+ IF 01
     ld sp,stack_prequel.top
 
     ; Switch in ROM bank
@@ -27,11 +29,28 @@ start_entry_point:
     ; Print text    
     ld hl,INTRO_TEXT
 	call print
-    
+ ENDIF
+
+    nop
+    nop
+    ;MF_BREAK
+    nop
+    nop
+
+
+
     ; Switch in the bank at 0x4000
     nextreg REG_MMU+USED_SLOT,USED_MAIN_BANK
-    ; Now the right bank is mapped into the slot, jump to the slot and continue
     jp main
+    
+    ;nextreg REG_MMU+1,95
+    ; Now the right bank is mapped into the slot, jump to the slot and continue
+.forever:
+    ;jr .forever
+    inc a
+    and 7
+    out (BORDER),a
+    jr .forever
 
 
 ; The preliminary stack
@@ -49,7 +68,8 @@ NOJOY_ROW:	equ 4
 INTRO_TEXT: 
     defb OVER, 0
     defb AT, 0, 0
-    defb "ZX Next UART DeZog Interface"
+    ;defb "ZX Next UART DeZog Interface"
+    PROGRAM_TITLE
     defb AT, 1, 0
     defb "ESP UART Baudrate: "
     STRINGIFY BAUDRATE

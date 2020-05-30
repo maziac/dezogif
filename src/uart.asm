@@ -170,8 +170,6 @@ read_uart_byte:
 .wait_loop:
 	in a,(c)					; Read status bits
     bit UART_RX_FIFO_EMPTY,a
-;    ld a,e
-;    out (BORDER),a
     jr nz,.byte_received
     dec e
     jr nz,.wait_loop
@@ -179,12 +177,17 @@ read_uart_byte:
     ; "Timeout"
     ; Waited for 256*43 T-states=393us
     nop ; LOGPOINT read_uart_byte: ERROR=TIMEOUT
-    jp timeout
+    jp RX_TIMEOUT_HANDLER
 
 .byte_received:
     ; At least 1 byte received, read it
     inc b	; The low byte stays the same
     in a,(c)
+    ; Change border
+    ld e,a
+    and 7
+    out (BORDER),a
+    ld a,e
 	ret 
 
 
@@ -291,9 +294,12 @@ set_uart_joystick:
     jr nz,.joy_2
     ; Check for joy 1
     bit 0,e
-    ret z   ; Neither 1 or 2
+    jr z,.end   ; Neither 1 or 2
     ; Joy 1
     ld a,10000000b  ; Left joystick (Joy 1)
 .joy_2:
     out (KEMPSTON_JOY_2),a
-    ret
+.end:
+    ; Now drain the RX to overcome garbage
+    jp drain_rx_buffer
+    

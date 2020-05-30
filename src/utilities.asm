@@ -152,7 +152,6 @@ write_tbblue_reg:
 ; Changes:
 ;   -
 ;===========================================================================
-
 	MACRO STRINGIFY number?
 value = number?
 divisor = 1000000
@@ -168,3 +167,17 @@ value = value-digit * divisor
 divisor = divisor / 10
     EDUP
 	ENDM
+
+
+;===========================================================================
+; Creates a Multiface NMI break.
+; Note: did not work for me!
+;===========================================================================
+	MACRO MF_BREAK
+	push af
+	ld a,r
+	di
+	in a,(0x3F)
+	rst 8
+	ENDM
+
