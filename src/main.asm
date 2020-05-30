@@ -149,55 +149,8 @@ read_key_joyport:
 
 
 ;===========================================================================
-; main routine - the code execution starts here.
+; main routine - The main loop of the program.
 ;===========================================================================
-main:
-    ; Disable interrupts
-    di
- 
-    ; Setup stack
-    ld sp,stack_top
-
-    ; Init state
-    xor a
-    ld (state),a
-    MEMCLEAR tmp_breakpoint_1, 2*TMP_BREAKPOINT
-
- IF 0   ; TODO: Re-enable
-     ; Backup slot 6
-    ld a,REG_MMU+6
-    call read_tbblue_reg    ; returns the bank in A
-
-    ; Switch in the bank at 0xC000
-    nextreg REG_MMU+6,USED_ROM_BANK
-    ; Copy the ROM at 0x0000 to bank USED_ROM_BANK
-    MEMCOPY SWAP_SLOT*0x2000, 0x0000, 0x2000
-
-    ; Overwrite the RST 0 address with a jump
-    ld hl,0xC000
-    ldi (hl),0xC3   ; JP
-    ldi (hl),LOW enter_breakpoint
-    ld (hl),HIGH enter_breakpoint
-
-    ; Restore slot 6 bank
-    nextreg REG_MMU+6,a
- ENDIF
-
-    ; Page in copied ROM bank to slot 0
-    nextreg REG_MMU+0,USED_ROM_BANK
-
-    ; Set baudrate
-    call set_uart_baudrate
-
-    ; Init
-    call drain_rx_buffer
-
-    ; Set uart at joystick port
-    ld e,2  ; Joy 2
-    call set_text_and_joyport
-
-    ; Border color timer
-    ld c,1     
 main_loop:
     push bc, de
 
