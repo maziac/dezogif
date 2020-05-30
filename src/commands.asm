@@ -57,8 +57,8 @@ cmd_jump_table:
 ;  NA
 ;===========================================================================
 cmd_call:	; Get pointer to subroutine
-	ld a,(receive_buffer.command)
-	out (BORDER),a
+	;ld a,(receive_buffer.command)
+	;out (BORDER),a
 	add a,a
 	ld hl,cmd_jump_table-2
 	add hl,a
@@ -299,8 +299,8 @@ cmd_continue:
 ;===========================================================================
 cmd_pause:
 	; LOGPOINT [COMMAND] cmd_pause
- ld a,MAGENTA
- out (BORDER),a
+ ;ld a,MAGENTA
+ ;out (BORDER),a
 
 	; Send response
 	ld de,1
