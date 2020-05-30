@@ -17,10 +17,18 @@
 ;===========================================================================
 
 ; DZRP version 1.1.0
-DZRP_VERSION:	defb 1, 1, 0
+DZRP_VERSION:	defb 1, 2, 0
+
+; The dezogif program version:
+ MACRO VERSION
+ 	defb "v0.3.2"
+ ENDM 
+
 
 ; The own program name and version
-PROGRAM_NAME:	defb "dezogif v0.2.0", 0
+PROGRAM_NAME:	defb "dezogif "
+				VERSION
+				defb 0
 .end
 
 
@@ -47,6 +55,7 @@ cmd_jump_table:
 .get_sprite_patterns:	defw cmd_get_sprite_patterns
 .get_sprites_clip_window_and_control:	defw cmd_get_sprites_clip_window_and_control
 .set_border:		defw cmd_set_border
+.set_slot:			defw cmd_set_slot
 
 
 ;===========================================================================
@@ -57,7 +66,7 @@ cmd_jump_table:
 ;  NA
 ;===========================================================================
 cmd_call:	; Get pointer to subroutine
-	;ld a,(receive_buffer.command)
+	ld a,(receive_buffer.command)
 	;out (BORDER),a
 	add a,a
 	ld hl,cmd_jump_table-2
@@ -468,6 +477,38 @@ cmd_get_slots:
 
 	ret
 
+
+;===========================================================================
+; CMD_sET_SLOT
+; Sets a 8k-banks/slot association.
+; Changes:
+;  NA
+;===========================================================================
+cmd_set_slot:
+	; LOGPOINT [COMMAND] cmd_set_slot
+	; Send response
+	ld de,2
+	call send_length_and_seqno
+
+	; Get slot
+	call read_uart_byte
+	; Check slot. Slots 0 and 1 (ROM) are occupied by dezogif itself
+	cp 2
+	jr c,.error
+	add a,REG_MMU
+	ld (.nextreg_register+2),a	; Modify opcode
+	; Get bank
+	call read_uart_byte
+.nextreg_register:
+	nextreg 0x00, a	; Self-modifying code
+	xor a	; no error
+	jp write_uart_byte
+	
+.error:
+	call read_uart_byte	; read dummy value
+	ld a,1	; error
+	jp write_uart_byte
+	
 
 ;===========================================================================
 ; CMD_READ_STATE

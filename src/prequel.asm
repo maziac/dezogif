@@ -102,16 +102,18 @@ stack_prequel:
 
 
 ; The info text to show.
-JOY1_ROW:	equ 2
-JOY2_ROW:	equ 3
-NOJOY_ROW:	equ 4
+JOY1_ROW:	equ 3
+JOY2_ROW:	equ 4
+NOJOY_ROW:	equ 5
+
 
 INTRO_TEXT: 
     defb OVER, 0
     defb AT, 0, 0
-    ;defb "ZX Next UART DeZog Interface"
-    PROGRAM_TITLE
+    PROGRAM_TITLE   ; E.g. "ZX Next UART DeZog Interface"
     defb AT, 1, 0
+    VERSION
+    defb AT, 2, 0
     defb "ESP UART Baudrate: "
     STRINGIFY BAUDRATE
 
@@ -119,15 +121,15 @@ INTRO_TEXT:
     defb AT, JOY2_ROW, 0, "Using Joy 2 (right)"
     defb AT, NOJOY_ROW, 0, "No joystick port used."
 
-    defb AT, 5, 0
-    defb "Tx=7, Rx=9"
     defb AT, 6, 0
-    defb "Keys:"
+    defb "Tx=7, Rx=9"
     defb AT, 7, 0
-    defb "1 = Joy 1"
+    defb "Keys:"
     defb AT, 8, 0
-    defb "2 = Joy 2"
+    defb "1 = Joy 1"
     defb AT, 9, 0
+    defb "2 = Joy 2"
+    defb AT, 10, 0
     defb "3 = No joystick port"
 ;.end
     defb EOS

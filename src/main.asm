@@ -20,7 +20,7 @@ USED_MAIN_BANK: EQU 95  ; Last 8k bank on unexpanded ZXNext. Debugged programs c
 USED_ROM_BANK:  EQU 94  ; Bank used to copy the ROM (0x0000) to and change the RST 0 address into a jump. Debugged programs cannot use this bank.
 LOADED_BANK:    EQU 93    ; The program is loaded here first, then copied to USED_MAIN_BANK. So dezogif can also load itself. Debugged programs may use this bank.
 USED_SLOT:      EQU 1   ; 0x2000
-SWAP_SLOT:    EQU 7   ; 0xE000
+SWAP_SLOT:      EQU 7   ; 0xE000, used only temporary
 
 
     MMU USED_SLOT e, LOADED_BANK ; e -> Everything should fit into one page, error if not.
