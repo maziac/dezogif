@@ -173,6 +173,7 @@ read_uart_byte:
     jr nz,.byte_received
     dec e
     jr nz,.wait_loop
+   ;jr .wait_loop ; TODO: REMOVE
     
     ; "Timeout"
     ; Waited for 256*43 T-states=393us
@@ -183,9 +184,22 @@ read_uart_byte:
     ; At least 1 byte received, read it
     inc b	; The low byte stays the same
     in a,(c)
+  
+  ;ret
     ; Change border
     ld e,a
-    and 7
+    and 0x1F
+    inc a
+    push hl
+    ld hl,border_color
+    add (hl)
+    ld (hl),a
+    pop hl
+    bit 5,a
+    ld a,YELLOW 
+    jr z,.yellow
+    ld a,BLUE
+.yellow:
     out (BORDER),a
     ld a,e
 	ret 
