@@ -16,14 +16,14 @@
  ENDIF
 
 ; The 8k memory bank to store the code to.
-USED_MAIN_BANK:  EQU 95  ; Last 8k bank on unexpanded ZXNext
-USED_SLOT:  EQU 1   ; 0x2000
-;USED_SLOT:  EQU 4   ; 0x8000
+USED_MAIN_BANK: EQU 95  ; Last 8k bank on unexpanded ZXNext. Debugged programs cannot use this bank.
+USED_ROM_BANK:  EQU 94  ; Bank used to copy the ROM (0x0000) to and change the RST 0 address into a jump. Debugged programs cannot use this bank.
+LOADED_BANK:    EQU 93    ; The program is loaded here first, then copied to USED_MAIN_BANK. So dezogif can also load itself. Debugged programs may use this bank.
+USED_SLOT:      EQU 1   ; 0x2000
+SWAP_SLOT:    EQU 7   ; 0xE000
 
-USED_ROM_BANK:  EQU 94  ; Bank used to copy the ROM (0x0000) to and change the RST 0 address into a jump.
 
-
-    MMU USED_SLOT e, USED_MAIN_BANK ; e -> Everything should fit inot one page, error if not.
+    MMU USED_SLOT e, LOADED_BANK ; e -> Everything should fit into one page, error if not.
     ORG USED_SLOT*0x2000
     ;ORG 0x8000
 
@@ -155,10 +155,6 @@ main:
     ; Disable interrupts
     di
  
-	; Maximize clock speed
-	ld a,RTM_28MHZ
-	nextreg REG_TURBO_MODE,a
-
     ; Setup stack
     ld sp,stack_top
 
@@ -175,7 +171,7 @@ main:
     ; Switch in the bank at 0xC000
     nextreg REG_MMU+6,USED_ROM_BANK
     ; Copy the ROM at 0x0000 to bank USED_ROM_BANK
-    MEMCOPY 0xC000, 0x0000, 0x2000
+    MEMCOPY SWAP_SLOT*0x2000, 0x0000, 0x2000
 
     ; Overwrite the RST 0 address with a jump
     ld hl,0xC000

@@ -15,12 +15,17 @@ start_entry_point:
     ; At startup this program is mapped at 0xC000
     di
 
- IF 01
-    ld sp,stack_prequel.top
+	; Maximize clock speed
+	ld a,RTM_28MHZ
+	nextreg REG_TURBO_MODE,a
 
     ; Switch in ROM bank
     nextreg REG_MMU+0,ROM_BANK
     nextreg REG_MMU+1,ROM_BANK
+
+ IF 01
+    ;ld sp,stack_prequel.top
+
 
     ; Clear screen
 	ld iy,VAR_ERRNR
@@ -31,26 +36,16 @@ start_entry_point:
 	call print
  ENDIF
 
-    nop
-    nop
-    ;MF_BREAK
-    nop
-    nop
-
-
-
+    ; The main program has been loaded into LOADED_BANK and needs to be copied to USED_MAIN_BANK
     ; Switch in the bank at 0x4000
     nextreg REG_MMU+USED_SLOT,USED_MAIN_BANK
+    ; Switch in loaded bank at 0xE000
+    nextreg REG_MMU+SWAP_SLOT,LOADED_BANK
+    ; Copy the code
+    MEMCOPY USED_SLOT*0x2000, SWAP_SLOT*0x2000, 0x2000   
+    ; The main program has been copied into USED_MAIN_BANK
     jp main
     
-    ;nextreg REG_MMU+1,95
-    ; Now the right bank is mapped into the slot, jump to the slot and continue
-.forever:
-    ;jr .forever
-    inc a
-    and 7
-    out (BORDER),a
-    jr .forever
 
 
 ; The preliminary stack
