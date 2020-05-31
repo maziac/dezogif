@@ -15,6 +15,9 @@ start_entry_point:
     ; At startup this program is mapped at 0xC000
     di
 
+    ;jp divmmc_init
+
+
 	; Maximize clock speed
 	ld a,RTM_28MHZ
 	nextreg REG_TURBO_MODE,a
@@ -135,3 +138,105 @@ INTRO_TEXT:
     defb EOS
 
 
+
+; The code below is from Matt Davies to catch the DRIVE button press with DivMMC.
+; Still unsolved is how to detect multiple presses.
+; I.e. this works only once. Most probably it need to be reset somehow.
+divmmc_init:
+    di
+    
+    ; Set border
+    ld a,WHITE
+    out (BORDER),a
+    
+    ; TODO: Read and set only required bits.
+    ; Bit 4: Enable DivMMC automap and DivMMC NMI by DRIVE button (0 after Hard-reset)
+    ; Bit 3: Enable multiface NMI by M1 button (hard reset = 0)
+    nextreg REG_PERIPHERAL_2,%10110001
+
+    ; Page in Divmmc memory bank 3
+    ; Bit 7: conmem
+    ; Bit 6: mapram
+    ; Bit 0/1: bank
+    ld      a,%10000011
+    out     ($e3),a
+
+    ; Copy esxDos to DivMMC bank 3
+    ld      hl,0
+    ld      de,$2000
+    ld      bc,$2000
+    ldir
+
+    ; Patch NMI routine
+    ld      hl,RomPatch
+    ld      de,$2066
+    ld      bc,RomPatchLen
+    ldir
+
+    ; Enable mapram
+    ld      a,%01000000
+    out     ($e3),a
+
+    jr      $
+
+
+TestRoutine:
+    ;ld a,YELLOW
+    inc a
+    and 7
+    out (BORDER),a
+    retn 
+
+    jr  $
+
+
+RomPatch:
+    nop ; PUSH AF in original ROM
+    jp      TestRoutine
+RomPatchLen:    equ     $-RomPatch
+
+
+/*
+Original:
+                org $c000
+
+Start:
+                ld      a,1
+                out     ($fe),a
+                
+                nextreg $06,%10110001
+
+                ; Page in Divmmc memory bank 3
+                ld      a,%10'000011
+                out     ($e3),a
+
+                ; Copy esxDos to bank 3
+                ld      hl,0
+                ld      de,$2000
+                ld      bc,$2000
+                ldir
+
+                ; Patch NMI routine
+                ld      hl,RomPatch
+                ld      de,$2066
+                ld      bc,RomPatchLen
+                ldir
+
+                ; Enable mapram
+                ld      a,%01'000000
+                out     ($e3),a
+
+                jr      $
+
+
+TestRoutine:
+                ld      a,2
+                out     ($fe),a
+                jr      $
+
+
+RomPatch:
+                nop
+                jp      TestRoutine
+RomPatchLen     equ     $-RomPatch
+*/
