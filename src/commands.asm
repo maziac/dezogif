@@ -499,6 +499,10 @@ cmd_set_slot:
 	ld (.nextreg_register+2),a	; Modify opcode
 	; Get bank
 	call read_uart_byte
+	; Check for special value 0xFE (ROM0) which is converted to 0xFF
+	cp 0xFE
+	jr nz,.nextreg_register
+	inc a	; Change 0xFE to 0xFF
 .nextreg_register:
 	nextreg 0x00, a	; Self-modifying code
 	xor a	; no error
