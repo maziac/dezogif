@@ -1,7 +1,5 @@
 # Changelog
 
-# Changelog
-
 ## 0.4.0
 - Changed SW breakpoints: more logic moved to DeZog.
 - Temporary breakpoints implemented.

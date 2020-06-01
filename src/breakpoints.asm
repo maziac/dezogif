@@ -138,7 +138,7 @@ enter_breakpoint:
 ;===========================================================================
 clear_tmp_breakpoints:
 	ld hl,(tmp_breakpoint_1.bp_address)
-	ld l,a
+	ld a,l
 	or h
 	jr z,.second_bp
 	; Restore opcode
@@ -146,7 +146,7 @@ clear_tmp_breakpoints:
 	ld (hl),a
 .second_bp:
 	ld hl,(tmp_breakpoint_2.bp_address)
-	ld l,a
+	ld a,l
 	or h
 	jr z,.clear
 	; Restore opcode
