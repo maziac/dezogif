@@ -26,7 +26,7 @@ start_entry_point:
     nextreg REG_MMU+0,ROM_BANK
     nextreg REG_MMU+1,ROM_BANK
 
- IF 01
+ IF 0
     ;ld sp,stack_prequel.top
 
 
@@ -56,24 +56,24 @@ start_entry_point:
     ld (state),a
     MEMCLEAR tmp_breakpoint_1, 2*TMP_BREAKPOINT
 
- IF 0   ; TODO: Re-enable
-     ; Backup slot 6
-    ld a,REG_MMU+6
+ IF 01   
+     ; Backup SWAP_SLOT bank
+    ld a,REG_MMU+SWAP_SLOT
     call read_tbblue_reg    ; returns the bank in A
 
     ; Switch in the bank at 0xC000
-    nextreg REG_MMU+6,USED_ROM_BANK
+    nextreg REG_MMU+SWAP_SLOT,USED_ROM_BANK
     ; Copy the ROM at 0x0000 to bank USED_ROM_BANK
     MEMCOPY SWAP_SLOT*0x2000, 0x0000, 0x2000
 
     ; Overwrite the RST 0 address with a jump
-    ld hl,0xC000
+    ld hl,SWAP_SLOT*0x2000
     ldi (hl),0xC3   ; JP
     ldi (hl),LOW enter_breakpoint
     ld (hl),HIGH enter_breakpoint
 
-    ; Restore slot 6 bank
-    nextreg REG_MMU+6,a
+    ; Restore SWAP_SLOT bank
+    nextreg REG_MMU+SWAP_SLOT,a
  ENDIF
 
     ; Page in copied ROM bank to slot 0
