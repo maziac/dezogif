@@ -62,6 +62,15 @@ bp_id	defw
 	ENDS
 payload_remove_breakpoint:	PAYLOAD_REMOVE_BREAKPOINT = receive_buffer.payload
 
+; CMD_CONTINUE
+	STRUCT PAYLOAD_CONTINUE
+bp1_enable	defb
+bp1_address	defw
+bp2_enable	defb
+bp2_address	defw
+	ENDS
+payload_continue:	PAYLOAD_CONTINUE = receive_buffer.payload
+
 
 ; The UART data is put here before being interpreted.
 receive_buffer: 

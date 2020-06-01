@@ -52,8 +52,6 @@ start_entry_point:
     ld sp,stack_top
 
     ; Init state
-    xor a
-    ld (state),a
     MEMCLEAR tmp_breakpoint_1, 2*TMP_BREAKPOINT
 
  IF 01   

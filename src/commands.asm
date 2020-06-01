@@ -21,7 +21,7 @@ DZRP_VERSION:	defb 1, 2, 0
 
 ; The dezogif program version:
  MACRO VERSION
- 	defb "v0.3.3"
+ 	defb "v0.4.0"
  ENDM 
 
 
@@ -290,13 +290,27 @@ cmd_continue:
 	ld de,1
 	call send_length_and_seqno
 
-	; Checkif we are in the middle of a breakpoint
-	ld a,(state)
+	; Clear temporary breakpoints
+	call clear_tmp_breakpoints
+	; Get breakpoints
+	ld a,(payload_continue.bp1_enable)
 	or a
-	; Restore registers and check for breakpoint state
-	jp nz,enter_breakpoint.continue
+	jr z,.bp2
+	; Set temporary bp 1
+	ld de,(payload_continue.bp1_address)
+	ld hl,tmp_breakpoint_1
+	call set_tmp_breakpoint
+.bp2:
+	ld a,(payload_continue.bp2_enable)
+	or a
+	jr z,.start
+	; Set temporary bp 1
+	ld de,(payload_continue.bp2_address)
+	ld hl,tmp_breakpoint_2
+	call set_tmp_breakpoint
 .start:
 	jp restore_registers
+
 
 ;===========================================================================
 ; CMD_PAUSE
@@ -346,16 +360,14 @@ cmd_add_breakpoint:
 
 	; Set breakpoint
 	ld hl,(payload_add_breakpoint.bp_address)
-	call add_breakpoint
-	push hl
+	SET_BREAKPOINT
 
 	; Send response
 	ld de,3
 	call send_length_and_seqno
 
 	; Returning BP ID	
-	pop hl	; bp ID
-	; TODO: returning 0 (no breakpoint available) needs to be tested inside DeZog
+	ld hl,(payload_add_breakpoint.bp_address)	; Address is also used as ID.
 	ld a,l
 	call write_uart_byte
 	ld a,h
@@ -369,6 +381,7 @@ cmd_add_breakpoint:
 ; Changes:
 ;  NA
 ;===========================================================================
+; TODO: This command is not really required. I.e. a memory write is done afterwards anyway. No bp lists have to be updated.
 cmd_remove_breakpoint:
 	; LOGPOINT [COMMAND] cmd_remove_breakpoint
 	; Read breakpoint ID from message
@@ -376,9 +389,10 @@ cmd_remove_breakpoint:
 	ld de,2
 	call receive_bytes
 
+	; Do nothing:
 	; Set breakpoint
-	ld hl,(payload_remove_breakpoint.bp_id)
-	call remove_breakpoint
+	;ld hl,(payload_remove_breakpoint.bp_id)
+	;call remove_breakpoint
 
 	; Send response
 	ld de,1

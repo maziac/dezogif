@@ -69,9 +69,6 @@ BREAK_REASON:
 ; The breakpoint RST command.
 BP_INSTRUCTION:		EQU 0xC7		; RST 0
 
-; The number of possible breakpoints.
-BREAKPOINT_LIST_COUNT:	EQU 20 
-
 
 ; The breakpoint structure to save.
 	STRUCT BREAKPOINT
@@ -83,9 +80,9 @@ opcode				defb	; The substituted opcode
 
 ; The temporary breakpoint structure.
 	STRUCT TMP_BREAKPOINT
-tmp_bp_address		defw	; The location of the temporary breakpoint (after instruction)
+bp_address		defw	; The location of the temporary breakpoint 
 opcode				defb	; The substituted opcode
-bp_address			defw	; The location of the "real" breakpoint	
+
 	ENDS
 
 
@@ -93,28 +90,10 @@ bp_address			defw	; The location of the "real" breakpoint
 ; Data. 
 ;===========================================================================
 
-; The overall state
-state:		defb 0
 
-
-;breakpoint_list:	DUP BREAKPOINT_LIST_COUNT 
-;                        BREAKPOINT
-;                    EDUP
-breakpoint_list:	defs BREAKPOINT_LIST_COUNT * BREAKPOINT, 0
-.end
-
-; Temporary storage for the breakpoint during ENTERED_BREAKPOINT state
-; and for step-over etc.
+; Temporary storage for the breakpoints during 'cmd_continue'
 tmp_breakpoint_1:	TMP_BREAKPOINT
 tmp_breakpoint_2:	TMP_BREAKPOINT
-
-
-;===========================================================================
-; Clears all breakpoints.
-;===========================================================================
-clear_breakpoints:
-	MEMCLEAR breakpoint_list, BREAKPOINT_LIST_COUNT * BREAKPOINT
-	ret
 
 
 ;===========================================================================
@@ -129,73 +108,27 @@ enter_breakpoint:
 	call save_registers
 	; SP is now at debug_stack_top
 
-	; Check state
-	ld a,(state)
-	or a	; 0 = NORMAL
-	jr nz,.restore_breakpoint
-
 	; Breakpoint entered
 
 	; Maximize clock speed
 	ld a,RTM_28MHZ
 	nextreg REG_TURBO_MODE,a
 
-    ; Send pause notification
+	; Check if temporary breakpoint hit
+	ld hl,(backup.pc)	
+	call check_tmp_breakpoints ; Z = found
+	ld a,BREAK_REASON.NO_REASON
+	jr z,.no_reason
+	; Otherwise a "real" breakpoint was hit
 	ld d,BREAK_REASON.BREAKPOINT_HIT
-	ld hl,(backup.pc)
+.no_reason:
+
+    ; Send pause notification
+	ld hl,(backup.pc)	; breakpoint address
 	call send_ntf_pause
 
-	; Get breakpoint address
-	ld hl,(backup.pc)	
-	; And save
-	ld (tmp_breakpoint_1.bp_address),hl 
-	; Change state
-	ld a,STATE.ENTERED_BREAKPOINT
-	ld (state),a
 	jp cmd_loop		; continues later at .continue
 
-.continue:
-	; Substitute breakpoint with original opcode
-	; Get breakpoint address
-	ld hl,(tmp_breakpoint_1.bp_address)
-	call find_breakpoint
-	jr nz,.temporary_continue_bp
-	; hl contains bp id
-	ldi a,(hl)	; Get opcode length
-	inc hl : inc hl	; move to opcode
-	ld c,(hl)
-	ld hl,(tmp_breakpoint_1.bp_address)	; Get breakpoint address
-	; Restore original opcode
-	ld (hl),c
-
-	; Add temporary breakpoint just after the original opcode
-	add hl,a	; Add opcode length
-	ld a,(hl)	; Get original opcode
-	ld (tmp_breakpoint_1.tmp_bp_address),hl 
-	ld (tmp_breakpoint_1.opcode),a 
-	ld (hl),BP_INSTRUCTION
-    jp restore_registers
-
-.temporary_continue_bp:
-	; No "real" breakpoint has been found, so it was a breakpoint set by the
-	; cmd_continue, e.g. a ste-over.
-	nop ; TODO
-
-
-.restore_breakpoint:
-	; In the middle of a breakpoint action. The temporary breakpoint has been hit.
-	; Restore temporary opcode
-	ld hl,(tmp_breakpoint_1.tmp_bp_address)
-	ld a,(tmp_breakpoint_1.opcode)	; Get original opcode
-	ld (hl),a
-	; Set the breakpoint again at previous location
-	ld hl,(tmp_breakpoint_1.bp_address)
-	ld (hl),BP_INSTRUCTION
-	; change state to normal
-	xor a
-	ld (state),a
-	; Continue with cmd_continue
-	jp cmd_continue.start
 
 
 ;===========================================================================
@@ -204,7 +137,7 @@ enter_breakpoint:
 ; Temporary breakpoints are not enable if they point to location 0x0000.
 ;===========================================================================
 clear_tmp_breakpoints:
-	ld hl,(tmp_breakpoint_1.tmp_bp_address)
+	ld hl,(tmp_breakpoint_1.bp_address)
 	ld l,a
 	or h
 	jr z,.second_bp
@@ -212,7 +145,7 @@ clear_tmp_breakpoints:
 	ld a,(tmp_breakpoint_1.opcode)
 	ld (hl),a
 .second_bp:
-	ld hl,(tmp_breakpoint_2.tmp_bp_address)
+	ld hl,(tmp_breakpoint_2.bp_address)
 	ld l,a
 	or h
 	jr z,.clear
@@ -223,182 +156,75 @@ clear_tmp_breakpoints:
 	; Clear both temporary breakpoints
 	MEMCLEAR tmp_breakpoint_1, 2*TMP_BREAKPOINT
 	ret
-; TODO: not yet used. Should be called whenever a continue was done.
 ;TODO: unit test this.
 
 
 ;===========================================================================
+; Sets one of the two temporary breakpoints.
+; Temporary breakpoints are not enable if they point to location 0x0000.
+; Stores the opcode at the bp address and set bp address to RST.
+; Sets a temporary breakpoint only if no "real" breakpoint is set.
+; Parameters:
+;   DE = Pointer to tmp_breakpoint1/2
+;   HL = breakpoint address
+; Changes:
+;   HL, DE, A
+;===========================================================================
+set_tmp_breakpoint:
+	; Get opcode
+	ld a,(hl)
+	cp BP_INSTRUCTION
+	ret z	; Do nothing if already a breakpoint set
+
+	; Set BP
+	ld (hl),BP_INSTRUCTION
+	; Store to 'opcode'
+	ex de,hl
+	ldi (hl),a	
+	; Store address
+	ldi (hl),de
+	ret 
+	
+
+;===========================================================================
+; Checks if one of the 2 temporary breakpoints matches the given breakpoint 
+; address.
+; Parameters:
+;   DE = breakpoint address
+; Returns:
+;   Z = found
+;   NZ = not found
+; Changes:
+;   HL, DE, A
+;===========================================================================
+check_tmp_breakpoints:
+	ld hl,tmp_breakpoint_1.bp_address
+	ldi a,(hl)
+	cp e
+	jr nz,.no_bp1
+	ld a,(hl)
+	cp d 
+	ret z	; Return if found
+.no_bp1:
+	inc hl 
+	ldi a,(hl)
+	cp e
+	ret nz	; Return if not found 
+	ld a,(hl) 
+	cp d 
+	ret 	; Return with Z or NZ
+	
+
+;===========================================================================
 ; Sets a new breakpoint.
-; Exchanges the location with a RST opcode and puts the breakpoint in a list.
-; If we are in the middle of a breakpoint execution (STATE.ENTERED_BREAKPOINT)
-; then we need to check first it opcode is already temporary exchanged.
+; Exchanges the location with a RST opcode.
 ; Parameters:
 ;  HL = breakpoint address
 ; Returns:
-;  HL = Location of added breakpoint. Is used as breakpoint ID.
-;       0 if no breakpoint available anymore.
-;  Z = Breakpoint added
-;  NZ = Breakpoint not added. List is full.
+;  A = original opcode at breakpoint address
 ;===========================================================================
-add_breakpoint:
-	push hl
-	; Find free breakpoint from list
-	call get_free_breakpoint
-	pop de	; breakpoint address
-	jr nz,.no_free_location 	; no free location found
-	
-	; Insert in list
-	ldi (hl),1	; occupied, instruction_length
-	ldi (hl),de ; the breakpoint address
-	
+ 	MACRO SET_BREAKPOINT
 	; Substitute opcode
-	ld a,(de)	; Original opcode
-	ld (hl),a	; Store in breakpoint structure
-	ld a,BP_INSTRUCTION
-	ld (de),a
-	; Correct hl to start of breaklpoint location
-	add hl,-BREAKPOINT.opcode
-	ret
-.no_free_location:
-	ld hl,0
-	ret
- 
-;===========================================================================
-; Removes a breakpoint.
-; Exchanges the location with a original opcode and removes the breakpoint 
-; from the list.
-; Parameters:
-;  HL = Breakpoint ID. This is the location (address) inside the breakpoint_list.
-; Changes:
-;  A, HL, DE
-;===========================================================================
-remove_breakpoint:
-	; Check if location contains a breakpoint
-	xor a
-	cp (hl)
-	ret z	; Returns immediately if no active breakpoint
-
-	; Clear breakpoint
-	xor a
-	ldi (hl),a
-	; Get breakpoint address
-	ld de,(hl)
-	ldi (hl),a : ldi (hl),a
-	; Get the original opcode
-	ld a,(hl)
-	ld (hl),0	; and clear
-
-	; Restore original opcode
-	ld (de),a
-	ret
-
-
-;===========================================================================
-; Returns a free breakpoint location in the list.
-; Returns:
-;  HL = address of free location in list.
-;	    0x0000 if no free location available.
-;  Z = location found
-;  NZ = no free location found
-;===========================================================================
-; TODO: Check if used at all.
-get_free_breakpoint:
-	ld hl,breakpoint_list
-	ld de,BREAKPOINT	; size of struct
-	ld b,BREAKPOINT_LIST_COUNT
-	xor a	; Search for 0 entry
-.loop:
-	cp (hl)
-	ret z	; found
-	add hl,de
-	djnz .loop
-	; not found, HL = 0
-	inc a	; Force NZ
-	ret
-
-
-;===========================================================================
-; Searches for the given breakpoint.
-; Returns:
-;  HL = address of free location in list.
-;  Z = found
-;  NZ = not found
-;===========================================================================
-find_breakpoint:
-	ex de,hl	; de = breakpoint to find
-	ld hl,breakpoint_list+BREAKPOINT.address
-	ld b,BREAKPOINT_LIST_COUNT
-	ld a,e
-.loop:
-	; compare low byte
-	cp (hl)
-	jr nz,.not_equal
-	; compare high byte
-	inc hl 
-	ld a,d
-	cp (hl)
-	dec hl
-	ld a,e
-	jr z,.equal	; found
-.not_equal:
-	add hl,BREAKPOINT	; size of struct
-	djnz .loop
-	; not found, HL = 0
-	; TODO: brauche ich hl=0 ?
-	ld a,1
-	or a	; To force NZ. 
-	ld h,a
-	ld l,a
-	ret
-
-.equal:
-	; let HL point to the beginning of the struct
-	add hl,-BREAKPOINT.address
-	ret
-
-
-/*
-Doesn't work:
-;===========================================================================
-; Returns the length of tthe instruction at HL.
-; Parameter:
-;  HL = address of the instruction
-; Returns:
-;  A = length [1-4]
-;===========================================================================
-get_instruction_length:
-	ld a,5
-	ld (.b_value+1),a
-	ld de,.instruction+3
-	; Fill sandbox
-	ld a,(.fill_instruction)
-	ldd (de),a : ldd (de),a : ldd (de),a
-	
-.loop:
-	; (hl)->(de)
-	ldi
-	push hl, de
-	ld hl,.b_value+1
-	dec (hl)
-	
-	; sandbox ------
-.b_value:
-	ld b,4
-.instruction:
-	nop
-	dec b
-	dec b
-	dec b
-	; --------------
-
-	pop de, hl
-	djnz .loop
-
-	; Found. Check which one.
-	add de,-.instruction
-	; e = instruction length
-	ld a,e
-	ret
-.fill_instruction:
-	dec b	
-*/
+	ld a,(hl)	; Original opcode
+	ld (hl),BP_INSTRUCTION
+	ENDM

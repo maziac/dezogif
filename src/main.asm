@@ -35,10 +35,10 @@ SWAP_SLOT:      EQU 7   ; 0xE000, used only temporary
     include "zxnext/zxnext_regs.inc"
     include "utilities.asm"
     include "uart.asm"
+    include "breakpoints.asm"
     include "message.asm"
     include "commands.asm"
     include "backup.asm"
-    include "breakpoints.asm"
 
  IFDEF LOOPBACK
     include "loopback.asm"
