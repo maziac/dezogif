@@ -18,6 +18,7 @@
 ;===========================================================================
 
 ; Commands
+/* TODO: Remove, not used.
 CMD.GET_CONFIG:			equ 	1
 CMD.READ_REGS:			equ 	2
 CMD.WRITE_REGS:			equ 	3
@@ -33,7 +34,7 @@ CMD.WRITE_MEM:			equ 	12
 CMD.GET_SLOTS:			equ 	13
 CMD.READ_STATE:			equ 	14
 CMD.WRITE_STATE:		equ 	15
-
+*/
 
 ;===========================================================================
 ; Data. 

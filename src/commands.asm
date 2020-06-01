@@ -16,12 +16,12 @@
 ; Data. 
 ;===========================================================================
 
-; DZRP version 1.1.0
+; DZRP version 1.2.0
 DZRP_VERSION:	defb 1, 2, 0
 
 ; The dezogif program version:
  MACRO VERSION
- 	defb "v0.3.2"
+ 	defb "v0.3.3"
  ENDM 
 
 
