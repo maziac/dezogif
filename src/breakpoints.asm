@@ -80,9 +80,8 @@ opcode				defb	; The substituted opcode
 
 ; The temporary breakpoint structure.
 	STRUCT TMP_BREAKPOINT
-bp_address		defw	; The location of the temporary breakpoint 
 opcode				defb	; The substituted opcode
-
+bp_address		defw	; The location of the temporary breakpoint 
 	ENDS
 
 
@@ -206,7 +205,7 @@ check_tmp_breakpoints:
 	cp d 
 	ret z	; Return if found
 .no_bp1:
-	inc hl 
+	inc hl : inc hl	; skip high byte and opcode
 	ldi a,(hl)
 	cp e
 	ret nz	; Return if not found 

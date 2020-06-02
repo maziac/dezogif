@@ -90,8 +90,8 @@ UT_clear_tmp_breakpoints.UT_second:
     ret 
 
 
-; Test not setting a a breakpoint position.
-UT_set_tmp_breakpoint.UT_few_entries:
+; Test not setting a breakpoint position.
+UT_set_tmp_breakpoint.UT_not_set_bp:
     ; Init
     MEMCLEAR tmp_breakpoint_1, 2*TMP_BREAKPOINT
     ld hl,testdata1
@@ -107,39 +107,80 @@ UT_set_tmp_breakpoint.UT_few_entries:
     ret 
 
 
-; Test too many entries.
-UT_get_free_breakpoint.UT_too_many_entries:
-    ; Init
+; Test setting a breakpoint position.
+UT_set_tmp_breakpoint.UT_set_bp:
+   ; Init
+    MEMCLEAR tmp_breakpoint_1, 2*TMP_BREAKPOINT
+    ld hl,testdata1
+    ld (hl),0xFF
+    ld de,tmp_breakpoint_1
+
+    ; TEST
+    call set_tmp_breakpoint
+
+    TEST_MEMORY_BYTE testdata1, BP_INSTRUCTION
+    TEST_MEMORY_BYTE tmp_breakpoint_1.opcode, 0xFF
+    TEST_MEMORY_WORD tmp_breakpoint_1.bp_address, testdata1
     ret 
 
 
 
+; Test check address for tmp breakpoint.
+; No breakpoint found.
+UT_check_tmp_breakpoints.UT_no_bp:
+   ; Init
+    MEMCLEAR tmp_breakpoint_1, 2*TMP_BREAKPOINT
+    ld hl,testdata1
+    ld (tmp_breakpoint_1.bp_address),hl
+    ld (tmp_breakpoint_2.bp_address),hl
+    inc hl
+    ex de,hl    ; de = bp address, does not match
 
+    ; TEST
+    call check_tmp_breakpoints
 
-; Test no breakpoint.
-UT_find_breakpoint.UT_simple:
-    ; Init
-	
+    TEST_FLAG_NZ
     ret 
 
 
-; Test to find the bp at the first location.
-UT_find_breakpoint.UT_find_first_entry:
-    ; Init
+
+; Test check address for tmp breakpoint.
+; First breakpoint found.
+UT_check_tmp_breakpoints.UT_first_bp:
+   ; Init
+    MEMCLEAR tmp_breakpoint_1, 2*TMP_BREAKPOINT
+    ld hl,testdata1
+    ld (tmp_breakpoint_1.bp_address),hl
+    inc hl
+    ld (tmp_breakpoint_2.bp_address),hl
+    dec hl
+    ex de,hl    ; de = bp address, matches first
+
+    ; TEST
+    call check_tmp_breakpoints
+
+    TEST_FLAG_Z
     ret 
 
 
-; Test to find the bp at some location.
-UT_find_breakpoint.UT_some_entry:
-    ; Init
+; Test check address for tmp breakpoint.
+; Second breakpoint found.
+UT_check_tmp_breakpoints.UT_second_bp:
+   ; Init
+    MEMCLEAR tmp_breakpoint_1, 2*TMP_BREAKPOINT
+    ld hl,testdata1
+    inc hl
+    ld (tmp_breakpoint_1.bp_address),hl
+    dec hl
+    ld (tmp_breakpoint_2.bp_address),hl
+    ex de,hl    ; de = bp address, matches second
+
+    ; TEST
+    call check_tmp_breakpoints
+
+    TEST_FLAG_Z
     ret 
-
-; Test to find the bp at teh last location.
-UT_find_breakpoint.UT_last_entry:
-    ; Init
-    ret 
-
-
+    
 
     ENDMODULE
     
