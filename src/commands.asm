@@ -297,16 +297,16 @@ cmd_continue:
 	or a
 	jr z,.bp2
 	; Set temporary bp 1
-	ld de,(payload_continue.bp1_address)
-	ld hl,tmp_breakpoint_1
+	ld hl,(payload_continue.bp1_address)
+	ld de,tmp_breakpoint_1
 	call set_tmp_breakpoint
 .bp2:
 	ld a,(payload_continue.bp2_enable)
 	or a
 	jr z,.start
 	; Set temporary bp 1
-	ld de,(payload_continue.bp2_address)
-	ld hl,tmp_breakpoint_2
+	ld hl,(payload_continue.bp2_address)
+	ld de,tmp_breakpoint_2
 	call set_tmp_breakpoint
 .start:
 	jp restore_registers

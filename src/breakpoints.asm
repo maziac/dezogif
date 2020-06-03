@@ -114,9 +114,9 @@ enter_breakpoint:
 	nextreg REG_TURBO_MODE,a
 
 	; Check if temporary breakpoint hit
-	ld hl,(backup.pc)	
+	ld de,(backup.pc)	
 	call check_tmp_breakpoints ; Z = found
-	ld a,BREAK_REASON.NO_REASON
+	ld d,BREAK_REASON.NO_REASON
 	jr z,.no_reason
 	; Otherwise a "real" breakpoint was hit
 	ld d,BREAK_REASON.BREAKPOINT_HIT
@@ -164,8 +164,8 @@ clear_tmp_breakpoints:
 ; Stores the opcode at the bp address and set bp address to RST.
 ; Sets a temporary breakpoint only if no "real" breakpoint is set.
 ; Parameters:
-;   DE = Pointer to tmp_breakpoint1/2
 ;   HL = breakpoint address
+;   DE = Pointer to tmp_breakpoint1/2
 ; Changes:
 ;   HL, DE, A
 ;===========================================================================
