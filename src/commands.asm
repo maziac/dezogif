@@ -16,12 +16,12 @@
 ; Data. 
 ;===========================================================================
 
-; DZRP version 1.2.0
-DZRP_VERSION:	defb 1, 2, 0
+; DZRP version 1.3.0
+DZRP_VERSION:	defb 1, 3, 0
 
 ; The dezogif program version:
  MACRO VERSION
- 	defb "v0.4.0"
+ 	defb "v0.5.0"
  ENDM 
 
 
@@ -40,8 +40,8 @@ cmd_jump_table:
 .write_bank:		defw cmd_write_bank
 .continue:			defw cmd_continue
 .pause:				defw cmd_pause
-.add_breakpoint:	defw cmd_add_breakpoint
-.remove_breakpoint:	defw cmd_remove_breakpoint
+.add_breakpoint:	defw cmd_add_breakpoint	; TODO: Remove
+.remove_breakpoint:	defw cmd_remove_breakpoint	; TODO: Remove
 .add_watchpoint:	defw 0	; not supported
 .remove_watchpoint:	defw 0	; not supported
 .read_mem:			defw cmd_read_mem
@@ -56,6 +56,8 @@ cmd_jump_table:
 .get_sprites_clip_window_and_control:	defw cmd_get_sprites_clip_window_and_control
 .set_border:		defw cmd_set_border
 .set_slot:			defw cmd_set_slot
+.set_breakpoints:	defw cmd_set_breakpoints
+.restore_mem:		defw cmd_restore_mem
 
 
 ;===========================================================================
@@ -493,7 +495,7 @@ cmd_get_slots:
 
 
 ;===========================================================================
-; CMD_sET_SLOT
+; CMD_SET_SLOT
 ; Sets a 8k-banks/slot association.
 ; Changes:
 ;  NA
@@ -527,6 +529,90 @@ cmd_set_slot:
 	ld a,1	; error
 	jp write_uart_byte
 	
+
+;===========================================================================
+; CMD_SET_BREAKPOINTS
+; Sets all breakpoints.
+; Changes:
+;  NA
+;===========================================================================
+cmd_set_breakpoints:
+	; LOGPOINT [COMMAND] cmd_set_breakpoints
+	; Calculate the count
+	ld de,(receive_buffer.length)	; Read only the lower bytes
+	add de,-2
+	; divide by 2
+	ld b,1
+	bsrl de,b
+	; Send response
+	push de
+	inc de
+	call send_length_and_seqno
+	pop de 	; count
+
+.loop:
+	; Check for end
+	ld a,e
+	or d
+	ret z
+	; Loop
+	push de
+	; Get breakpoint address
+	call read_uart_byte
+	ld l,a
+	call read_uart_byte
+	ld h,a
+	; Get memory
+	ld a,(hl)
+	; Set breakpoint
+	ld (hl),BP_INSTRUCTION
+	; Send memory
+	call write_uart_byte
+	pop de 
+	dec de 
+	jr .loop
+	
+
+;===========================================================================
+; CMD_RESTORE_MEM
+; Restores the memory at the addresses.
+; Changes:
+;  NA
+;===========================================================================
+cmd_restore_mem:
+	; LOGPOINT [COMMAND] cmd_restore_mem
+	; Calculate the count
+	ld de,(receive_buffer.length)	; Read only the lower bytes
+	add de,-2
+	; divide by 2
+	ld b,1
+	bsrl de,b
+	; Send response
+	push de
+	inc de
+	call send_length_and_seqno
+	pop de 	; count
+
+.loop:
+	; Check for end
+	ld a,e
+	or d
+	ret z
+	; Loop
+	push de
+	; Get address
+	call read_uart_byte
+	ld l,a
+	call read_uart_byte
+	ld h,a
+	; Get value
+	call read_uart_byte
+	; Restore memory
+	ld (hl),a
+	pop de 
+	dec de 
+	jr .loop
+
 
 ;===========================================================================
 ; CMD_READ_STATE
