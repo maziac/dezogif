@@ -37,6 +37,10 @@ ROM_PRINT               EQU  0x203C
 ; Data. 
 ;===========================================================================
 
+; Temporary data area to be used by several subroutines.
+tmp_data:   defb 4
+
+
 
 ;===========================================================================
 ; Reads a TBBLUE register.

@@ -52,8 +52,8 @@ cmd_jump_table:
 .write_state:		defw cmd_write_state
 .get_tbblue_reg:	defw cmd_get_tbblue_reg
 .get_sprites_palette:	defw cmd_get_sprites_palette
-.get_sprites:		defw cmd_get_sprites
-.get_sprite_patterns:	defw cmd_get_sprite_patterns
+.get_sprites:		defw 0	; not supported on a ZX Next
+.get_sprite_patterns:	defw 0	; not supported on a ZX Next
 .get_sprites_clip_window_and_control:	defw cmd_get_sprites_clip_window_and_control
 .set_border:		defw cmd_set_border
 .set_slot:			defw cmd_set_slot
@@ -718,40 +718,56 @@ cmd_get_sprites_palette:
 	
 
 ;===========================================================================
-; CMD_GET_SPRITES
-; Returns the requested sprites (attributes).
-; Changes:
-;  NA
-;===========================================================================
-cmd_get_sprites:
-; TODO: Implement
-	; LOGPOINT [COMMAND] cmd_get_sprites
-	ret
-
-
-;===========================================================================
-; CMD_GET_SPRITE_PATTERNS
-; Returns the requested sprite patterns.
-; Changes:
-;  NA
-;===========================================================================
-cmd_get_sprite_patterns:
-; TODO: Implement
-	; LOGPOINT [COMMAND] cmd_get_sprites_patterns
-	ret
-
-
-;===========================================================================
 ; CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL
 ; Returns the sprites clip window and the control byte (regsiter (0x15).
 ; Changes:
 ;  NA
 ;===========================================================================
 cmd_get_sprites_clip_window_and_control:
-; TODO: Implement
 	; LOGPOINT [COMMAND] cmd_get_sprites_clip_window_and_control
-	ret
+	; Prepare response
+	ld de,6
+	call send_length_and_seqno
 
+    ; Get index 
+	ld a,REG_CLIP_WINDOW_CONTROL
+	call read_tbblue_reg
+	rra
+	and 011b	; A contains the index
+
+	; Get xl, xr, yt or yb
+	ld d,4
+.loop:	; 4x: for xl, xr, yt and yb
+	push af
+	ld a,REG_CLIP_WINDOW_SPRITES
+	call read_tbblue_reg
+	; Increase index by writing the same value
+	nextreg REG_CLIP_WINDOW_SPRITES, a
+	; Store
+	pop af
+	ld c,a
+	ld hl,tmp_data
+	add hl,a
+	ld (hl),c
+	inc a
+	and 011b
+	dec d
+	jr nz,.loop
+	
+	; Send xl, xr, yt or yb
+	ld d,4
+	ld hl,tmp_data
+.send_loop:
+	ldi a,(hl)
+	call write_uart_byte 	; Send xl, xr, yt or yb
+	dec d
+	jr nz,.send_loop
+		
+	; Get sprite control byte
+	ld a,REG_SPRITE_LAYER_SYSTEM
+	call read_tbblue_reg
+	jp write_uart_byte 	; Send sprite control byte
+	
 
 ;===========================================================================
 ; CMD_SET_BORDER
