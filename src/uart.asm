@@ -202,7 +202,7 @@ read_uart_byte:
     add (hl)
     ld (hl),a
     pop hl
-    bit 5,a
+    bit 2,a
     ld a,YELLOW 
     jr z,.yellow
     ld a,BLUE

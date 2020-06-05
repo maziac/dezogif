@@ -14,6 +14,7 @@
 BAUDRATE:   equ 999999
 
 
+    include "macros.asm"
     include "zxnext/zxnext_regs.inc"
     include "utilities.asm"
     include "print.asm"

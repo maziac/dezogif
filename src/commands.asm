@@ -323,14 +323,13 @@ cmd_continue:
 ;===========================================================================
 cmd_pause:
 	; LOGPOINT [COMMAND] cmd_pause
- ;ld a,MAGENTA
- ;out (BORDER),a
+  
+  ; TODO: Remove
+  ld a,MAGENTA
+  out (BORDER),a
 
 	; Send response
 	ld de,1
-	jp send_length_and_seqno
-
-	; TODO REMOVE
 	call send_length_and_seqno
 	
 	; Send fake break notification

@@ -17,38 +17,10 @@
 ; Constants
 ;===========================================================================
 
-; Commands
-/* TODO: Remove, not used.
-CMD.GET_CONFIG:			equ 	1
-CMD.READ_REGS:			equ 	2
-CMD.WRITE_REGS:			equ 	3
-CMD.WRITE_BANK:			equ 	4
-CMD.CONTINUE:			equ 	5
-CMD.PAUSE:				equ 	6
-CMD.ADD_BREAKPOINT:		equ 	7
-CMD.REMOVE_BREAKPOINT:	equ 	8
-CMD.ADD_WATCHPOINT:		equ 	9
-CMD.REMOVE_WATCHPOINT:	equ 	10
-CMD.READ_MEM:			equ 	11
-CMD.WRITE_MEM:			equ 	12
-CMD.GET_SLOTS:			equ 	13
-CMD.READ_STATE:			equ 	14
-CMD.WRITE_STATE:		equ 	15
-*/
 
 ;===========================================================================
 ; Data. 
 ;===========================================================================
-
-; Counts the received bytes.
-;received_length:  defw 0
-
-
-; Counter for the remaining bytes.
-;receive_remaining_length:  defw 0
-
-; Pointer to the next receive position.
-;receive_ptr:    defw 0
 
 ; CMD_ADD_BREAKPOINT
 	STRUCT PAYLOAD_ADD_BREAKPOINT
@@ -110,6 +82,7 @@ receive_buffer:
 ;  HL
 ;===========================================================================
  if 0
+ ; TODO: REMOVE
 init_receive_buffer:
     ld hl,0
     ld (received_length),hl
@@ -120,31 +93,6 @@ init_receive_buffer:
 
 
 ;===========================================================================
-; Checks if a new messages has been received.
-; If not then it returns without changing any register or flag.
-; If yes the message is received and interpreted.
-; Uses 2 words on the stack, one for calling the subroutine and one
-; additional for pushing AF.
-; Changes:
-;  -
-; Duration:
-;  T-States=81 (with CALL), 2.32us@3.5MHz
-;===========================================================================
-dbg_check_for_message:			; T=17 for calling
-	; Save AF
-    push af						; T=11
-	ld a,PORT_UART_TX>>8		; T= 7
-	in a,(PORT_UART_TX&0xFF)	; T=11, Read status bits
-    bit UART_RX_FIFO_EMPTY,a	; T= 8
-    jr nz,.start_cmd_loop		; T= 7
-	; Restore AF 
-    pop af						; T=10
-	ret			 				; T=10
-.start_cmd_loop:
-	; Restore AF
-	pop af
-
-;===========================================================================
 ; Starts the command loop. I.e. backups all registers.
 ; Interpretes the last received message.
 ; Stays in command loop waiting for the next message until
@@ -152,13 +100,6 @@ dbg_check_for_message:			; T=17 for calling
 ; Changes:
 ;  -, At the end the registers are restored.
 ;===========================================================================
-enter_cmd_loop:
-	; Backup all registers 
-	call save_registers
-	; SP is now at debug_stack_top
-	; Maximize clock speed
-	ld a,RTM_28MHZ
-	nextreg REG_TURBO_MODE,a
 cmd_loop:
 	; Wait on next command
 	call wait_for_uart_rx
@@ -172,6 +113,46 @@ cmd_loop:
 	call cmd_call
 	jr cmd_loop
 
+
+;===========================================================================
+; Executes available commands and leaves the loop as soon as no commands
+; are available anymore.
+; This is called froom teh coop routine (from the debugged program) when
+; a new byte is available at the UART.
+; Changes:
+;  -, At the end the registers are restored.
+;===========================================================================
+execute_cmd:
+	; Backup all registers 
+	call save_registers
+	; SP is now at debug_stack_top
+	; Maximize clock speed
+	ld a,RTM_28MHZ
+	nextreg REG_TURBO_MODE,a
+.loop:
+	; Receive length sequence number and command
+	ld hl,receive_buffer
+	ld de,receive_buffer.payload-receive_buffer
+	call receive_bytes
+	;ld a,BLUE
+	;out (BORDER),a
+	; Handle command
+	call cmd_call
+
+	; Check for some time if another command is available
+	ld de,256*200
+.wait:
+	push de
+	call check_uart_byte_available
+	pop de
+	jr nz,.loop
+	dec de
+	ld a,d
+	or e
+	jr nz,.wait
+	
+	; Return to debugged program
+	jp restore_registers
 
 
 ; Called if a UART timeout occurs.

@@ -32,7 +32,9 @@ SWAP_SLOT:      EQU 7   ; 0xE000, used only temporary
 ; Include modules
 ;===========================================================================
 
+    include "macros.asm"
     include "zxnext/zxnext_regs.inc"
+    include "coop.asm"
     include "utilities.asm"
     include "uart.asm"
     include "breakpoints.asm"
@@ -160,7 +162,9 @@ main_loop:
  ELSE
     ; Normal dezog functionality.
     ; Check if byte available.
-    call dbg_check_for_message
+    call check_uart_byte_available
+    ; If so leave loop and enter command loop
+    jp nz,cmd_loop    
  ENDIF
 
 .no_uart_byte:

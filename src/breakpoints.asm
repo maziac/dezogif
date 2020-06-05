@@ -106,7 +106,7 @@ enter_breakpoint:
 	; LOGPOINT [DEFAULT] enter_breakpoint
 
    	; Backup all registers 
-	call save_registers
+	call save_registers_with_dec_pc
 	; SP is now at debug_stack_top
 
 	; Breakpoint entered

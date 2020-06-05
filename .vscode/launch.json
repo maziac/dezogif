@@ -102,7 +102,7 @@
             "startAutomatically": true,
             "skipInterrupt": true,
             "commandsAfterLaunch": [
-                "-logpoint enable",
+                //"-logpoint enable",
                 "-assert enable",
                 //"-logpoint enable DEFAULT"
                 //"-sprites",

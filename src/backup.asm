@@ -52,14 +52,25 @@ backup_top:
 ;  SP = debug_stack_top after RET
 ; ===========================================================================
 save_registers:
+	; Save without decrementing PC
+	ld (backup.hl),hl
+	pop hl  ; Save return address to HL
+	ld (save_registers_common.ret_jump+1),hl	; self.modifying code, used instead of a return
+
+	; Get caller address (+3 for CALL) of dbg_check_for_message
+	pop hl	
+	jr save_registers_common
+
+save_registers_with_dec_pc:
 	; Save
 	ld (backup.hl),hl
 	pop hl  ; Save return address to HL
-	ld (.ret_jump+1),hl	; self.modifying code, used instead of a return
+	ld (save_registers_common.ret_jump+1),hl	; self.modifying code, used instead of a return
 
-	; Get caller address (+1 for RST) of dbg_check_for message or enter_breakpoint
+	; Get caller address (+1 for RST) of enter_breakpoint
 	pop hl	
 	dec hl
+save_registers_common:
 	ld (backup.pc),hl
 
 	; Save stack pointer (is already corrected because of 'pop hl')
