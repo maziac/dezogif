@@ -61,10 +61,10 @@ save_registers:
 	pop hl	
 	dec hl
 	ld (backup.pc),hl
-	
+
 	; Save stack pointer (is already corrected because of 'pop hl')
 	ld (backup.sp),sp
-
+	
 	; Use new stack
 	ld sp,backup.af+2
 
@@ -171,7 +171,7 @@ restore_registers:
 	; Correct PC on stack (might have been changed by DeZog)
 	ld sp,(backup.sp)
 	ld hl,(backup.pc)
-	ex (sp),hl
+	push hl
 	
 	; Load correct value of HL
 	ld hl,(backup.hl)

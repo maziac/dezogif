@@ -103,6 +103,8 @@ tmp_breakpoint_2:	TMP_BREAKPOINT
 ; I.e. it was pushed on stack because of the RST.
 ;===========================================================================
 enter_breakpoint:
+	; LOGPOINT [DEFAULT] enter_breakpoint
+
    	; Backup all registers 
 	call save_registers
 	; SP is now at debug_stack_top

@@ -165,22 +165,29 @@ check_uart_byte_available:
 ;   2.4us at 28MHz
 ;===========================================================================
 read_uart_byte:
-    ld e,0
+    push de
+    ld de,250*256
+    ;ld e,0
 	ld bc,PORT_UART_TX
 .wait_loop:
 	in a,(c)					; Read status bits
     bit UART_RX_FIFO_EMPTY,a
     jr nz,.byte_received
-    dec e
+    ;dec e
+    dec de
+    ld a,e
+    or d
     jr nz,.wait_loop
    ;jr .wait_loop ; TODO: REMOVE
     
     ; "Timeout"
+    pop de
     ; Waited for 256*43 T-states=393us
     nop ; LOGPOINT read_uart_byte: ERROR=TIMEOUT
-    jp RX_TIMEOUT_HANDLER
+    jp RX_TIMEOUT_HANDLER   ; ASSERT
 
 .byte_received:
+    pop de
     ; At least 1 byte received, read it
     inc b	; The low byte stays the same
     in a,(c)

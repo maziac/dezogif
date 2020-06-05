@@ -305,7 +305,7 @@ cmd_continue:
 	ld a,(payload_continue.bp2_enable)
 	or a
 	jr z,.start
-	; Set temporary bp 1
+	; Set temporary bp 2
 	ld hl,(payload_continue.bp2_address)
 	ld de,tmp_breakpoint_2
 	call set_tmp_breakpoint

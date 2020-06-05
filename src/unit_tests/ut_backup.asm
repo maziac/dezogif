@@ -91,9 +91,7 @@ UT_save_registers.UT_save:
 UT_save_registers.UT_restore:
     ; Init
     ld hl,.continue     ; The jump address
-    ld (backup.pc),hl   ; Continue at used a return address
-    ld hl,0
-    push hl             ; Add an entry on the stack to offer enough space for the PC (return value)
+    ld (backup.pc),hl   ; Continue at return address
     ld (backup.sp),sp
     ld sp,backup.af
 

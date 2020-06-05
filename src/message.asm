@@ -160,6 +160,8 @@ enter_cmd_loop:
 	ld a,RTM_28MHZ
 	nextreg REG_TURBO_MODE,a
 cmd_loop:
+	; Wait on next command
+	call wait_for_uart_rx
 	; Receive length sequence number and command
 	ld hl,receive_buffer
 	ld de,receive_buffer.payload-receive_buffer
@@ -168,10 +170,8 @@ cmd_loop:
 	;out (BORDER),a
 	; Handle command
 	call cmd_call
-	; Wait on next command
-	call wait_for_uart_rx
 	jr cmd_loop
-	
+
 
 
 ; Called if a UART timeout occurs.
