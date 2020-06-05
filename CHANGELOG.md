@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.0
+- DZRP 1.3.0:
+	- Breakpoint commands: CM_SET_BREAKPOINTS and CMD_RESTORE_MEM implemented.
+
 ## 0.4.0
 - Changed SW breakpoints: more logic moved to DeZog.
 - Temporary breakpoints implemented.
