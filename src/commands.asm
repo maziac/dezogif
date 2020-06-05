@@ -33,6 +33,7 @@ PROGRAM_NAME:	defb "dezogif "
 
 
 ; Command number <-> subroutine association
+; TODO: Maybe sort differently.
 cmd_jump_table:
 .get_config:		defw cmd_init
 .read_regs:			defw cmd_get_regs
@@ -40,8 +41,8 @@ cmd_jump_table:
 .write_bank:		defw cmd_write_bank
 .continue:			defw cmd_continue
 .pause:				defw cmd_pause
-.add_breakpoint:	defw cmd_add_breakpoint	; TODO: Remove
-.remove_breakpoint:	defw cmd_remove_breakpoint	; TODO: Remove
+.add_breakpoint:	defw 0	; not supported
+.remove_breakpoint:	defw 0	; not supported
 .add_watchpoint:	defw 0	; not supported
 .remove_watchpoint:	defw 0	; not supported
 .read_mem:			defw cmd_read_mem
@@ -292,8 +293,6 @@ cmd_continue:
 	ld de,1
 	call send_length_and_seqno
 
-	; Clear temporary breakpoints
-	call clear_tmp_breakpoints
 	; Get breakpoints
 	ld a,(payload_continue.bp1_enable)
 	or a
@@ -339,66 +338,6 @@ cmd_pause:
 	ld hl,0 ; bp address
 	call send_ntf_pause
 	ret
-
-
-;===========================================================================
-; CMD_ADD_BREAKPOINT
-; Adds a breakpoint. Returns the breakpoint ID in the response.
-; If no breakpoint is left 0 is returned.
-; Changes:
-;  NA
-;===========================================================================
-cmd_add_breakpoint:
-	; LOGPOINT [COMMAND] cmd_add_breakpoint
-	; Read breakpoint from message
-	ld hl,receive_buffer.payload
-	ld de,2
-	call receive_bytes
-	; Consume condition (conditions not implemented)
-.loop:
-	call read_uart_byte
-	or a
-	jr nz,.loop
-
-	; Set breakpoint
-	ld hl,(payload_add_breakpoint.bp_address)
-	SET_BREAKPOINT
-
-	; Send response
-	ld de,3
-	call send_length_and_seqno
-
-	; Returning BP ID	
-	ld hl,(payload_add_breakpoint.bp_address)	; Address is also used as ID.
-	ld a,l
-	call write_uart_byte
-	ld a,h
-	jp write_uart_byte
-
-
-
-;===========================================================================
-; CMD_REMOVE_BREAKPOINT
-; Removes a breakpoint.
-; Changes:
-;  NA
-;===========================================================================
-; TODO: This command is not really required. I.e. a memory write is done afterwards anyway. No bp lists have to be updated.
-cmd_remove_breakpoint:
-	; LOGPOINT [COMMAND] cmd_remove_breakpoint
-	; Read breakpoint ID from message
-	ld hl,receive_buffer.payload
-	ld de,2
-	call receive_bytes
-
-	; Do nothing:
-	; Set breakpoint
-	;ld hl,(payload_remove_breakpoint.bp_id)
-	;call remove_breakpoint
-
-	; Send response
-	ld de,1
-	jp send_length_and_seqno
 
 
 ;===========================================================================
@@ -581,17 +520,13 @@ cmd_set_breakpoints:
 ;===========================================================================
 cmd_restore_mem:
 	; LOGPOINT [COMMAND] cmd_restore_mem
+	; Send response
+	ld de,1
+	call send_length_and_seqno
+
 	; Calculate the count
 	ld de,(receive_buffer.length)	; Read only the lower bytes
 	add de,-2
-	; divide by 2
-	ld b,1
-	bsrl de,b
-	; Send response
-	push de
-	inc de
-	call send_length_and_seqno
-	pop de 	; count
 
 .loop:
 	; Check for end
@@ -610,7 +545,7 @@ cmd_restore_mem:
 	; Restore memory
 	ld (hl),a
 	pop de 
-	dec de 
+	dec de : dec de : dec de
 	jr .loop
 
 

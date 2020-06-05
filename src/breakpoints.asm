@@ -126,6 +126,9 @@ enter_breakpoint:
 	ld hl,(backup.pc)	; breakpoint address
 	call send_ntf_pause
 
+	; Clear temporary breakpoints
+	call clear_tmp_breakpoints
+
 	jp cmd_loop		; continues later at .continue
 
 
@@ -222,8 +225,10 @@ check_tmp_breakpoints:
 ; Returns:
 ;  A = original opcode at breakpoint address
 ;===========================================================================
+/*
  	MACRO SET_BREAKPOINT
 	; Substitute opcode
 	ld a,(hl)	; Original opcode
 	ld (hl),BP_INSTRUCTION
 	ENDM
+*/

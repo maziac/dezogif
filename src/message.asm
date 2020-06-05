@@ -168,7 +168,6 @@ cmd_loop:
 	;out (BORDER),a
 	; Handle command
 	call cmd_call
-	ld hl,(backup.sp)
 	; Wait on next command
 	call wait_for_uart_rx
 	jr cmd_loop
