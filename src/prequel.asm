@@ -8,6 +8,43 @@
 
 
 ;===========================================================================
+; This instruction needs to be copied to address 0x0000.
+; It will be executed whenever a RST 0 happens.
+; Right after executing the instruction the DivMMC memory is paged in.
+; I.e. the following instructions do not matter.
+;===========================================================================
+    DISP 0x0000 ; Displacement/Compile for address 0x0000
+copy_rom_start_0000h_code:
+    ; Store current AF
+    push af
+
+    ; Get current interrupt state
+	ld a,i
+    jp pe,go_on     ; IFF was 1 (interrupts enabled)
+
+	; if P/V read "0", try a 2nd time
+    ld a,i
+
+go_on:
+	di
+    ; F = P/V flag. F is not changed with below code.
+    ; Get current memory bank
+    ld a,REG_MMU+USED_SLOT
+    push bc
+	ld bc,IO_NEXTREG_REG
+	out (c),a
+	; Read register
+	ld b,IO_NEXTREG_DAT>>8
+	in a,(c)
+    ; Switch memory bank
+    nextreg REG_MMU+USED_SLOT,USED_MAIN_BANK
+    ; A contains the previous memory bank, F contans the interrupt state
+	jp enter_breakpoint
+.end
+    ENT 
+
+
+;===========================================================================
 ; After loading the program starts here. Moves the bank to the destination 
 ; slot and jumps there.
 ;===========================================================================
@@ -39,6 +76,36 @@ start_entry_point:
 	call print
  ENDIF
 
+
+ IF 01  ; DivMMC not working on CSpect.
+
+    ; The main program has been loaded into LOADED_BANK and needs to be copied to DivMMC.
+
+    ; Switch in loaded bank at SWAP_SLOT (0xE000)
+    nextreg REG_MMU+SWAP_SLOT,LOADED_BANK
+
+    ; TODO: Read and set only required bits.
+    ; Bit 4: Enable DivMMC automap and DivMMC NMI by DRIVE button (0 after Hard-reset)
+    ; Bit 3: Enable multiface NMI by M1 button (hard reset = 0)
+    nextreg REG_PERIPHERAL_2,%10110001
+
+    ; Page in Divmmc memory bank 3
+    ; Bit 7: conmem
+    ; Bit 6: mapram
+    ; Bit 0/1: bank
+    ld a,%10000011
+    out (DIVIDE_CTRL_REG),a
+
+    ; Copy loaded bank to DivMMC bank 3 (0x2000)
+    MEMCOPY 0x2000, SWAP_SLOT*0x2000, 0x2000 
+
+    ; Enable mapram
+    ld a,%01000000
+    out (DIVIDE_CTRL_REG),a
+ ELSE 
+
+    ; Use ROM for now
+
     ; The main program has been loaded into LOADED_BANK and needs to be copied to USED_MAIN_BANK
     ; Switch in the bank at 0x4000
     nextreg REG_MMU+USED_SLOT,USED_MAIN_BANK
@@ -46,6 +113,9 @@ start_entry_point:
     nextreg REG_MMU+SWAP_SLOT,LOADED_BANK
     ; Copy the code
     MEMCOPY USED_SLOT*0x2000, SWAP_SLOT*0x2000, 0x2000   
+
+ ENDIF
+
 
     ; Initialization.
     ; Setup stack
