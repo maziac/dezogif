@@ -16,8 +16,8 @@
 ; Data. 
 ;===========================================================================
 
-; DZRP version 1.3.0
-DZRP_VERSION:	defb 1, 3, 0
+; DZRP version 1.4.0
+DZRP_VERSION:	defb 1, 4, 0
 
 ; The dezogif program version:
  MACRO VERSION
@@ -33,32 +33,34 @@ PROGRAM_NAME:	defb "dezogif "
 
 
 ; Command number <-> subroutine association
-; TODO: Maybe sort differently.
 cmd_jump_table:
-.get_config:		defw cmd_init
-.read_regs:			defw cmd_get_regs
-.write_regs:		defw cmd_set_reg
-.write_bank:		defw cmd_write_bank
-.continue:			defw cmd_continue
-.pause:				defw cmd_pause
-.add_breakpoint:	defw 0	; not supported
-.remove_breakpoint:	defw 0	; not supported
-.add_watchpoint:	defw 0	; not supported
-.remove_watchpoint:	defw 0	; not supported
-.read_mem:			defw cmd_read_mem
-.write_mem:			defw cmd_write_mem
-.get_slots:			defw cmd_get_slots
-.read_state:		defw cmd_read_state
-.write_state:		defw cmd_write_state
-.get_tbblue_reg:	defw cmd_get_tbblue_reg
-.get_sprites_palette:	defw cmd_get_sprites_palette
-.get_sprites:		defw 0	; not supported on a ZX Next
-.get_sprite_patterns:	defw 0	; not supported on a ZX Next
-.get_sprites_clip_window_and_control:	defw cmd_get_sprites_clip_window_and_control
-.set_border:		defw cmd_set_border
-.set_slot:			defw cmd_set_slot
-.set_breakpoints:	defw cmd_set_breakpoints
-.restore_mem:		defw cmd_restore_mem
+.get_config:		defw cmd_init				; 1
+.read_regs:			defw cmd_get_regs			; 2
+.write_regs:		defw cmd_set_reg			; 3
+.write_bank:		defw cmd_write_bank			; 4
+.continue:			defw cmd_continue			; 5
+.pause:				defw cmd_pause				; 6
+.read_mem:			defw cmd_read_mem			; 7 
+.write_mem:			defw cmd_write_mem			; 8
+.get_slots:			defw cmd_get_slots			; 9
+.set_slot:			defw cmd_set_slot			; 10
+.get_tbblue_reg:	defw cmd_get_tbblue_reg		; 11
+.set_border:		defw cmd_set_border			; 12
+.set_breakpoints:	defw cmd_set_breakpoints	; 13
+.restore_mem:		defw cmd_restore_mem		; 14
+.get_sprites_palette:	defw cmd_get_sprites_palette	; 15
+.get_sprites_clip_window_and_control:	defw cmd_get_sprites_clip_window_and_control	; 16
+
+;.get_sprites:			defw 0	; not supported on a ZX Next
+;.get_sprite_patterns:	defw 0	; not supported on a ZX Next
+
+;.add_breakpoint:		defw 0		; not supported (see set_breakpoints/restore_mem)
+;.remove_breakpoint:	defw 0	; not supported (see set_breakpoints/restore_mem)
+;.add_watchpoint:		defw 0	; not supported
+;.remove_watchpoint:	defw 0	; not supported
+
+;.read_state:			defw 0	; not supported
+;.write_state:			defw 0	; not supported
 
 
 ;===========================================================================
@@ -77,12 +79,9 @@ cmd_call:	; Get pointer to subroutine
 	ldi a,(hl)
 	ld h,(hl)
 	ld l,a
-	; safety check
-	or a,h
-	ret z	; return if jump address is zero
 	; jump to subroutine
 	jp (hl)
-
+	
 
 ;===========================================================================
 ; CMD_GET_CONFIG
@@ -267,8 +266,7 @@ cmd_write_bank:
 
 	; Restore slot/bank (D)
 	pop de
-	;ld a,.slot+REG_MMU
-	;jp write_tbblue_reg	; A=register, D=value
+	; register, D=value
 	WRITE_TBBLUE_REG .slot+REG_MMU,d
 	ret
 
@@ -287,8 +285,16 @@ cmd_continue:
 	; LOGPOINT [COMMAND] cmd_continue
 	; Read breakpoints etc. from message
 	ld hl,receive_buffer.payload
-	ld de,11
+	ld de,PAYLOAD_CONTINUE
 	call receive_bytes
+	
+	; Read unused bytes
+	ld d,11-PAYLOAD_CONTINUE
+.loop_unused:
+	call read_uart_byte
+	dec d
+	jr nz,.loop_unused
+
 	; Send response
 	ld de,1
 	call send_length_and_seqno
@@ -546,36 +552,6 @@ cmd_restore_mem:
 	pop de 
 	dec de : dec de : dec de
 	jr .loop
-
-
-;===========================================================================
-; CMD_READ_STATE
-; Returns the complete state of the device.
-; Changes:
-;  NA
-;===========================================================================
-cmd_read_state:
-	; LOGPOINT [COMMAND] cmd_read_state
-	; TODO: Implement to save/restore state
-
-	; Send response
-	ld de,1
-	jp send_length_and_seqno
-
-
-;===========================================================================
-; CMD_WRITE_STATE
-; Writes the complete state of the device.
-; Changes:
-;  NA
-;===========================================================================
-cmd_write_state:
-	; LOGPOINT [COMMAND] cmd_write_state
-	; TODO: Implement to save/restore state
-
-	; Send response
-	ld de,1
-	jp send_length_and_seqno
 
 
 ;===========================================================================

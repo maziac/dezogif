@@ -83,6 +83,8 @@ receive_buffer:
 .payload:
 	defs 6	; maximum used count for CMD_CONTINUE structure
 
+; Just for testing buffer overflow:
+;	defb  0xff, 0xff
 
 ;===========================================================================
 ; Initializes the receive buffer.
