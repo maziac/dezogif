@@ -174,7 +174,7 @@ cmd_set_reg:
 	
 .inner:	; jump label for unit tests
 	; Get value in DE
-	ld hl,receive_buffer.register_value+1
+	ld hl,payload_set_reg.register_value+1
 	ldd d,(hl)
 	ldd e,(hl)
 	; Which register
@@ -353,7 +353,7 @@ cmd_read_mem:
 	call receive_bytes
 
 	; Send response
-	ld hl,(receive_buffer.mem_size)
+	ld hl,(payload_read_mem.mem_size)
 	ld de,1		; Add 1 for the sequence number
 	add hl,de
 	ex hl,de
@@ -364,8 +364,8 @@ cmd_read_mem:
 
 .inner:
 	; Loop all memory bytes
-	ld hl,(receive_buffer.mem_start)
-	ld de,(receive_buffer.mem_size)
+	ld hl,(payload_read_mem.mem_start)
+	ld de,(payload_read_mem.mem_size)
 .loop:
 	ldi a,(hl)
 	; Send
@@ -397,7 +397,7 @@ cmd_write_mem:
 	add hl,de
 	ex de,hl
 	; Read bytes from UART and put into memory
-	ld hl,(receive_buffer.mem_start)
+	ld hl,(payload_write_mem.mem_start)
 	call receive_bytes
 
 	; Send response

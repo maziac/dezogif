@@ -38,9 +38,9 @@ UT_cmd_write_reg.UT_pc:
 	ld hl,test_stack
 	ld (backup.sp),hl
 	ld hl,0x1112
-	ld (receive_buffer.register_value),hl
+	ld (payload_set_reg.register_value),hl
 	ld a,0	; PC
-	ld (receive_buffer.register_number),a
+	ld (payload_set_reg.register_number),a
 	
     ; Test
     call cmd_set_reg.inner
@@ -56,8 +56,8 @@ UT_cmd_write_reg.UT_pc:
 ; HL = value
 cmd_set_dreg:
     ; Init
-	ld (receive_buffer.register_value),hl	; value
-	ld (receive_buffer.register_number),a	; register number
+	ld (payload_set_reg.register_value),hl	; value
+	ld (payload_set_reg.register_number),a	; register number
     ; set
     call cmd_set_reg.inner
     ret 
@@ -136,8 +136,8 @@ set_reg:
 	push hl
 	push af
 	ld h,0x55  ; should not be used
-	ld (receive_buffer.register_value),hl	; value
-	ld (receive_buffer.register_number),a	; register number
+	ld (payload_set_reg.register_value),hl	; value
+	ld (payload_set_reg.register_number),a	; register number
     ; Set first byte
     call cmd_set_reg.inner
 	; Set second byte
@@ -145,9 +145,9 @@ set_reg:
 	pop hl
 	ld l,h
 	ld h,0x55  ; should not be used
-	ld (receive_buffer.register_value),hl	; value
+	ld (payload_set_reg.register_value),hl	; value
 	inc a
-	ld (receive_buffer.register_number),a	; register number
+	ld (payload_set_reg.register_number),a	; register number
     ; Set first byte
     call cmd_set_reg.inner
     ret 
@@ -225,22 +225,22 @@ UT_cmd_write_reg.UT_A_to_IR:
 ; The check only allows a visual check that all lines have been covered.
 UT_cmd_write_reg.UT_im:
 	ld a,13	; IM register
-	ld (receive_buffer.register_number),a
+	ld (payload_set_reg.register_number),a
 	; IM 0
 	ld hl,0
-	ld (receive_buffer.register_value),hl	; value
+	ld (payload_set_reg.register_value),hl	; value
 	call cmd_set_reg.inner
 	; IM 1
 	ld hl,1
-	ld (receive_buffer.register_value),hl	; value
+	ld (payload_set_reg.register_value),hl	; value
 	call cmd_set_reg.inner
 	; IM 2
 	ld hl,2
-	ld (receive_buffer.register_value),hl	; value
+	ld (payload_set_reg.register_value),hl	; value
 	call cmd_set_reg.inner
 	; Wrong mode
 	ld hl,3
-	ld (receive_buffer.register_value),hl	; value
+	ld (payload_set_reg.register_value),hl	; value
 	call cmd_set_reg.inner
 	ret
 
@@ -249,14 +249,14 @@ UT_cmd_write_reg.UT_im:
 ; The check is simply that no crash happens.
 UT_cmd_write_reg.UT_wrong_register:
 	ld a,35	; First non existing register
-	ld (receive_buffer.register_number),a
+	ld (payload_set_reg.register_number),a
 	ld hl,0xCC55
-	ld (receive_buffer.register_value),hl	; value
+	ld (payload_set_reg.register_value),hl	; value
 	call cmd_set_reg.inner
 	ld a,0xFF	; Last non existing register
-	ld (receive_buffer.register_number),a
+	ld (payload_set_reg.register_number),a
 	ld hl,0xCC55
-	ld (receive_buffer.register_value),hl	; value
+	ld (payload_set_reg.register_value),hl	; value
 	call cmd_set_reg.inner
 	ret
 
@@ -280,7 +280,7 @@ UT_cmd_write_bank:
 
 	; Set bank to use
 	ld a,28
-	ld (receive_buffer.bank_number),a 
+	ld (payload_write_bank.bank_number),a 
 
 
 	; Set fill byte
@@ -364,9 +364,9 @@ UT_cmd_read_mem:
 
 	; Test
 	ld hl,test_memory_src
-	ld (receive_buffer.mem_start),hl
+	ld (payload_read_mem.mem_start),hl
 	ld hl,test_memory_src_end-test_memory_src
-	ld (receive_buffer.mem_size),hl
+	ld (payload_read_mem.mem_size),hl
 	call cmd_read_mem.inner
 
 	; Compare src against dst
@@ -402,7 +402,7 @@ UT_cmd_write_mem:
 
 	; Test
 	ld hl,test_memory_dst
-	ld (receive_buffer.mem_start),hl
+	ld (payload_write_mem.mem_start),hl
 	ld hl,test_memory_dst_end-test_memory_dst+5
 	ld (receive_buffer.length),hl
 	call cmd_write_mem.inner

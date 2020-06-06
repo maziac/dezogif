@@ -22,6 +22,13 @@
 ; Data. 
 ;===========================================================================
 
+; CMD_SET_REG
+	STRUCT PAYLOAD_SET_REG
+register_number	defb
+register_value	defw
+	ENDS
+payload_set_reg:	PAYLOAD_SET_REG = receive_buffer.payload
+
 ; CMD_ADD_BREAKPOINT
 	STRUCT PAYLOAD_ADD_BREAKPOINT
 bp_address	defw
@@ -43,6 +50,27 @@ bp2_address	defw
 	ENDS
 payload_continue:	PAYLOAD_CONTINUE = receive_buffer.payload
 
+; CMD_READ_MEM
+	STRUCT PAYLOAD_READ_MEM
+reserved	defb
+mem_start	defw
+mem_size	defw
+	ENDS
+payload_read_mem:	PAYLOAD_READ_MEM = receive_buffer.payload
+
+; CMD_WRITE_MEM
+	STRUCT PAYLOAD_WRITE_MEM
+reserved	defb
+mem_start	defw
+	ENDS
+payload_write_mem:	PAYLOAD_WRITE_MEM = receive_buffer.payload
+
+; CMD_WRITE_BANK
+	STRUCT PAYLOAD_WRITE_BANK
+bank_number	defb
+	ENDS
+payload_write_bank:	PAYLOAD_WRITE_BANK = receive_buffer.payload
+
 
 ; The UART data is put here before being interpreted.
 receive_buffer: 
@@ -53,27 +81,7 @@ receive_buffer:
 .command:
 	defb 0
 .payload:
-;.border_color:		; For CMD_SET_BORDER
-;.palette_index:		; For CMD_GET_SPRITES_PALETTE
-.register_number:	; For CMD_READ_REGS
-.bank_number:		; For CMD_WRITE_BANK
-.bp1_enable:		; For CMD_CONTINUE
-.bp_id:				; For CMD_REMOVE_BREAKPOINT
-	defs 1
-.register_value:	; For CMD_READ_REGS
-.bp1_address:		; For CMD_CONTINUE
-.mem_start:			; For CMD_READ_MEM
-	defs 1
-	defs 1
-.bp2_enable:		; For CMD_CONTINUE
-.mem_size:			; For CMD_READ_MEM
-	defs 1
-.bp2_address:		; For CMD_CONTINUE
-	defs 1
-	defs 1
-
-	defs 100	; TODO: Remove. Soviel brauchen wir nicht.
-    defb 0  ; WPMEM
+	defs 6	; maximum used count for CMD_CONTINUE structure
 
 
 ;===========================================================================
