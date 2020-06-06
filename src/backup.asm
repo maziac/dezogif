@@ -22,24 +22,26 @@ debug_stack_top:
 
 ; The registers of the debugged program are stored here.
 backup:
-.im:		defb 0	; TODO: cannot be saved
-.reserved:	defb 0
-.r:			defb 0
-.i:			defb 0
-.hl2:		defw 0
-.de2:		defw 0
-.bc2:		defw 0
-.af2:		defw 0
-.iy:		defw 0
-.ix:		defw 0
-.hl:		defw 0
-.de:		defw 0
-.bc:		defw 0
-.af:		defw 0
-.sp:		defw 0
-.pc:		defw 0
-.speed:	defb 0
-.border_color:	defb 0
+.im:				defb 0	; TODO: cannot be saved
+.reserved:			defb 0
+.r:					defb 0
+.i:					defb 0
+.hl2:				defw 0
+.de2:				defw 0
+.bc2:				defw 0
+.af2:				defw 0
+.iy:				defw 0
+.ix:				defw 0
+.hl:				defw 0
+.de:				defw 0
+.bc:				defw 0
+.af:				defw 0
+.sp:				defw 0
+.pc:				defw 0
+.interrupt_state:	defb 0	; P/V flag -> Bit 2: 0=disabled, 1=enabled
+.save_mem_bank:		defb 0
+.speed:				defb 0
+.border_color:		defb 0
 backup_top:
 			defb 0	; WPMEM
 
@@ -47,11 +49,18 @@ backup_top:
 ; Save all registers.
 ; Also changes stack pointer.
 ; Parameters:
-;  SP = points to backup.af
+;  - A = The memory bank to restore at USED_SLOT
+;  - F = contains the interrupt state in P/V (PE=enabled)
+;  - Stack:
+;    -2 = return address (return to caller)
+;    -4 = AF
+;    -6 = caller of breakpoint (RST) +1
 ; Returns:
 ;  SP = debug_stack_top after RET
 ; ===========================================================================
 save_registers:
+;TODO: The interrupt recognition has to be added here similar to save_registers_with_dec_pc
+
 	; Save without decrementing PC
 	ld (backup.hl),hl
 	pop hl  ; Save return address to HL
@@ -66,6 +75,14 @@ save_registers_with_dec_pc:
 	ld (backup.hl),hl
 	pop hl  ; Save return address to HL
 	ld (save_registers_common.ret_jump+1),hl	; self.modifying code, used instead of a return
+
+	; Store interrupt state and bank
+	push af
+	pop hl 
+	ld (backup.interrupt_state),hl
+
+	; Restore AF
+	pop af 
 
 	; Get caller address (+1 for RST) of enter_breakpoint
 	pop hl	

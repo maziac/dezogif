@@ -21,7 +21,7 @@ DZRP_VERSION:	defb 1, 4, 0
 
 ; The dezogif program version:
  MACRO VERSION
- 	defb "v0.5.0"
+ 	defb "v0.6.0"
  ENDM 
 
 

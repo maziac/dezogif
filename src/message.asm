@@ -127,7 +127,7 @@ cmd_loop:
 ;===========================================================================
 ; Executes available commands and leaves the loop as soon as no commands
 ; are available anymore.
-; This is called froom teh coop routine (from the debugged program) when
+; This is called from the coop routine (from the debugged program) when
 ; a new byte is available at the UART.
 ; Changes:
 ;  -, At the end the registers are restored.

@@ -81,7 +81,7 @@ opcode				defb	; The substituted opcode
 ; The temporary breakpoint structure.
 	STRUCT TMP_BREAKPOINT
 opcode				defb	; The substituted opcode
-bp_address		defw	; The location of the temporary breakpoint 
+bp_address			defw	; The location of the temporary breakpoint 
 	ENDS
 
 
@@ -101,9 +101,16 @@ tmp_breakpoint_2:	TMP_BREAKPOINT
 ; I.e. this indicates that a breakpoint was hit.
 ; The location just after the breakpoint can be found from the SP.
 ; I.e. it was pushed on stack because of the RST.
+; When entered:
+; - BC was put on the stack
+; - AF was put on the stack
+; - F contains the interrupt enabled state in P/V (PE=interrrupts enabled)
+; - A contains the last used memory bank for USED_SLOT
+; - interrupts are turned off (DI)
 ;===========================================================================
 enter_breakpoint:
 	; LOGPOINT [DEFAULT] enter_breakpoint
+	pop bc
 
    	; Backup all registers 
 	call save_registers_with_dec_pc
