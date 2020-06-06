@@ -38,7 +38,7 @@ ROM_PRINT               EQU  0x203C
 ;===========================================================================
 
 ; Temporary data area to be used by several subroutines.
-tmp_data:   defb 4
+tmp_data:   defs 4
 
 
 

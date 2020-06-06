@@ -729,10 +729,21 @@ cmd_get_sprites_clip_window_and_control:
 	ld de,6
 	call send_length_and_seqno
 
+    /* Testing:
+	WRITE_TBBLUE_REG REG_CLIP_WINDOW_CONTROL, 0x02 ; TODO: REMOVE
+    ld a,2 
+    nextreg 28, a
+    ld a,2 : nextreg 25, a		; 0
+    ld a,200 : nextreg 25, a	; 1
+    ld a,3 : nextreg 25, a		; 2
+    ld a,100 : nextreg 25, a	; 3
+	ld a,4 : nextreg 25, a		; 0
+	*/
+
     ; Get index 
 	ld a,REG_CLIP_WINDOW_CONTROL
 	call read_tbblue_reg
-	rra
+	rra : rra
 	and 011b	; A contains the index
 
 	; Get xl, xr, yt or yb
@@ -743,12 +754,12 @@ cmd_get_sprites_clip_window_and_control:
 	call read_tbblue_reg
 	; Increase index by writing the same value
 	nextreg REG_CLIP_WINDOW_SPRITES, a
+	ld e,a
 	; Store
 	pop af
-	ld c,a
 	ld hl,tmp_data
 	add hl,a
-	ld (hl),c
+	ld (hl),e
 	inc a
 	and 011b
 	dec d
