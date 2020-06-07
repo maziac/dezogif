@@ -3,45 +3,6 @@
 ;
 ; For a SW breakpoint a RST 0 is substituted with the opcode so that a
 ; breakpoint can be recognized.
-; Breakpoints work in 2 main phases:
-; If the breakpoint occurs another temporary breakpoint is set after the
-; instruction.
-; This second breakpoint is necessary to execute the substituted instruction,
-; to break after it to resotre the original breakpoint.
-; Here is a raw state diagram:
-/*
-             ╔═════════════════════════════╗                           
-             ║                             ║                           
-             ║        STATE.NORMAL         ║                           
-             ║          (Running)          ║                           
-             ║                             ║                           
-             ║                             ║                           
-             ╚═════════════════════════════╝                           
-                 │                   ▲                                 
-                 │                   │                                 
-                 │                   │                                 
-                 │         ┌─────────┴──────────┐                      
-                 │         │  Restore opcode 2  │                      
-                 │         └────────────────────┘                      
-                 │                   ▲                                 
-                 │                   │ Temporary breakpoint hit        
-                 │                   │                                 
-  Breakpoint hit │         ┌─────────┴──────────┐                      
-                 │         │ Set temporary BPs, │                      
-                 │         │   Restore opcode   │                      
-                 │         └────────────────────┘                      
-                 │                   ▲                                 
-                 │                   │ Continue                        
-                 ▼                   │                                 
-            ╔════════════════════════════╗                             
-            ║                            ║                             
-            ║                            ║                             
-            ║  STATE.ENTERED_BREAKPOINT  ║                             
-            ║                            ║                             
-            ║                            ║                             
-            ╚════════════════════════════╝                             
-*/
-;
 ;
 ; Notes:
 ; - address 0x0000 is special. Here is the RST command. So it is not possible
@@ -52,12 +13,6 @@
 ;===========================================================================
 ; Constants
 ;===========================================================================
-
-; States
-STATE:
-.NORMAL				EQU 0
-.ENTERED_BREAKPOINT	EQU 1
-
 
 ; The breakpoint reasons.
 BREAK_REASON:	
@@ -85,24 +40,105 @@ bp_address			defw	; The location of the temporary breakpoint
 	ENDS
 
 
-;===========================================================================
-; Data. 
-;===========================================================================
-
-
-; Temporary storage for the breakpoints during 'cmd_continue'
-tmp_breakpoint_1:	TMP_BREAKPOINT
-tmp_breakpoint_2:	TMP_BREAKPOINT
-
 
 ;===========================================================================
-; Called by RST 0.
+; This instruction needs to be copied to address 0x0000.
+; It will be executed whenever a RST 0 happens.
+; Right after executing the instruction the DivMMC memory is paged in.
+; I.e. the following instructions do not matter.
+;===========================================================================
+copy_rom_start_0000h_code:
+    ;DISP 0x0000 ; Displacement/Compile for address 0x0000
+rst_code:
+    ; Store current AF
+    push af
+
+    ; Get current interrupt state
+	ld a,i
+    jp pe,.int_found     ; IFF was 1 (interrupts enabled)
+
+	; if P/V read "0", try a 2nd time
+    ld a,i
+
+.int_found:
+	di
+    ; F = P/V flag.
+	jp enter_debugger
+
+
+;===========================================================================
+; Jump here to return.
+; If DivMMC and ROM code need to be the same, so the
+; DivMMC can be switched off.
+; When jumped here:
+; - AF is on the stack and need to be popped.
+; - Another RET will return to the breaked instruction.
+; - Flags: NZ=Interrupts need to be enabled.
+;===========================================================================
+rst_code_return:
+    ; Switch off DivMMC memory
+    ; ...
+
+    ; Check interrupt state
+	jr z,.not_enable_interrupt
+
+	; Interrupts were enabled
+	pop af	; Restore
+	ei 	; Re-enable interrupts
+	; Jump to the address on the stack, i.e. the PC
+    ret 
+	
+.not_enable_interrupt:
+	pop af	; Restore
+	; Jump to the address on the stack, i.e. the PC
+    ret 
+copy_rom_end
+    ;ENT 
+
+
+
+;===========================================================================
+; Called by RST 0 or JP 0.
+; This point is reached when the program e.g. runs into a RST 0.
+; This indicates that either a breakpoint was hit (RST 0)
+; or the coop code has called it because the debugged program wants to
+; check for data on teh UART (JP 0).
+; The cases are distinguished by the stack contents:
+; - Breakpoint: The stack contains the return address to the debugged program
+;   which is != 0.
+; - Coop code: A 0 has been put on the stack. The next value on the stack is
+;   the return address to the debugged program.
+; When entered:
+; - AF was put on the stack
+; - optionally a 0x0000 was put on the stack
+; - the return address is on the stack
+; - F contains the interrupt enabled state in P/V (PE=interrrupts enabled)
+; - A contains the last used memory bank for USED_SLOT
+; - interrupts are turned off (DI)
+;===========================================================================
+enter_debugger:
+	; Determine if breakpoint or coop code
+	inc sp : inc sp
+	ex (sp),hl	; Get value from stack
+	; Check for 0
+	ld a,l
+	or h 
+	ex (sp),hl	; Restore stack
+	dec sp : dec sp
+	jp nz,enter_breakpoint
+	
+	; Remove 0 from stack
+	pop af 	; AF is anyway restored
+	jp execute_cmd
+
+
+;===========================================================================
+; Called by enter_debugger.
 ; I.e. this point is reached when the program runs into a RST 0.
 ; I.e. this indicates that a breakpoint was hit.
 ; The location just after the breakpoint can be found from the SP.
 ; I.e. it was pushed on stack because of the RST.
 ; When entered:
-; - BC was put on the stack
 ; - AF was put on the stack
 ; - F contains the interrupt enabled state in P/V (PE=interrrupts enabled)
 ; - A contains the last used memory bank for USED_SLOT
@@ -110,14 +146,10 @@ tmp_breakpoint_2:	TMP_BREAKPOINT
 ;===========================================================================
 enter_breakpoint:
 	; LOGPOINT [DEFAULT] enter_breakpoint
-	pop bc
 
    	; Backup all registers 
 	call save_registers_with_dec_pc
 	; SP is now at debug_stack_top
-
-	; Breakpoint entered
-
 	; Maximize clock speed
 	ld a,RTM_28MHZ
 	nextreg REG_TURBO_MODE,a
@@ -167,7 +199,6 @@ clear_tmp_breakpoints:
 	; Clear both temporary breakpoints
 	MEMCLEAR tmp_breakpoint_1, 2*TMP_BREAKPOINT
 	ret
-;TODO: unit test this.
 
 
 ;===========================================================================
@@ -224,20 +255,4 @@ check_tmp_breakpoints:
 	ld a,(hl) 
 	cp d 
 	ret 	; Return with Z or NZ
-	
 
-;===========================================================================
-; Sets a new breakpoint.
-; Exchanges the location with a RST opcode.
-; Parameters:
-;  HL = breakpoint address
-; Returns:
-;  A = original opcode at breakpoint address
-;===========================================================================
-/*
- 	MACRO SET_BREAKPOINT
-	; Substitute opcode
-	ld a,(hl)	; Original opcode
-	ld (hl),BP_INSTRUCTION
-	ENDM
-*/

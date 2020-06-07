@@ -10,11 +10,6 @@
 ;===========================================================================
 
 
-;===========================================================================
-; Data. 
-;===========================================================================
-
-
 
 ;===========================================================================
 ; Checks if a new messages has been received.
@@ -22,8 +17,11 @@
 ; If yes the message is received and interpreted.
 ; Uses 2 words on the stack, one for calling the subroutine and one
 ; additional for pushing AF.
+; To avoid switching banks, this is code that should be compiled together 
+; with the debugged program.
 ; Changes:
-;  -
+;  No register. 4 bytes on the stack are used including the call to this 
+;  function.
 ; Duration:
 ;  T-States=81 (with CALL), 2.32us@3.5MHz
 ;===========================================================================
@@ -40,5 +38,12 @@ dbg_check_for_message:			; T=17 for calling
 .start_cmd_loop:
 	; Restore AF
 	pop af
-	jp execute_cmd
+	
+	; Jump to DivMMC code. The code is automatically paged in by branching
+	; to address 0x0000.
+	; Push a 0x0000 on the stack. With this the call is distinguished from
+	; a SW breakpoint.
+	; (Above is already the return address.)
+	push 0x0000
+	jp 0x0000
 

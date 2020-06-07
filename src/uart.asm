@@ -50,7 +50,7 @@ UART_TX_READY:      equ 1   ; 0=ready for next byte, 1=byte is being transmitted
 
 
 ;===========================================================================
-; Data. 
+; Const data. 
 ;===========================================================================
 
 ; Baudrate timing calculation table.
@@ -65,10 +65,6 @@ baudrate_table:
     defb 33000000/BAUDRATE
     defb 27000000/BAUDRATE
 
-
-
-; Color is changed after each received message.
-border_color:	defb BLACK
 
 
 ;===========================================================================

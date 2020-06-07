@@ -7,42 +7,6 @@
 
 
 
-;===========================================================================
-; This instruction needs to be copied to address 0x0000.
-; It will be executed whenever a RST 0 happens.
-; Right after executing the instruction the DivMMC memory is paged in.
-; I.e. the following instructions do not matter.
-;===========================================================================
-    DISP 0x0000 ; Displacement/Compile for address 0x0000
-copy_rom_start_0000h_code:
-    ; Store current AF
-    push af
-
-    ; Get current interrupt state
-	ld a,i
-    jp pe,go_on     ; IFF was 1 (interrupts enabled)
-
-	; if P/V read "0", try a 2nd time
-    ld a,i
-
-go_on:
-	di
-    ; F = P/V flag. F is not changed with below code.
-    ; Get current memory bank
-    ld a,REG_MMU+USED_SLOT
-    push bc
-	ld bc,IO_NEXTREG_REG
-	out (c),a
-	; Read register
-	ld b,IO_NEXTREG_DAT>>8
-	in a,(c)
-    ; Switch memory bank
-    nextreg REG_MMU+USED_SLOT,USED_MAIN_BANK
-    ; A contains the previous memory bank, F contans the interrupt state
-	jp enter_breakpoint
-.end
-    ENT 
-
 
 ;===========================================================================
 ; After loading the program starts here. Moves the bank to the destination 
@@ -77,7 +41,7 @@ start_entry_point:
  ENDIF
 
 
- IF 01  ; DivMMC not working on CSpect.
+ IF 0  ; DivMMC not working on CSpect.
 
     ; The main program has been loaded into LOADED_BANK and needs to be copied to DivMMC.
 
@@ -104,10 +68,8 @@ start_entry_point:
     out (DIVIDE_CTRL_REG),a
  ELSE 
 
-    ; Use ROM for now
-
     ; The main program has been loaded into LOADED_BANK and needs to be copied to USED_MAIN_BANK
-    ; Switch in the bank at 0x4000
+    ; Switch in the bank at 0x0000
     nextreg REG_MMU+USED_SLOT,USED_MAIN_BANK
     ; Switch in loaded bank at 0xE000
     nextreg REG_MMU+SWAP_SLOT,LOADED_BANK
@@ -124,7 +86,7 @@ start_entry_point:
     ; Init state
     MEMCLEAR tmp_breakpoint_1, 2*TMP_BREAKPOINT
 
- IF 01   
+ IF 0   ; Not needed before DivMMc is enabled   
      ; Backup SWAP_SLOT bank
     ld a,REG_MMU+SWAP_SLOT
     call read_tbblue_reg    ; returns the bank in A
@@ -134,18 +96,12 @@ start_entry_point:
     ; Copy the ROM at 0x0000 to bank USED_ROM_BANK
     MEMCOPY SWAP_SLOT*0x2000, 0x0000, 0x2000
 
-    ; Overwrite the RST 0 address with a jump
-    ld hl,SWAP_SLOT*0x2000
-    ldi (hl),0xC3   ; JP
-    ldi (hl),LOW enter_breakpoint
-    ld (hl),HIGH enter_breakpoint
+    ; Overwrite the RST 0 address with a with code
+    MEMCOPY SWAP_SLOT*0x2000, copy_rom_start_0000h_code, copy_rom_end-copy_rom_start_0000h_code
 
     ; Restore SWAP_SLOT bank
     nextreg REG_MMU+SWAP_SLOT,a
  ENDIF
-
-    ; Page in copied ROM bank to slot 0
-    nextreg REG_MMU+0,USED_ROM_BANK
 
     ; Set baudrate
     call set_uart_baudrate

@@ -19,7 +19,7 @@
 USED_MAIN_BANK: EQU 95  ; Last 8k bank on unexpanded ZXNext. Debugged programs cannot use this bank.
 USED_ROM_BANK:  EQU 94  ; Bank used to copy the ROM (0x0000) to and change the RST 0 address into a jump. Debugged programs cannot use this bank.
 LOADED_BANK:    EQU 93    ; The program is loaded here first, then copied to USED_MAIN_BANK. So dezogif can also load itself. Debugged programs may use this bank.
-USED_SLOT:      EQU 1   ; 0x2000
+USED_SLOT:      EQU 0   ; 0x0000
 SWAP_SLOT:      EQU 7   ; 0xE000, used only temporary
 
 
@@ -34,13 +34,14 @@ SWAP_SLOT:      EQU 7   ; 0xE000, used only temporary
 
     include "macros.asm"
     include "zxnext/zxnext_regs.inc"
-    include "coop.asm"
+    include "breakpoints.asm"
     include "utilities.asm"
     include "uart.asm"
-    include "breakpoints.asm"
     include "message.asm"
     include "commands.asm"
     include "backup.asm"
+    include "coop.asm"
+    include "data.asm"
 
  IFDEF LOOPBACK
     include "loopback.asm"
@@ -62,11 +63,6 @@ BAUDRATE:   equ 921600
 ;BAUDRATE:   equ 460800
 ;BAUDRATE:   equ 230400
 
-
-
-;===========================================================================
-; Data. 
-;===========================================================================
 
 ;===========================================================================
 ; Sets up the ESP UART at joystick port and displays a text.

@@ -44,15 +44,6 @@ DIVIDE_CTRL_REG:	EQU 0xE3
 
 
 ;===========================================================================
-; Data. 
-;===========================================================================
-
-; Temporary data area to be used by several subroutines.
-tmp_data:   defs 4
-
-
-
-;===========================================================================
 ; Reads a TBBLUE register.
 ; Parameters:
 ;   A = The register to read

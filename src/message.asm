@@ -19,7 +19,7 @@
 
 
 ;===========================================================================
-; Data. 
+; Structs. 
 ;===========================================================================
 
 ; CMD_SET_REG
@@ -72,35 +72,6 @@ bank_number	defb
 payload_write_bank:	PAYLOAD_WRITE_BANK = receive_buffer.payload
 
 
-; The UART data is put here before being interpreted.
-receive_buffer: 
-.length:
-	defw 0, 0		; 4 bytes length
-.seq_no:
-	defb 0
-.command:
-	defb 0
-.payload:
-	defs 6	; maximum used count for CMD_CONTINUE structure
-
-; Just for testing buffer overflow:
-;	defb  0xff, 0xff
-
-;===========================================================================
-; Initializes the receive buffer.
-; Changes:
-;  HL
-;===========================================================================
- if 0
- ; TODO: REMOVE
-init_receive_buffer:
-    ld hl,0
-    ld (received_length),hl
-    ld hl,receive_buffer
-    ld (receive_ptr),hl
-    ret
- endif
-
 
 ;===========================================================================
 ; Starts the command loop. I.e. backups all registers.
@@ -130,7 +101,7 @@ cmd_loop:
 ; This is called from the coop routine (from the debugged program) when
 ; a new byte is available at the UART.
 ; Changes:
-;  -, At the end the registers are restored.
+;  At the end the registers are restored.
 ;===========================================================================
 execute_cmd:
 	; Backup all registers 
@@ -139,6 +110,7 @@ execute_cmd:
 	; Maximize clock speed
 	ld a,RTM_28MHZ
 	nextreg REG_TURBO_MODE,a
+
 .loop:
 	; Receive length sequence number and command
 	ld hl,receive_buffer

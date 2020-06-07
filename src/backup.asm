@@ -11,39 +11,6 @@
 ;===========================================================================
     
 
-;===========================================================================
-; Data. 
-;===========================================================================
-
-	defb	0	; WPMEM
-; The debug stack begins here. SP flows from backup in here.
-debug_stack:	defs 50
-debug_stack_top:
-
-; The registers of the debugged program are stored here.
-backup:
-.im:				defb 0	; TODO: cannot be saved
-.reserved:			defb 0
-.r:					defb 0
-.i:					defb 0
-.hl2:				defw 0
-.de2:				defw 0
-.bc2:				defw 0
-.af2:				defw 0
-.iy:				defw 0
-.ix:				defw 0
-.hl:				defw 0
-.de:				defw 0
-.bc:				defw 0
-.af:				defw 0
-.sp:				defw 0
-.pc:				defw 0
-.interrupt_state:	defb 0	; P/V flag -> Bit 2: 0=disabled, 1=enabled
-.save_mem_bank:		defb 0
-.speed:				defb 0
-.border_color:		defb 0
-backup_top:
-			defb 0	; WPMEM
 
 ;===========================================================================
 ; Save all registers.
@@ -79,7 +46,8 @@ save_registers_with_dec_pc:
 	; Store interrupt state and bank
 	push af
 	pop hl 
-	ld (backup.interrupt_state),hl
+	ld a,l
+	ld (backup.interrupt_state),a
 
 	; Restore AF
 	pop af 
@@ -197,12 +165,16 @@ restore_registers:
 	pop af
 
 	; Correct PC on stack (might have been changed by DeZog)
-	ld sp,(backup.sp)
 	ld hl,(backup.pc)
+	ld sp,(backup.sp)
 	push hl
 	
 	; Load correct value of HL
 	ld hl,(backup.hl)
 
-	; Jump to the address on the stack, i.e. the PC
-	ret 
+	; Get interrupt state
+	push af
+	ld a,(backup.interrupt_state)
+	bit 2,a
+.jump:
+	jp rst_code_return
