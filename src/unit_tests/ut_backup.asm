@@ -58,10 +58,6 @@ UT_save_registers.UT_save:
     ld a,0x82
     ld r,a
 
-    ; Interrupt state (Bit 2)
-    push 0100b
-    pop af  ; Bit 2 = P/V flag
-
     ; Test
     call save_registers
 
@@ -93,12 +89,11 @@ UT_save_registers.UT_save:
 
 
 ; Test that all registers are restored correctly.
-UT_save_registers_dec_pc.UT_restore:
+UT_save_registers.UT_restore:
     ; Init
     ld hl,.continue     ; The jump address
     ld (backup.pc),hl   ; Continue at return address
     ld (backup.sp),sp
-    ld sp,backup.af
 
     ; Prepare data
     ld a,0x2A
@@ -129,7 +124,7 @@ UT_save_registers_dec_pc.UT_restore:
 
     ld a,0x1A
     ld (backup.af+1),a
- 
+
     ; Test
     jp restore_registers
 

@@ -15,8 +15,8 @@
 ;===========================================================================
 ; Save all registers.
 ; Also changes stack pointer.
+; Note: The interrupt state is already saved before this function is called.
 ; Parameters:
-;  - F = contains the interrupt state in P/V (PE=enabled)
 ;  - Stack:
 ;    -2 = return address (return to caller)
 ;    -4 = AF
@@ -29,12 +29,6 @@ save_registers:
 	ld (backup.hl),hl
 	pop hl  ; Save return address to HL
 	ld (.ret_jump+1),hl	; self.modifying code, used instead of a return
-
-	; Store interrupt state
-	push af
-	pop hl 
-	ld a,l
-	ld (backup.interrupt_state),a
 
 	; Restore AF
 	pop af 

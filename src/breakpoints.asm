@@ -84,18 +84,27 @@ rst_code_return:
 
 	; Interrupts were enabled
 	pop af	; Restore
-	;ei 	; Re-enable interrupts
-	
+	ei 	; Re-enable interrupts
+	; LOGPOINT [INT] Restoring interrupt state: enabled
 	; Jump to the address on the stack, i.e. the PC
     ret 
 	
 .not_enable_interrupt:
 	pop af	; Restore
+	; LOGPOINT [INT] Restoring interrupt state: disabled
 	; Jump to the address on the stack, i.e. the PC
     ret 
 copy_rom_end
     ;ENT 
 
+
+	ORG 0x0038
+interrupt:
+	nop
+	nop
+	nop
+	ei
+	ret
 
 
 ;===========================================================================
@@ -118,6 +127,15 @@ copy_rom_end
 ; - interrupts are turned off (DI)
 ;===========================================================================
 enter_debugger:
+	; Check interrupt state
+	ld a,0100b
+	jp pe,.int_enabled
+	xor a	
+.int_enabled:
+	; Store interrupt state in bit 2
+	ld (backup.interrupt_state),a	; 
+	; LOGPOINT [INT] Saving interrupt state: ${A:hex}h
+
 	; Determine if breakpoint or coop code
 	inc sp : inc sp
 	ex (sp),hl	; Get value from stack
