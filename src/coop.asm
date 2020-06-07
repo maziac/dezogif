@@ -35,6 +35,7 @@ dbg_check_for_message:			; T=17 for calling
 	; Restore AF 
     pop af						; T=10
 	ret			 				; T=10
+	
 .start_cmd_loop:
 	; Restore AF
 	pop af

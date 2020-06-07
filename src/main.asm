@@ -189,23 +189,10 @@ main_loop:
 
 
 
-;===========================================================================
-; Stack. 
-;===========================================================================
-
-; Stack: this area is reserved for the stack
-STACK_SIZE: equ 100    ; in words
-
-
-; Reserve stack space
-    defw 0  ; WPMEM, 2
-stack_bottom:
-    defs    STACK_SIZE*2, 0
-stack_top:  
-    defw 0  ; WPMEM, 2
-
-
-
+    ; TODO: Just for testing. Remove when dbg_check_for_message becomes a 
+    ; user routine.
+    ORG USED_SLOT*0x2000+0x1F00 ; I.e. 0x1F00
+    jp  dbg_check_for_message
 
 
 ;===========================================================================

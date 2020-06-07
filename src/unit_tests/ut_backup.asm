@@ -12,13 +12,13 @@ sp_backup:  defw    0
 
 
 ; Test that subroutine returns correctly.
-UT_save_registers_dec_pc.UT_returns:
+UT_save_registers.UT_returns:
     ; Init
     ld (sp_backup),sp
     ld sp,backup.af
 
     ; Test
-    call save_registers_with_dec_pc
+    call save_registers
 
     ; Deinit
     ld sp,(sp_backup)
@@ -26,7 +26,7 @@ UT_save_registers_dec_pc.UT_returns:
 
 
 ; Test that all registers are saved correctly.
-UT_save_registers_dec_pc.UT_save:
+UT_save_registers.UT_save:
     ; Remember SP
     ld (sp_backup),sp
 
@@ -58,7 +58,7 @@ UT_save_registers_dec_pc.UT_save:
 
     ; Test
     push 0x9765+1    ; Push a test value used as PC (+1 for RST opcode length)
-    call save_registers_with_dec_pc
+    call save_registers
 
     TEST_MEMORY_BYTE backup.af+1, 0x1A
     TEST_MEMORY_WORD backup.bc, 0x1B1C

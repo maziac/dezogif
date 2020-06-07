@@ -5,10 +5,21 @@
 ;===========================================================================
 
 
-    
 ;===========================================================================
-; Constants
+; Stack. 
 ;===========================================================================
+
+; Stack: this area is reserved for the stack
+STACK_SIZE: equ 100    ; in words
+
+
+; Reserve stack space
+    defw 0  ; WPMEM, 2
+stack_bottom:
+    defs    STACK_SIZE*2, 0
+stack_top:  
+    defw 0  ; WPMEM, 2
+
 
 
 ;===========================================================================
@@ -70,7 +81,7 @@ receive_buffer:
 	defs 6	; maximum used count for CMD_CONTINUE structure
 
 ; Just for testing buffer overflow:
-;	defb  0xff, 0xff
+	defb  0xff, 0xff
 
 
 ;===========================================================================

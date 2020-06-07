@@ -51,7 +51,7 @@ copy_rom_start_0000h_code:
     ;DISP 0x0000 ; Displacement/Compile for address 0x0000
 rst_code:
     ; Store current AF
-    push af
+    push af  ; LOGPOINT [BP] RST 0, called from ${w@(SP):hex}h (${w@(SP)})
 
     ; Get current interrupt state
 	ld a,i
@@ -84,7 +84,8 @@ rst_code_return:
 
 	; Interrupts were enabled
 	pop af	; Restore
-	ei 	; Re-enable interrupts
+	;ei 	; Re-enable interrupts
+	
 	; Jump to the address on the stack, i.e. the PC
     ret 
 	
@@ -128,7 +129,13 @@ enter_debugger:
 	jp nz,enter_breakpoint
 	
 	; Remove 0 from stack
-	pop af 	; AF is anyway restored
+	pop af 	; Get AF
+	; Skip 0x0000
+	inc sp : inc sp
+	push af
+	; The stack is now:
+	; - AF
+	; - return address
 	jp execute_cmd
 
 
@@ -148,14 +155,18 @@ enter_breakpoint:
 	; LOGPOINT [DEFAULT] enter_breakpoint
 
    	; Backup all registers 
-	call save_registers_with_dec_pc
+	call save_registers
 	; SP is now at debug_stack_top
 	; Maximize clock speed
 	ld a,RTM_28MHZ
 	nextreg REG_TURBO_MODE,a
 
-	; Check if temporary breakpoint hit
+	; Correct the return address to the breakpoint address
 	ld de,(backup.pc)	
+	dec de
+	ld (backup.pc),de	
+
+	; Check if temporary breakpoint hit (de = breakpoint address)
 	call check_tmp_breakpoints ; Z = found
 	ld d,BREAK_REASON.NO_REASON
 	jr z,.no_reason
@@ -219,7 +230,7 @@ set_tmp_breakpoint:
 	ret z	; Do nothing if already a breakpoint set
 
 	; Set BP
-	ld (hl),BP_INSTRUCTION
+	ld (hl),BP_INSTRUCTION ; LOGPOINT [BP] set_tmp_breakpoint @${HL:hex} (${HL})
 	; Store to 'opcode'
 	ex de,hl
 	ldi (hl),a	

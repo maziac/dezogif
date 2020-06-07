@@ -507,7 +507,7 @@ cmd_set_breakpoints:
 	call read_uart_byte
 	ld h,a
 	; Get memory
-	ld a,(hl)
+	ld a,(hl)	; LOGPOINT [COMMAND] BP=${HL:hex}h, ${HL}
 	; Set breakpoint
 	ld (hl),BP_INSTRUCTION
 	; Send memory
@@ -548,7 +548,7 @@ cmd_restore_mem:
 	; Get value
 	call read_uart_byte
 	; Restore memory
-	ld (hl),a
+	ld (hl),a	; LOGPOINT [COMMAND] BP=${HL:hex}h, ${HL}, (HL)=${A:hex}
 	pop de 
 	dec de : dec de : dec de
 	jr .loop
