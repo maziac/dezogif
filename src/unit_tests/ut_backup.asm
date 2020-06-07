@@ -40,7 +40,11 @@ UT_save_registers.UT_save:
     ex af,af'
     exx
 
+    push 0x9765    ; Push a test value used as PC
+
     ld a,0x1A
+    push af
+
     ld bc,0x1B1C
     ld de,0x1D1E
     ld hl,0x1112
@@ -49,15 +53,16 @@ UT_save_registers.UT_save:
     ld iy,0x1516
 
     ; I, R
-    push af
     ld a,0x81
     ld i,a
     ld a,0x82
     ld r,a
-    pop af
+
+    ; Interrupt state (Bit 2)
+    push 0100b
+    pop af  ; Bit 2 = P/V flag
 
     ; Test
-    push 0x9765+1    ; Push a test value used as PC (+1 for RST opcode length)
     call save_registers
 
     TEST_MEMORY_BYTE backup.af+1, 0x1A

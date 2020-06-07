@@ -16,7 +16,6 @@
 ; Save all registers.
 ; Also changes stack pointer.
 ; Parameters:
-;  - A = The memory bank to restore at USED_SLOT
 ;  - F = contains the interrupt state in P/V (PE=enabled)
 ;  - Stack:
 ;    -2 = return address (return to caller)
@@ -31,7 +30,7 @@ save_registers:
 	pop hl  ; Save return address to HL
 	ld (.ret_jump+1),hl	; self.modifying code, used instead of a return
 
-	; Store interrupt state and bank
+	; Store interrupt state
 	push af
 	pop hl 
 	ld a,l
