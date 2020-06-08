@@ -7,8 +7,21 @@
 
     
 ;===========================================================================
-; Constants
+; Structs
 ;===========================================================================
+
+
+; CMD_READ_MEM/CMD_WRITE_MEM
+	STRUCT SLOT_BACKUP
+slot0:	defb
+slot1:	defb
+slot2:	defb
+slot3:	defb
+slot4:	defb
+slot5:	defb
+slot6:	defb
+slot7:	defb
+	ENDS
 
 
 
@@ -348,6 +361,8 @@ cmd_pause:
 ;===========================================================================
 ; CMD_READ_MEM
 ; Reads a memory area.
+; Special is that if the DivMMC (ROM) area is read, 
+; then the memory is paged in (SWAP_SLOT) and read.
 ; Changes:
 ;  NA
 ;===========================================================================
@@ -368,19 +383,96 @@ cmd_read_mem:
 .hl_correct:
 	call send_4bytes_length_and_seqno
 
-.inner:
-	; Loop all memory bytes
-	ld hl,(payload_read_mem.mem_start)
+.inner:		; For unit testing
 	ld de,(payload_read_mem.mem_size)
-.loop:
-	ldi a,(hl)
-	; Send
-	call write_uart_byte
-	dec de
+	ld hl,(payload_read_mem.mem_start)
+	ld bc,cmd_read_mem.read
+
+	; Loop over memory in 2 phases:
+	; 1. memory in range 0x0000-0x7FFF
+	; 2. memory in range 0x4000-0xFFFF
+	; 3. loop to 1
+	; Each of the phase is optionally.
+	; BC contains a function piinter to the inner call
+loop_memory:
+	; Phase 1: memory in range 0x0000-0x7FFF
+	ld (.inner_call+1),bc	; function pointer
+	ld a,h
+	cp 0x40
+	jr nc,.phase2
+
+	; Modify HL
+	and 0x3F
+	add 0xC0
+	ld h,a
+
+.phase1:
+	; Save current slots
+	push hl, de
+	call save_slots
+
+	; Page in ROM area to swap slots
+	ld a,(slot_backup.slot0)
+	nextreg REG_MMU+SWAP_SLOT0,a
+	ld a,(slot_backup.slot1)
+	nextreg REG_MMU+SWAP_SLOT1,a
+
+	pop de, hl
+
+	call .inner_loop	; HL = 0
+	ld h,0x40	; Correct the address
+
+	; Page in original banks
+	push hl, de
+	call restore_slots
+	pop de, hl
+	
+.phase2:
+	; Phase 2: memory in range 0x4000-0xFFFF
+	call .inner_loop	; HL = 0
+
+	; Phase 1 again: memory in range 0x0000-0x7FFF
+	ld h,0xC0
+	jr .phase1
+
+
+	; On a return DE contains the rest of the bytes to copy, HL is 0.
+	; If the counter reaches 0 this function does not return but leaves
+	; the whole cmd_read_mem.
+.inner_loop:
+	; Check counter
 	ld a,e
 	or d
-	jr nz,.loop
-	ret
+	jr z,.end_reached
+
+.inner_call:
+	call 0x0000	; Self-modifying code
+
+	; Decrement counter
+	dec de
+	; Increment pointer
+	inc l
+	jr nz,.inner_loop
+	inc h
+	jr nz,.inner_loop
+	
+	; End of bank(s) reached	
+	; Check DE once again
+	ld a,e
+	or d
+	ret nz
+
+.end_reached:
+	; Counter is 0
+	pop de 	; Remove caller address
+	ret		; Leave whole method
+
+; The inner call
+cmd_read_mem.read:
+	; Get byte
+	ld a,(hl)
+	; Send
+	jp write_uart_byte
 
 
 ;===========================================================================
@@ -404,11 +496,23 @@ cmd_write_mem:
 	ex de,hl
 	; Read bytes from UART and put into memory
 	ld hl,(payload_write_mem.mem_start)
-	call receive_bytes
-
+	ld bc,.write
+	call loop_memory
+	
 	; Send response
 	ld de,1
 	jp send_length_and_seqno
+
+
+; The inner call
+.write:
+	; Get byte
+	push de
+	call read_uart_byte
+	pop de
+	; Write
+	ld (hl),a
+	ret
 
 
 ;===========================================================================
@@ -733,7 +837,7 @@ cmd_get_sprites_clip_window_and_control:
 	ld e,a
 	; Store
 	pop af
-	ld hl,tmp_data
+	ld hl,tmp_clip_window
 	add hl,a
 	ld (hl),e
 	inc a
@@ -743,7 +847,7 @@ cmd_get_sprites_clip_window_and_control:
 	
 	; Send xl, xr, yt or yb
 	ld d,4
-	ld hl,tmp_data
+	ld hl,tmp_clip_window
 .send_loop:
 	ldi a,(hl)
 	call write_uart_byte 	; Send xl, xr, yt or yb

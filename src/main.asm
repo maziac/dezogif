@@ -20,7 +20,8 @@ USED_MAIN_BANK: EQU 95  ; Last 8k bank on unexpanded ZXNext. Debugged programs c
 USED_ROM_BANK:  EQU 94  ; Bank used to copy the ROM (0x0000) to and change the RST 0 address into a jump. Debugged programs cannot use this bank.
 LOADED_BANK:    EQU 93    ; The program is loaded here first, then copied to USED_MAIN_BANK. So dezogif can also load itself. Debugged programs may use this bank.
 USED_SLOT:      EQU 0   ; 0x0000
-SWAP_SLOT:      EQU 7   ; 0xE000, used only temporary
+SWAP_SLOT0:      EQU 6   ; 0xC000, used only temporary
+SWAP_SLOT1:      EQU SWAP_SLOT0+1   ; 0xE000, used only temporary
 
 
     MMU USED_SLOT e, LOADED_BANK ; e -> Everything should fit into one page, error if not.
@@ -198,14 +199,14 @@ main_loop:
 ;===========================================================================
 ; After loading the program starts here. 
 ;===========================================================================
-    ORG 0xC000 
+    ORG 0xA000 
 
     include "prequel.asm"
     include "print.asm"
 
 
     ; Save NEX file
-    SAVENEX OPEN BIN_FILE, start_entry_point, stack_prequel.top // 0xC000    //stack_top: CSpect has a problem (crashes the program immediately when it is run) is stack points to stack_top which is inside the 
+    SAVENEX OPEN BIN_FILE, start_entry_point, stack_top //stack_top: CSpect has a problem (crashes the program immediately when it is run) if stack points to stack_top 
     SAVENEX CORE 2, 0, 0        ; Next core 2.0.0 required as minimum
     ;SAVENEX CFG 0               ; black border
     ;SAVENEX BAR 0, 0            ; no load bar

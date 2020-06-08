@@ -46,7 +46,7 @@ start_entry_point:
     ; The main program has been loaded into LOADED_BANK and needs to be copied to DivMMC.
 
     ; Switch in loaded bank at SWAP_SLOT (0xE000)
-    nextreg REG_MMU+SWAP_SLOT,LOADED_BANK
+    nextreg REG_MMU+SWAP_SLOT0,LOADED_BANK
 
     ; TODO: Read and set only required bits.
     ; Bit 4: Enable DivMMC automap and DivMMC NMI by DRIVE button (0 after Hard-reset)
@@ -61,7 +61,7 @@ start_entry_point:
     out (DIVIDE_CTRL_REG),a
 
     ; Copy loaded bank to DivMMC bank 3 (0x2000)
-    MEMCOPY 0x2000, SWAP_SLOT*0x2000, 0x2000 
+    MEMCOPY 0x2000, SWAP_SLOT0*0x2000, 0x2000 
 
     ; Enable mapram
     ld a,%01000000
@@ -72,9 +72,9 @@ start_entry_point:
     ; Switch in the bank at 0x0000
     nextreg REG_MMU+USED_SLOT,USED_MAIN_BANK
     ; Switch in loaded bank at 0xE000
-    nextreg REG_MMU+SWAP_SLOT,LOADED_BANK
+    nextreg REG_MMU+SWAP_SLOT0,LOADED_BANK
     ; Copy the code
-    MEMCOPY USED_SLOT*0x2000, SWAP_SLOT*0x2000, 0x2000   
+    MEMCOPY USED_SLOT*0x2000, SWAP_SLOT0*0x2000, 0x2000   
 
  ENDIF
 
@@ -88,19 +88,19 @@ start_entry_point:
 
  IF 0   ; Not needed before DivMMc is enabled   
      ; Backup SWAP_SLOT bank
-    ld a,REG_MMU+SWAP_SLOT
+    ld a,REG_MMU+SWAP_SLOT0
     call read_tbblue_reg    ; returns the bank in A
 
     ; Switch in the bank at 0xC000
-    nextreg REG_MMU+SWAP_SLOT,USED_ROM_BANK
+    nextreg REG_MMU+SWAP_SLOT0,USED_ROM_BANK
     ; Copy the ROM at 0x0000 to bank USED_ROM_BANK
-    MEMCOPY SWAP_SLOT*0x2000, 0x0000, 0x2000
+    MEMCOPY SWAP_SLOT0*0x2000, 0x0000, 0x2000
 
     ; Overwrite the RST 0 address with a with code
-    MEMCOPY SWAP_SLOT*0x2000, copy_rom_start_0000h_code, copy_rom_end-copy_rom_start_0000h_code
+    MEMCOPY SWAP_SLOT0*0x2000, copy_rom_start_0000h_code, copy_rom_end-copy_rom_start_0000h_code
 
     ; Restore SWAP_SLOT bank
-    nextreg REG_MMU+SWAP_SLOT,a
+    nextreg REG_MMU+SWAP_SLOT0,a
  ENDIF
 
     ; Set baudrate

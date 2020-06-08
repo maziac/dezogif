@@ -13,6 +13,8 @@
 ; Need to be defined
 BAUDRATE:   EQU 999999
 //rst_code_return:    EQU 0
+SWAP_SLOT0:      EQU 6   ; 0xC000, used only temporary
+SWAP_SLOT1:      EQU SWAP_SLOT0+1   ; 0xE000, used only temporary
 
 
     include "macros.asm"

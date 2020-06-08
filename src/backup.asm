@@ -157,3 +157,45 @@ restore_registers:
 	bit 2,a
 .jump:
 	jp rst_code_return
+
+
+
+
+;===========================================================================
+; Saves all slots/banks to RAM.
+; Changes:
+;   A, HL, DE, BC
+; ===========================================================================
+save_slots:
+	ld de,8*256+REG_MMU
+	ld hl,slot_backup
+.loop:
+	ld a,e
+	call read_tbblue_reg
+	ldi (hl),a
+	; next
+	inc e
+	dec d
+	jr nz,.loop
+	ret
+	
+
+;===========================================================================
+; Restores all slots/banks to RAM.
+; Changes:
+;   HL, DE, B
+; ===========================================================================
+restore_slots:
+	ld b,8
+	ld hl,slot_backup
+	ld e,REG_MMU
+.loop:
+	ldi d,(hl)
+	ld (.reg+2),de	; E=MMU register, D=bank
+.reg:
+	nextreg 0,0
+	inc e
+	djnz .loop
+	ret
+	
+
