@@ -420,16 +420,22 @@ loop_memory:
 	pop de, hl
 
 	call .inner_loop	; HL = 0
-	ld h,0x40	; Correct the address
+
+	; End if de was 0
+	jp z,restore_slots
 
 	; Page in original banks
-	push hl, de
+	push de
 	call restore_slots
-	pop de, hl
-	
+	pop de
+
+	; Correct the address
+	ld hl,0x4000
+
 .phase2:
 	; Phase 2: memory in range 0x4000-0xFFFF
 	call .inner_loop	; HL = 0
+	ret z	; Return if DE was 0
 
 	; Phase 1 again: memory in range 0x0000-0x7FFF
 	ld h,0xC0
@@ -439,11 +445,12 @@ loop_memory:
 	; On a return DE contains the rest of the bytes to copy, HL is 0.
 	; If the counter reaches 0 this function does not return but leaves
 	; the whole cmd_read_mem.
+	; Returns with Z if DE is zero, otherwise NZ.
 .inner_loop:
 	; Check counter
 	ld a,e
 	or d
-	jr z,.end_reached
+	ret z
 
 .inner_call:
 	call 0x0000	; Self-modifying code
@@ -460,12 +467,8 @@ loop_memory:
 	; Check DE once again
 	ld a,e
 	or d
-	ret nz
-
-.end_reached:
-	; Counter is 0
-	pop de 	; Remove caller address
-	ret		; Leave whole method
+	ret 
+	
 
 ; The inner call
 cmd_read_mem.read:
@@ -586,6 +589,7 @@ cmd_set_slot:
 ;===========================================================================
 cmd_set_breakpoints:
 	; LOGPOINT [COMMAND] cmd_set_breakpoints
+	call save_slots
 	; Calculate the count
 	ld de,(receive_buffer.length)	; Read only the lower bytes
 	add de,-2
@@ -602,7 +606,7 @@ cmd_set_breakpoints:
 	; Check for end
 	ld a,e
 	or d
-	ret z
+	jp z,restore_slots	; Returns
 	; Loop
 	push de
 	; Get breakpoint address
@@ -610,16 +614,53 @@ cmd_set_breakpoints:
 	ld l,a
 	call read_uart_byte
 	ld h,a
+	; Check memory area
+	cp 0x40
+	jr nc,.normal
+
+	; It's in the ROM/DivMMc area.
+	; Page in bank
+	ld de,slot_backup.slot0 
+	cp 0x20
+	jr c,.slot0 
+	; slot1
+	inc de
+.slot0:
+	ld a,(de)
+	nextreg REG_MMU+SWAP_SLOT0,a
+	ld a,h
+	and 0x1f
+	add 0xC0		; SWAP_SLOT0*0x20
+	ld h,a
+	; Get memory
+	ld a,(hl)	; LOGPOINT [COMMAND] BP=${HL:hex}h, ${HL} (SWAP)
+	; Set breakpoint
+	ld (hl),BP_INSTRUCTION
+
+	; Restore slot/bank
+	ld e,a
+	ld a,(slot_backup+SWAP_SLOT0)
+	nextreg REG_MMU+SWAP_SLOT0,a
+
+	; Restore a
+	ld a,e
+	jr .send
+
+.normal:
 	; Get memory
 	ld a,(hl)	; LOGPOINT [COMMAND] BP=${HL:hex}h, ${HL}
 	; Set breakpoint
 	ld (hl),BP_INSTRUCTION
+
+.send:
 	; Send memory
 	call write_uart_byte
 	pop de 
 	dec de 
 	jr .loop
 	
+; TODO: TESTEN: ROM0 und ROM1 banks.
+
 
 ;===========================================================================
 ; CMD_RESTORE_MEM

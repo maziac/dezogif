@@ -47,7 +47,7 @@ bp_address			defw	; The location of the temporary breakpoint
 ; Right after executing the instruction the DivMMC memory is paged in.
 ; I.e. the following instructions do not matter.
 ;===========================================================================
-copy_rom_start_0000h_code:
+copy_rom_start_0000h_code:	; Located at 0x0000
     ;DISP 0x0000 ; Displacement/Compile for address 0x0000
 rst_code:
     ; Store current AF
@@ -75,7 +75,7 @@ rst_code:
 ; - Another RET will return to the breaked instruction.
 ; - Flags: NZ=Interrupts need to be enabled.
 ;===========================================================================
-rst_code_return:
+rst_code_return:	
     ; Switch off DivMMC memory
     ; ...
 
@@ -98,7 +98,7 @@ copy_rom_end
     ;ENT 
 
 
-	ORG 0x0038
+	ORG copy_rom_start_0000h_code+0x0038	; 0x0038 (this is expresssed as relative for the unit tests)
 interrupt:
 	nop
 	nop

@@ -352,7 +352,7 @@ redirected_receive_bytes:
 
 
 ; Test reading memory.
-UT_cmd_read_mem:
+UT_cmd_read_mem.UT_normal:
 	; Redirect write_uart_byte function call
 	ld hl,write_uart_byte
 	ldi (hl),0xC3	; JP
@@ -388,6 +388,78 @@ redirected_write_uart_byte:
 	ret
 
 
+; Test reading memory in each relevant bank.
+; Note: The locations should not contain any code/data of
+; the tested program which is around 0x7000 for unit testing.
+UT_cmd_read_mem.UT_banks:
+	; Page in different bank in ROM area 
+	nextreg REG_MMU+0,80	; Bank 80
+	nextreg REG_MMU+1,81	; Bank 81
+
+	; Redirect write_uart_byte function call
+	ld hl,write_uart_byte
+	ldi (hl),0xC3	; JP
+	ldi (hl),redirected_write_uart_byte&0xFF
+	ld (hl),redirected_write_uart_byte>>8
+
+	; Test
+	ld hl,1
+	ld (payload_read_mem.mem_size),hl
+	
+	; Location 0x1FFF
+	ld ix,test_memory_dst	; Pointer to write to
+	ld hl,0x1FFF
+	ld (hl),0xA1
+	ld (payload_read_mem.mem_start),hl
+	call cmd_read_mem.inner
+	TEST_MEMORY_BYTE test_memory_dst,0xA1
+
+	; Location 0x2000
+	ld ix,test_memory_dst	; Pointer to write to
+	ld hl,0x2000
+	ld (hl),0xA2
+	ld (payload_read_mem.mem_start),hl
+	call cmd_read_mem.inner
+	TEST_MEMORY_BYTE test_memory_dst,0xA2
+
+	; Location 0x3FFF
+	ld ix,test_memory_dst	; Pointer to write to
+	ld hl,0x3FFF
+	ld (hl),0xA3
+	ld (payload_read_mem.mem_start),hl
+	call cmd_read_mem.inner
+	TEST_MEMORY_BYTE test_memory_dst,0xA3
+
+	; Location 0x4000
+	ld ix,test_memory_dst	; Pointer to write to
+	ld hl,0x4000
+	ld (hl),0xA4
+	ld (payload_read_mem.mem_start),hl
+	call cmd_read_mem.inner
+	TEST_MEMORY_BYTE test_memory_dst,0xA4
+
+	; Location 0x5123
+	ld ix,test_memory_dst	; Pointer to write to
+	ld hl,0x5123
+	ld (hl),0xA5
+	ld (payload_read_mem.mem_start),hl
+	call cmd_read_mem.inner
+	TEST_MEMORY_BYTE test_memory_dst,0xA5
+
+	; Location 0xFFFF
+	ld ix,test_memory_dst	; Pointer to write to
+	ld hl,0xFFFF
+	ld (hl),0xA6
+	ld (payload_read_mem.mem_start),hl
+	call cmd_read_mem.inner
+	TEST_MEMORY_BYTE test_memory_dst,0xA6
+
+	; Cleanup
+	nextreg REG_MMU+0,ROM_BANK
+	nextreg REG_MMU+1,ROM_BANK
+	ret
+
+
 ; Test writing memory.
 UT_cmd_write_mem:
 	; Redirect receive_bytes funtion call
@@ -414,6 +486,8 @@ UT_cmd_write_mem:
 	
 
 ; Test retrieving the slot/bank association.
+; Note: This will also fail if some other test that changes the default
+; slot/bank association fails.
 UT_cmd_get_slots:
 	; Redirect write_uart_byte funtion call
 	ld hl,write_uart_byte
