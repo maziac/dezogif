@@ -65,12 +65,13 @@ mem_start	defw
 	ENDS
 payload_write_mem:	PAYLOAD_WRITE_MEM = receive_buffer.payload
 
+/*
 ; CMD_WRITE_BANK
 	STRUCT PAYLOAD_WRITE_BANK
 bank_number	defb
 	ENDS
 payload_write_bank:	PAYLOAD_WRITE_BANK = receive_buffer.payload
-
+*/
 
 
 ;===========================================================================

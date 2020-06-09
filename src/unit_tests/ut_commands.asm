@@ -20,6 +20,25 @@ test_memory_dst:	defb 0, 0, 0, 0, 0, 0, 0, 0
 test_memory_dst_end:
 	defb 0	; WPMEM
 
+test_memory_write_bank:
+.bank:	
+	defb 0	; Bank
+.end:
+	defb 0	; WPMEM
+
+test_memory_write_mem:
+	defb 0	; Reserved
+.address:	
+	defw 0  ; Address
+.values:
+	defb 0, 0, 0	; Values
+.end:
+	defb 0	; WPMEM
+
+test_memory_output:	defs 40
+	defb 0 	; WPMEM
+
+
 ; Helper function that inits all backup values to 0xFF.
 cmd_data_init:
 	ld hl,backup
@@ -28,6 +47,66 @@ cmd_data_init:
 	ld bc,backup_top-backup-1
 	ldir
 	ret 
+
+
+; Helper function to redirect the uart input/output.
+redirect_uart:
+	; Also redirect read_uart_byte function call
+	ld hl,read_uart_byte
+	ldi (hl),0xC3	; JP
+	ldi (hl),redirected_read_uart_byte&0xFF
+	ld (hl),redirected_read_uart_byte>>8
+.common:
+	; Redirect write_uart_byte function call
+	ld hl,write_uart_byte
+	ldi (hl),0xC3	; JP
+	ldi (hl),redirected_write_uart_byte&0xFF
+	ld (hl),redirected_write_uart_byte>>8
+	ret
+
+
+; Helper function to redirect the uart input/output.
+redirect_uart_write_bank:
+	; Also redirect read_uart_byte function call
+	ld hl,read_uart_byte
+	ldi (hl),0xC3	; JP
+	ldi (hl),redirected_read_uart_byte_bank&0xFF
+	ld (hl),redirected_read_uart_byte_bank>>8
+	jr redirect_uart.common
+
+
+; Return values read from (iy)
+redirected_read_uart_byte:
+	ld e,0
+	ld bc,PORT_UART_TX
+	ld a,(iy)
+	inc iy
+	ret
+
+
+; Return same values.
+redirected_read_uart_byte_bank:
+	ld e,0
+	ld bc,PORT_UART_TX
+.bank:	equ $+1
+	ld a,0	; is overwritten
+	ld bc,.second
+	ld (read_uart_byte+1),bc
+	ret
+.second:
+	ld e,0
+	ld bc,PORT_UART_TX
+.fill_data:	equ $+1
+	ld a,0	; is overwritten
+	ret
+
+
+; Simulated write_uart_byte.
+; Write at ix.
+redirected_write_uart_byte:
+	ld (ix),a
+	inc ix
+	ret
 
 
 ; Test that register is set correctly.
@@ -61,6 +140,8 @@ cmd_set_dreg:
     ; set
     call cmd_set_reg.inner
     ret 
+
+
 
 
 ; Test that register SP to HL' are set correctly.
@@ -268,40 +349,38 @@ UT_cmd_write_reg.UT_wrong_register:
 ; The test simulates the receive_bytes function call.
 UT_cmd_write_bank:
 	; Remember current bank for slot
-	ld a,.slot+REG_MMU
+	ld a,REG_MMU+SWAP_SLOT0
 	call read_tbblue_reg	; Result in A
 	push af	; remember
 
-	; Redirect receive_bytes funtion call
-	ld hl,receive_bytes
-	ldi (hl),0xC3	; JP
-	ldi (hl),redirected_receive_bytes&0xFF
-	ld (hl),redirected_receive_bytes>>8
+	; Redirect
+	call redirect_uart_write_bank
 
 	; Set bank to use
 	ld a,28
-	ld (payload_write_bank.bank_number),a 
-
+	ld (redirected_read_uart_byte_bank.bank),a
 
 	; Set fill byte
 	ld a,0x55
-	ld (redirected_receive_bytes.fill_data),a
+	ld (redirected_read_uart_byte_bank.fill_data),a
 
 	; Test A
-	call cmd_write_bank.inner
+	ld iy,test_memory_write_bank
+	ld ix,test_memory_output
+	call cmd_write_bank
 
 	; Check that slot/bank has been restored
-	ld a,.slot+REG_MMU
+	ld a,REG_MMU+SWAP_SLOT0
 	call read_tbblue_reg	; Result in A
 	pop de		; Get original bank in D 
 	push de
 	TEST_A D
 
 	; Page in the memory bank
-.slot:	equ ((cmd_write_bank+2*0x2000)>>13)&0x07
-	nextreg .slot+REG_MMU,28
+;.slot:	equ ((cmd_write_bank+2*0x2000)>>13)&0x07
+	nextreg REG_MMU+SWAP_SLOT0,28
 	
-	ld hl,.slot<<13	; Start address
+	ld hl,SWAP_SLOT0*0x2000	; .slot<<13	; Start address
 	ld a,(hl)
 	TEST_A 0x55
 	add hl,0x2000-1
@@ -309,17 +388,22 @@ UT_cmd_write_bank:
 	TEST_A 0x55
 	
 
+	; Redirect again
+	call redirect_uart_write_bank
+
 	; Set fill byte
 	ld a,0xAA
-	ld (redirected_receive_bytes.fill_data),a
+	ld (redirected_read_uart_byte_bank.fill_data),a
 
 	; Test A
-	call cmd_write_bank.inner
+	ld iy,test_memory_write_bank
+	ld ix,test_memory_output
+	call cmd_write_bank
 
 	; Page in the memory bank
-	nextreg .slot+REG_MMU,28
+	nextreg REG_MMU+SWAP_SLOT0,28
 	
-	ld hl,.slot<<13	; Start address
+	ld hl,SWAP_SLOT0*0x2000	;.slot<<13	; Start address
 	ld a,(hl)
 	TEST_A 0xAA
 	add hl,0x2000-1
@@ -331,33 +415,14 @@ UT_cmd_write_bank:
 	pop de
 	;ld a,.slot+REG_MMU
 	;call write_tbblue_reg	; A=register, D=value
-	WRITE_TBBLUE_REG .slot+REG_MMU,d
+	WRITE_TBBLUE_REG REG_MMU+SWAP_SLOT0,d
 	ret
-
-; Simulated receive bytes.
-; Writes a fix value into bank.
-redirected_receive_bytes:
-	push af
-.loop:
-.fill_data:	equ $+1
-	ld (hl),0
-	inc hl
-	dec de
-	ld a,e
-	or d
-	jr nz,.loop
-	pop af
-	ret
-
 
 
 ; Test reading memory.
 UT_cmd_read_mem.UT_normal:
-	; Redirect write_uart_byte function call
-	ld hl,write_uart_byte
-	ldi (hl),0xC3	; JP
-	ldi (hl),redirected_write_uart_byte&0xFF
-	ld (hl),redirected_write_uart_byte>>8
+	; Redirect
+	call redirect_uart
 
 	; Pointer to write to
 	ld ix,test_memory_dst
@@ -381,12 +446,6 @@ UT_cmd_read_mem.UT_normal:
 
 	ret
 
-; Simulated write_uart_byte.
-redirected_write_uart_byte:
-	ld (ix),a
-	inc ix
-	ret
-
 
 ; Test reading memory in each relevant bank.
 ; Note: The locations should not contain any code/data of
@@ -396,11 +455,8 @@ UT_cmd_read_mem.UT_banks:
 	nextreg REG_MMU+0,80	; Bank 80
 	nextreg REG_MMU+1,81	; Bank 81
 
-	; Redirect write_uart_byte function call
-	ld hl,write_uart_byte
-	ldi (hl),0xC3	; JP
-	ldi (hl),redirected_write_uart_byte&0xFF
-	ld (hl),redirected_write_uart_byte>>8
+	; Redirect
+	call redirect_uart
 
 	; Test
 	ld hl,1
@@ -461,39 +517,133 @@ UT_cmd_read_mem.UT_banks:
 
 
 ; Test writing memory.
-UT_cmd_write_mem:
-	; Redirect receive_bytes funtion call
-	ld hl,receive_bytes
-	ldi (hl),0xC3	; JP
-	ldi (hl),redirected_receive_bytes&0xFF
-	ld (hl),redirected_receive_bytes>>8
+UT_cmd_write_mem.UT_normal:
+	; Redirect
+	call redirect_uart
 
-	; Set fill byte
-	ld a,0x5C
-	ld (redirected_receive_bytes.fill_data),a
-
-	; Test
-	ld hl,test_memory_dst
-	ld (payload_write_mem.mem_start),hl
-	ld hl,test_memory_dst_end-test_memory_dst+5
+	; Prepare
+	ld hl,5+3
 	ld (receive_buffer.length),hl
-	call cmd_write_mem.inner
 
-	TEST_MEMORY_BYTE test_memory_dst, 0x5C
-	TEST_MEMORY_BYTE test_memory_dst_end-1, 0x5C
-	
+	ld hl,test_memory_dst
+	ld (test_memory_write_mem.address),hl
+	ld iy,test_memory_write_mem.values
+	ld (iy),0xD1
+	ld (iy+1),0xD2
+	ld (iy+2),0xD3
+	ld iy,test_memory_write_mem
+	ld ix,test_memory_output
+	call cmd_write_mem
+
+	TEST_MEMORY_BYTE test_memory_dst, 0xD1
+	TEST_MEMORY_BYTE test_memory_dst+1, 0xD2
+	TEST_MEMORY_BYTE test_memory_dst+2, 0xD3
 	ret
 	
+	
+
+; Test writing memory in each relevant bank.
+; Note: The locations should not contain any code/data of
+; the tested program which is around 0x7000 for unit testing.
+UT_cmd_write_mem.UT_banks:
+	; Page in different bank in ROM area 
+	nextreg REG_MMU+0,80	; Bank 80
+	nextreg REG_MMU+1,81	; Bank 81
+
+	; Redirect
+	call redirect_uart
+
+	; Prepare
+	ld hl,5+1
+	ld (receive_buffer.length),hl
+	
+	; Location 0x1FFF
+	ld hl,test_memory_write_mem.address
+	ld de,0x1FFF
+	ldi (hl),de
+	ld hl,test_memory_write_mem.values
+	ld (hl),0xB1
+	ld iy,test_memory_write_mem
+	ld ix,test_memory_output
+	call cmd_write_mem
+	TEST_MEMORY_BYTE 0x1FFF,0xB1
+
+	; Location 0x2000
+	ld hl,test_memory_write_mem.address
+	ld de,0x2000
+	ldi (hl),de
+	ld hl,test_memory_write_mem.values
+	ld (hl),0xB2
+	ld iy,test_memory_write_mem
+	ld ix,test_memory_output
+	call cmd_write_mem
+	TEST_MEMORY_BYTE 0x2000,0xB2
+
+	; Location 0x3FFF
+	ld hl,test_memory_write_mem.address
+	ld de,0x3FFF
+	ldi (hl),de
+	ld hl,test_memory_write_mem.values
+	ld (hl),0xB3
+	ld iy,test_memory_write_mem
+	ld ix,test_memory_output
+	call cmd_write_mem
+	TEST_MEMORY_BYTE 0x3FFF,0xB3
+
+	; Location 0x4000
+	ld hl,test_memory_write_mem.address
+	ld de,0x4000
+	ldi (hl),de
+	ld hl,test_memory_write_mem.values
+	ld (hl),0xB4
+	ld iy,test_memory_write_mem
+	ld ix,test_memory_output
+	call cmd_write_mem
+	TEST_MEMORY_BYTE 0x4000,0xB4
+
+	; Location 0x5123
+	ld hl,test_memory_write_mem.address
+	ld de,0x5123
+	ldi (hl),de
+	ld hl,test_memory_write_mem.values
+	ld (hl),0xB5
+	ld iy,test_memory_write_mem
+	ld ix,test_memory_output
+	call cmd_write_mem
+	TEST_MEMORY_BYTE 0x5123,0xB5
+
+	; Location 0xFFFF
+	ld hl,test_memory_write_mem.address
+	ld de,0xFFFF
+	ldi (hl),de
+	ld hl,test_memory_write_mem.values
+	ld (hl),0xB6
+	ld iy,test_memory_write_mem
+	ld ix,test_memory_output
+	call cmd_write_mem
+	TEST_MEMORY_BYTE 0xFFFF,0xB6
+
+	; Cleanup
+	nextreg REG_MMU+0,ROM_BANK
+	nextreg REG_MMU+1,ROM_BANK
+	ret
+
 
 ; Test retrieving the slot/bank association.
 ; Note: This will also fail if some other test that changes the default
 ; slot/bank association fails.
 UT_cmd_get_slots:
-	; Redirect write_uart_byte funtion call
-	ld hl,write_uart_byte
-	ldi (hl),0xC3	; JP
-	ldi (hl),redirected_write_uart_byte&0xFF
-	ld (hl),redirected_write_uart_byte>>8
+	; Set standard config
+	nextreg REG_MMU, ROM_BANK
+	nextreg REG_MMU+1, ROM_BANK
+	nextreg REG_MMU+2, 10
+	nextreg REG_MMU+3, 11
+	nextreg REG_MMU+4, 4
+	nextreg REG_MMU+5, 5
+	nextreg REG_MMU+6, 0
+	nextreg REG_MMU+7, 1
+	; Redirect
+	call redirect_uart
 
 	; Pointer to write to
 	ld ix,test_memory_dst

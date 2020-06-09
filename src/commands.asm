@@ -261,26 +261,28 @@ cmd_write_bank:
 
 .inner:
 	; Choose the right slot: don't use a slot where this program is located.
-.slot:	equ ((cmd_write_bank+2*0x2000)>>13)&0x07
+;.slot:	equ ((cmd_write_bank+2*0x2000)>>13)&0x07
 	; Remember current bank for slot
-	ld a,.slot+REG_MMU
+	;ld a,.slot+REG_MMU
+	ld a,REG_MMU+SWAP_SLOT0
 	call read_tbblue_reg	; Result in A
 	push af	; remember
 
 	; Change bank for slot 
 	; Read bank number of message
 	call read_uart_byte
-	nextreg .slot+REG_MMU,a
+	nextreg REG_MMU+SWAP_SLOT0,a
 
 	; Read bytes from UART and put into bank
-	ld hl,.slot<<13	; Start address
+	ld hl,SWAP_SLOT0*0x2000		;.slot<<13	; Start address
 	ld de,0x2000	; Bank size
 	call receive_bytes
 
 	; Restore slot/bank (D)
 	pop de
 	; register, D=value
-	WRITE_TBBLUE_REG .slot+REG_MMU,d
+	;WRITE_TBBLUE_REG .slot+REG_MMU,d
+	WRITE_TBBLUE_REG REG_MMU+SWAP_SLOT0,d
 	ret
 
 
@@ -531,7 +533,7 @@ cmd_get_slots:
 	call send_length_and_seqno
 
 .inner:
-	ld de,(REG_MMU<<8)+8	; Ld d and e at the same time
+	ld de,256*REG_MMU+8	; Load D and E at the same time
 .loop:
 	; Get bank for slot
 	ld a,d
