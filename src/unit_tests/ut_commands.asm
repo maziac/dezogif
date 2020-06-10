@@ -847,8 +847,38 @@ UT_11_cmd_get_tbblue_reg:
 
 ; Test cmd_set_border
 UT_12_cmd_set_border:
-	TEST_FAIL
+	; Redirect
+	call redirect_uart
+
+	; Prepare
+	ld hl,4
+	ld (receive_buffer.length),hl
+
+	; Test
+	ld iy,.cmd_data
+	ld (iy),CYAN
+	ld ix,test_memory_output
+	call cmd_set_border
+
+	; Check result
+	ld a,CYAN ; Required for zxsim as it decodes the full 16 bit IO address
+	in a,(BORDER)
+	TEST_A CYAN
+
+	; Test
+	ld iy,.cmd_data
+	ld (iy),BLACK
+	ld ix,test_memory_output
+	call cmd_set_border
+
+	; Check result
+	ld a,BLACK ; Required for zxsim as it decodes the full 16 bit IO address
+	in a,(BORDER)
+	TEST_A BLACK
+
 	ret
+
+.cmd_data:	defb 0
 
 
 ; Test cmd_set_breakpoints

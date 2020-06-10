@@ -602,6 +602,22 @@ cmd_get_tbblue_reg:
 
 
 ;===========================================================================
+; CMD_SET_BORDER
+; Sets the border color.
+; Changes:
+;  NA
+;===========================================================================
+:
+	; LOGPOINT [COMMAND] cmd_set_border
+	; Read register number
+	call read_uart_byte
+	out (BORDER),a
+	; Send response
+	ld de,1
+	jp send_length_and_seqno
+
+
+;===========================================================================
 ; CMD_SET_BREAKPOINTS
 ; Sets all breakpoints.
 ; Changes:
@@ -902,18 +918,3 @@ cmd_get_sprites_clip_window_and_control:
 	call read_tbblue_reg
 	jp write_uart_byte 	; Send sprite control byte
 	
-
-;===========================================================================
-; CMD_SET_BORDER
-; Sets the border color.
-; Changes:
-;  NA
-;===========================================================================
-cmd_set_border:
-	; LOGPOINT [COMMAND] cmd_set_border
-	; Read register number
-	call read_uart_byte
-	out (BORDER),a
-	; Send response
-	ld de,1
-	jp send_length_and_seqno
