@@ -8,7 +8,6 @@
 
     DEFINE UNIT_TEST
 
-    ORG 0x7000
  
 ; Need to be defined
 BAUDRATE:   EQU 999999
@@ -16,7 +15,8 @@ BAUDRATE:   EQU 999999
 SWAP_SLOT0:      EQU 6   ; 0xC000, used only temporary
 SWAP_SLOT1:      EQU SWAP_SLOT0+1   ; 0xE000, used only temporary
 
-
+    ORG 0x7000
+PRG_START:
     include "macros.asm"
     include "zxnext/zxnext_regs.inc"
     include "breakpoints.asm"
@@ -40,7 +40,13 @@ SWAP_SLOT1:      EQU SWAP_SLOT0+1   ; 0xE000, used only temporary
     ; Initialization routine.
     UNITTEST_INITIALIZE
     ret
+PRG_END:
 
+
+; Check to avoid that program is put i a memory area that is used 
+; in unit testing.
+    ASSERT PRG_START >= 0x7000
+    ASSERT PRG_END <= 0xBFFF
 
     ; Save NEX file
     SAVENEX OPEN BIN_FILE

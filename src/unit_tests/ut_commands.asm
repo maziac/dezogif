@@ -109,8 +109,93 @@ redirected_write_uart_byte:
 	ret
 
 
+; Test response of cmd_init.
+UT_1_cmd_init:
+	; Redirect
+	call redirect_uart
+
+	; Prepare
+	ld hl,5+.cmd_data_end-.cmd_data
+	ld (receive_buffer.length),hl
+
+	; Test
+	ld iy,.cmd_data
+	ld ix,test_memory_output
+	call cmd_init
+
+	; Test length
+	TEST_MEMORY_WORD test_memory_output, 5+PROGRAM_NAME.end-DZRP_VERSION
+	TEST_MEMORY_WORD test_memory_output+2, 0
+
+	; Test error
+	TEST_MEMORY_BYTE test_memory_output+5, 0	; no error
+	
+	; Test DZRP version
+	ld hl,DZRP_VERSION
+	ldi a,(hl)
+	TEST_MEMORY_BYTE test_memory_output+6, a
+	ldi a,(hl)
+	TEST_MEMORY_BYTE test_memory_output+7, a
+	ld a,(hl)
+	TEST_MEMORY_BYTE test_memory_output+8, a
+
+	; Test program name
+	ld de,test_memory_output+6+3
+	ld hl,PROGRAM_NAME
+.loop:
+	ldi a,(de)
+	cp (hl) : inc hl
+	TEST_FLAG_Z 
+	or a
+	jr nz,.loop
+	ret
+
+.cmd_data:
+	defb 1, 2, 3	; Version 1.2.3
+	defb "host_program", 0	; Remote program name
+.cmd_data_end
+
+
+; Test cmd_get_registers.
+UT_2_cmd_get_registers:	
+	; Redirect
+	call redirect_uart
+
+	; Prepare
+	ld hl,2
+	ld (receive_buffer.length),hl
+
+	; Copy data
+	MEMCOPY .cmd_data, backup, .cmd_data_end-.cmd_data
+	; Test
+	ld iy,.cmd_data
+	ld ix,test_memory_output
+	call cmd_get_registers
+
+	; Test length
+	TEST_MEMORY_WORD test_memory_output, 29
+	TEST_MEMORY_WORD test_memory_output+2, 0
+
+	; Test returned data
+	ld de,.cmd_data
+	ld hl,test_memory_output+5
+	ld b,.cmd_data_end-.cmd_data
+.loop:
+	ldi a,(de)
+	cp (hl) : inc hl
+	TEST_FLAG_Z 
+	djnz .loop
+
+	ret
+
+.cmd_data:
+	defw 1001, 1002, 1003, 1004, 1005, 1006, 1007
+	defw 2001, 2002, 2003, 2004, 2005, 2006, 2007
+.cmd_data_end
+
+
 ; Test that register is set correctly.
-UT_cmd_write_reg.UT_pc:
+UT_3_cmd_set_register.UT_pc:
 	; Init values
 	call cmd_data_init
     ; Init
@@ -122,7 +207,7 @@ UT_cmd_write_reg.UT_pc:
 	ld (payload_set_reg.register_number),a
 	
     ; Test
-    call cmd_set_reg.inner
+    call cmd_set_register.inner
 
 	ld hl,(backup.pc)
 	TEST_DREG hl, 0x1112
@@ -138,14 +223,13 @@ cmd_set_dreg:
 	ld (payload_set_reg.register_value),hl	; value
 	ld (payload_set_reg.register_number),a	; register number
     ; set
-    call cmd_set_reg.inner
+    call cmd_set_register.inner
     ret 
 
 
 
-
 ; Test that register SP to HL' are set correctly.
-UT_cmd_write_reg.UT_SP_to_HL2:
+UT_3_cmd_set_register.UT_SP_to_HL2:
 	; Init values
 	call cmd_data_init
 	; First set all double registers
@@ -220,7 +304,7 @@ set_reg:
 	ld (payload_set_reg.register_value),hl	; value
 	ld (payload_set_reg.register_number),a	; register number
     ; Set first byte
-    call cmd_set_reg.inner
+    call cmd_set_register.inner
 	; Set second byte
 	pop af
 	pop hl
@@ -230,12 +314,12 @@ set_reg:
 	inc a
 	ld (payload_set_reg.register_number),a	; register number
     ; Set first byte
-    call cmd_set_reg.inner
+    call cmd_set_register.inner
     ret 
 
 
 ; Test that register A to H' are set correctly.
-UT_cmd_write_reg.UT_A_to_IR:
+UT_3_cmd_set_register.UT_A_to_IR:
 	; Init values
 	call cmd_data_init
 	; First set all single registers
@@ -304,41 +388,41 @@ UT_cmd_write_reg.UT_A_to_IR:
 ; Test setting of interrupt modes.
 ; A real check is not possible, IM cannot be read.
 ; The check only allows a visual check that all lines have been covered.
-UT_cmd_write_reg.UT_im:
+UT_3_cmd_set_register.UT_im:
 	ld a,13	; IM register
 	ld (payload_set_reg.register_number),a
 	; IM 0
 	ld hl,0
 	ld (payload_set_reg.register_value),hl	; value
-	call cmd_set_reg.inner
+	call cmd_set_register.inner
 	; IM 1
 	ld hl,1
 	ld (payload_set_reg.register_value),hl	; value
-	call cmd_set_reg.inner
+	call cmd_set_register.inner
 	; IM 2
 	ld hl,2
 	ld (payload_set_reg.register_value),hl	; value
-	call cmd_set_reg.inner
+	call cmd_set_register.inner
 	; Wrong mode
 	ld hl,3
 	ld (payload_set_reg.register_value),hl	; value
-	call cmd_set_reg.inner
+	call cmd_set_register.inner
 	ret
 
 
 ; Test writing a wrong register index.
 ; The check is simply that no crash happens.
-UT_cmd_write_reg.UT_wrong_register:
+UT_3_cmd_set_register.UT_wrong_register:
 	ld a,35	; First non existing register
 	ld (payload_set_reg.register_number),a
 	ld hl,0xCC55
 	ld (payload_set_reg.register_value),hl	; value
-	call cmd_set_reg.inner
+	call cmd_set_register.inner
 	ld a,0xFF	; Last non existing register
 	ld (payload_set_reg.register_number),a
 	ld hl,0xCC55
 	ld (payload_set_reg.register_value),hl	; value
-	call cmd_set_reg.inner
+	call cmd_set_register.inner
 	ret
 
 
@@ -347,7 +431,7 @@ UT_cmd_write_reg.UT_wrong_register:
 
 ; Test writing data to a memory bank.
 ; The test simulates the receive_bytes function call.
-UT_cmd_write_bank:
+UT_4_cmd_write_bank:
 	; Remember current bank for slot
 	ld a,REG_MMU+SWAP_SLOT0
 	call read_tbblue_reg	; Result in A
@@ -419,8 +503,36 @@ UT_cmd_write_bank:
 	ret
 
 
+; Test cmd_continue
+UT_5_continue:
+
+	; Redirect
+	call redirect_uart
+
+	; Prepare
+	ld hl,5+.cmd_data_end-.cmd_data
+	ld (receive_buffer.length),hl
+
+	; Test
+	ld iy,.cmd_data
+	ld ix,test_memory_output
+	call cmd_init
+
+	; Test length
+	TEST_MEMORY_WORD test_memory_output, 5+PROGRAM_NAME.end-DZRP_VERSION
+	TEST_MEMORY_WORD test_memory_output+2, 0
+
+	ret
+
+
+; Test cmd_pause
+UT_6_pause:
+	TEST_FAIL
+	ret
+
+
 ; Test reading memory.
-UT_cmd_read_mem.UT_normal:
+UT_7_cmd_read_mem.UT_normal:
 	; Redirect
 	call redirect_uart
 
@@ -450,7 +562,7 @@ UT_cmd_read_mem.UT_normal:
 ; Test reading memory in each relevant bank.
 ; Note: The locations should not contain any code/data of
 ; the tested program which is around 0x7000 for unit testing.
-UT_cmd_read_mem.UT_banks:
+UT_7_cmd_read_mem.UT_banks:
 	; Page in different bank in ROM area 
 	nextreg REG_MMU+0,80	; Bank 80
 	nextreg REG_MMU+1,81	; Bank 81
@@ -517,7 +629,7 @@ UT_cmd_read_mem.UT_banks:
 
 
 ; Test writing memory.
-UT_cmd_write_mem.UT_normal:
+UT_8_cmd_write_mem.UT_normal:
 	; Redirect
 	call redirect_uart
 
@@ -525,6 +637,7 @@ UT_cmd_write_mem.UT_normal:
 	ld hl,5+3
 	ld (receive_buffer.length),hl
 
+	; Test
 	ld hl,test_memory_dst
 	ld (test_memory_write_mem.address),hl
 	ld iy,test_memory_write_mem.values
@@ -545,7 +658,7 @@ UT_cmd_write_mem.UT_normal:
 ; Test writing memory in each relevant bank.
 ; Note: The locations should not contain any code/data of
 ; the tested program which is around 0x7000 for unit testing.
-UT_cmd_write_mem.UT_banks:
+UT_8_cmd_write_mem.UT_banks:
 	; Page in different bank in ROM area 
 	nextreg REG_MMU+0,80	; Bank 80
 	nextreg REG_MMU+1,81	; Bank 81
@@ -632,7 +745,7 @@ UT_cmd_write_mem.UT_banks:
 ; Test retrieving the slot/bank association.
 ; Note: This will also fail if some other test that changes the default
 ; slot/bank association fails.
-UT_cmd_get_slots:
+UT_9_cmd_get_slots:
 	; Set standard config
 	nextreg REG_MMU, ROM_BANK
 	nextreg REG_MMU+1, ROM_BANK
@@ -660,9 +773,50 @@ UT_cmd_get_slots:
 	TEST_MEMORY_BYTE test_memory_dst+5, 5
 	TEST_MEMORY_BYTE test_memory_dst+6, 0
 	TEST_MEMORY_BYTE test_memory_dst+7, 1
-
 	ret
 	
+
+; Test cmd_set_slot
+UT_10_set_slot:
+	TEST_FAIL
+	ret
+
+
+; Test cmd_get_tbblue_reg
+UT_11_cmd_get_tbblue_reg:
+	TEST_FAIL
+	ret
+
+
+; Test cmd_set_border
+UT_12_cmd_set_border:
+	TEST_FAIL
+	ret
+
+
+; Test cmd_set_breakpoints
+UT_13_cmd_set_breakpoints:
+	TEST_FAIL
+	ret
+
+
+; Test cmd_restore_mem
+UT_14_cmd_restore_mem:
+	TEST_FAIL
+	ret
+
+
+; Test cmd_get_sprites_palette
+UT_15_cmd_get_sprites_palette:
+	TEST_FAIL
+	ret
+
+
+; Test cmd_get_sprites_clip_window_and_control
+UT_16_cmd_get_sprites_clip_window_and_control:
+	TEST_FAIL
+	ret
+
 
     ENDMODULE
     

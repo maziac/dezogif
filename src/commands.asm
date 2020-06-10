@@ -29,18 +29,19 @@ slot7:	defb
 ; Const data. 
 ;===========================================================================
 
-; DZRP version 1.4.0
-DZRP_VERSION:	defb 1, 4, 0
 
 ; The dezogif program version:
- MACRO VERSION
+ MACRO PRG_VERSION
  	defb "v0.6.0"
  ENDM 
 
+; DZRP version 1.4.0
+DZRP_VERSION:	defb 1, 4, 0
+; Flow through to program name.
 
 ; The own program name and version
 PROGRAM_NAME:	defb "dezogif "
-				VERSION
+				PRG_VERSION
 				defb 0
 .end
 
@@ -48,8 +49,8 @@ PROGRAM_NAME:	defb "dezogif "
 ; Command number <-> subroutine association
 cmd_jump_table:
 .get_config:		defw cmd_init				; 1
-.read_regs:			defw cmd_get_regs			; 2
-.write_regs:		defw cmd_set_reg			; 3
+.get_registers:		defw cmd_get_registers		; 2
+.set_register:		defw cmd_set_register		; 3
 .write_bank:		defw cmd_write_bank			; 4
 .continue:			defw cmd_continue			; 5
 .pause:				defw cmd_pause				; 6
@@ -115,7 +116,7 @@ cmd_init:
 	jr nz,.read_loop
 
 	; Send length and seq-no
-	ld de,PROGRAM_NAME.end-PROGRAM_NAME + 5
+	ld de,PROGRAM_NAME.end-DZRP_VERSION + 5
 	call send_length_and_seqno
 	; No error
 	xor a
@@ -144,7 +145,7 @@ cmd_init:
 ; Changes:
 ;  NA
 ;===========================================================================
-cmd_get_regs:
+cmd_get_registers:
 	; LOGPOINT [COMMAND] cmd_get_regs
 	; Send response
 	ld de,29
@@ -172,14 +173,14 @@ cmd_get_regs:
 ; Changes:
 ;  NA
 ;===========================================================================
-cmd_set_reg:
+cmd_set_register:
 	; LOGPOINT [COMMAND] cmd_set_reg
 	; Read rest of message
 	ld hl,receive_buffer.payload
 	ld de,3
 	call receive_bytes
 	; Execute command
-	call cmd_set_reg.inner
+	call cmd_set_register.inner
 	; Send response
 	ld de,1
 	jp send_length_and_seqno

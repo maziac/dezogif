@@ -139,7 +139,7 @@ INTRO_TEXT:
     defb AT, 0, 0
     PROGRAM_TITLE   ; E.g. "ZX Next UART DeZog Interface"
     defb AT, 1, 0
-    VERSION
+    PRG_VERSION
     defb AT, 2, 0
     defb "ESP UART Baudrate: "
     STRINGIFY BAUDRATE

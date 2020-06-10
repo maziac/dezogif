@@ -184,7 +184,7 @@
     ; Tests a memory address for a specific string.
     ; addr = the tested string
     ; string = the compared string
-    ; term0 = If 0 it is also tested that the string (addr) is null termiated
+    ; term0 = If 0 it is also tested that the string (addr) is null terminated
     MACRO TEST_STRING addr?, string?, term0?
         push af
         push hl
@@ -223,6 +223,44 @@
         pop de
         pop hl
         pop af
+.end:
+    ENDM
+
+
+    ; Tests a memory address for a specific string.
+    ; addr1 = the tested memory area
+    ; addr2 = the memory area to compare to
+    ; count = the number of elements to compare
+    MACRO TEST_MEM_CMP addr1?, addr2?, count?
+        push af
+        push hl
+        push de 
+        push bc
+        ld de,addr2?
+        ld hl,addr1? 
+        ld bc,count?
+.loop:
+        ldi a,(de)
+        ; Compare
+        cpi      ; cp (hl++); dec bc
+        jr nz,.not_equal
+        jp pe,.loop 
+
+        ; Memory is equal
+        pop bc
+        pop de
+        pop hl
+        pop af
+        ret 
+
+.not_equal:
+        ; Memory areas are not equal
+        pop bc
+        pop de
+        pop hl
+        pop af
+        call UNITTEST_TEST_READY_FAILURE 
+        jr .end
 .end:
     ENDM
 
