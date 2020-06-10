@@ -131,23 +131,11 @@ UT_1_cmd_init:
 	TEST_MEMORY_BYTE test_memory_output+5, 0	; no error
 	
 	; Test DZRP version
-	ld hl,DZRP_VERSION
-	ldi a,(hl)
-	TEST_MEMORY_BYTE test_memory_output+6, a
-	ldi a,(hl)
-	TEST_MEMORY_BYTE test_memory_output+7, a
-	ld a,(hl)
-	TEST_MEMORY_BYTE test_memory_output+8, a
+	TEST_MEM_CMP test_memory_output+6, DZRP_VERSION, 3
 
 	; Test program name
-	ld de,test_memory_output+6+3
-	ld hl,PROGRAM_NAME
-.loop:
-	ldi a,(de)
-	cp (hl) : inc hl
-	TEST_FLAG_Z 
-	or a
-	jr nz,.loop
+	TEST_STRING_PTR test_memory_output+6+3, PROGRAM_NAME
+	
 	ret
 
 .cmd_data:
@@ -166,7 +154,7 @@ UT_2_cmd_get_registers:
 	ld (receive_buffer.length),hl
 
 	; Copy data
-	MEMCOPY .cmd_data, backup, .cmd_data_end-.cmd_data
+	MEMCOPY backup, .cmd_data, .cmd_data_end-.cmd_data
 	; Test
 	ld iy,.cmd_data
 	ld ix,test_memory_output
@@ -177,21 +165,18 @@ UT_2_cmd_get_registers:
 	TEST_MEMORY_WORD test_memory_output+2, 0
 
 	; Test returned data
-	ld de,.cmd_data
-	ld hl,test_memory_output+5
-	ld b,.cmd_data_end-.cmd_data
-.loop:
-	ldi a,(de)
-	cp (hl) : inc hl
-	TEST_FLAG_Z 
-	djnz .loop
+	TEST_MEM_CMP test_memory_output+5, .cmp_data, .cmp_data_end-.cmp_data
 
 	ret
 
-.cmd_data:
+.cmd_data:	; WPMEM, 28, W
 	defw 1001, 1002, 1003, 1004, 1005, 1006, 1007
 	defw 2001, 2002, 2003, 2004, 2005, 2006, 2007
 .cmd_data_end
+.cmp_data:	; Order is vice versa
+	defw 2007, 2006, 2005, 2004, 2003, 2002, 2001
+	defw 1007, 1006, 1005, 1004, 1003, 1002, 1001
+.cmp_data_end
 
 
 ; Test that register is set correctly.
@@ -510,11 +495,11 @@ UT_5_continue:
 	call redirect_uart
 
 	; Prepare
-	ld hl,5+.cmd_data_end-.cmd_data
+	;ld hl,5+.cmd_data_end-.cmd_data
 	ld (receive_buffer.length),hl
 
 	; Test
-	ld iy,.cmd_data
+	;ld iy,.cmd_data
 	ld ix,test_memory_output
 	call cmd_init
 

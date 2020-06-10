@@ -181,9 +181,45 @@
     ENDM
 
 
+    ; Compares 2 memory areas containing null terminated strings.
+    ; addr1 = the first string
+    ; addr2 = the second string
+    MACRO TEST_STRING_PTR addr1?, addr2?
+        push af
+        push hl
+        push de 
+        ld de,addr2?
+        ld hl,addr1? 
+.loop:
+        ld a,(de)
+        ; Check for null termination
+        cp (hl)
+        jr nz,.not_equal
+        or a 
+        jr z,.null_found
+        inc de 
+        inc hl
+        jr .loop
+    
+.not_equal:
+        ; Strings are not equal
+        pop de
+        pop hl
+        pop af
+        call UNITTEST_TEST_READY_FAILURE 
+        jr .end
+
+.null_found:
+        pop de
+        pop hl
+        pop af
+.end:
+    ENDM
+
+
     ; Tests a memory address for a specific string.
     ; addr = the tested string
-    ; string = the compared string
+    ; string = the compared string, e.g. "STRING"
     ; term0 = If 0 it is also tested that the string (addr) is null terminated
     MACRO TEST_STRING addr?, string?, term0?
         push af
@@ -240,10 +276,11 @@
         ld hl,addr1? 
         ld bc,count?
 .loop:
-        ldi a,(de)
+        ld a,(de)
         ; Compare
         cpi      ; cp (hl++); dec bc
         jr nz,.not_equal
+        inc de
         jp pe,.loop 
 
         ; Memory is equal
@@ -251,7 +288,7 @@
         pop de
         pop hl
         pop af
-        ret 
+        jr .end
 
 .not_equal:
         ; Memory areas are not equal
@@ -513,9 +550,45 @@ TEST_DREGS_UNEQUAL:    MACRO dreg1, dreg2
     ENDM
 
 
+    ; Compares 2 memory areas containing null terminated strings.
+    ; addr1 = the first string
+    ; addr2 = the second string
+TEST_STRING_PTR:    MACRO addr1, addr2
+        push af
+        push hl
+        push de 
+        ld de,addr2
+        ld hl,addr1?
+.loop:
+        ld a,(de)
+        ; Check for null termination
+        cp (hl)
+        jr nz,.not_equal
+        or a 
+        jr z,.null_found
+        inc de 
+        inc hl
+        jr .loop
+    
+.not_equal:
+        ; Strings are not equal
+        pop de
+        pop hl
+        pop af
+        call UNITTEST_TEST_READY_FAILURE 
+        jr .end
+
+.null_found:
+        pop de
+        pop hl
+        pop af
+.end:
+    ENDM
+
+
     ; Tests a memory address for a specific string.
     ; addr = the tested string
-    ; string = the compared string
+    ; string = the compared string, e.g. "STRING"
     ; term0 = If 0 it is also tested that the string (addr) is null terminated
 TEST_STRING:    MACRO addr, string, term0
         push af
@@ -555,6 +628,45 @@ TEST_STRING:    MACRO addr, string, term0
         pop de
         pop hl
         pop af
+.end:
+    ENDM
+
+
+    ; Tests a memory address for a specific string.
+    ; addr1 = the tested memory area
+    ; addr2 = the memory area to compare to
+    ; count = the number of elements to compare
+TEST_MEM_CMP:   MACRO addr1, addr2, count
+        push af
+        push hl
+        push de 
+        push bc
+        ld de,addr2
+        ld hl,addr1
+        ld bc,count
+.loop:
+        ld a,(de)
+        ; Compare
+        cpi      ; cp (hl++); dec bc
+        jr nz,.not_equal
+        inc de
+        jp pe,.loop 
+
+        ; Memory is equal
+        pop bc
+        pop de
+        pop hl
+        pop af
+        jr .end
+
+.not_equal:
+        ; Memory areas are not equal
+        pop bc
+        pop de
+        pop hl
+        pop af
+        call UNITTEST_TEST_READY_FAILURE 
+        jr .end
 .end:
     ENDM
 
