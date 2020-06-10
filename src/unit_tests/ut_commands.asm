@@ -808,10 +808,41 @@ UT_10_set_slot:
 
 
 
-; Test cmd_get_tbblue_reg
+; Test cmd_get_tbblue_reg.
+; Check a set slot.
 UT_11_cmd_get_tbblue_reg:
-	TEST_FAIL
+	; Redirect
+	call redirect_uart
+
+	; Prepare
+	ld hl,4
+	ld (receive_buffer.length),hl
+
+	; Test
+	nextreg REG_MMU+SWAP_SLOT0, 74
+	ld iy,.cmd_data
+	ld ix,test_memory_output
+	call cmd_get_tbblue_reg
+
+	; Check result
+	TEST_MEMORY_WORD test_memory_output, 2
+	TEST_MEMORY_WORD test_memory_output+2, 0
+	TEST_MEMORY_BYTE test_memory_output+5, 74
+
+	; Test
+	nextreg REG_MMU+SWAP_SLOT0, 73
+	ld iy,.cmd_data
+	ld ix,test_memory_output
+	call cmd_get_tbblue_reg
+
+	; Check result
+	TEST_MEMORY_WORD test_memory_output, 2
+	TEST_MEMORY_WORD test_memory_output+2, 0
+	TEST_MEMORY_BYTE test_memory_output+5, 73
+
 	ret
+
+.cmd_data:	defb REG_MMU+SWAP_SLOT0
 
 
 ; Test cmd_set_border

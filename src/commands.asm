@@ -560,6 +560,7 @@ cmd_set_slot:
 
 	; Get slot
 	call read_uart_byte
+	; TODO: If dezog is in DivMMC, maybe I don't need the check. Although some bytes around address 0x0000 need to be set.
 	; Check slot. Slots 0 and 1 (ROM) are occupied by dezogif itself
 	cp 2
 	jr c,.error
@@ -581,6 +582,24 @@ cmd_set_slot:
 	ld a,1	; error
 	jp write_uart_byte
 	
+
+;===========================================================================
+; CMD_GET_TBBLUE_REG
+; Reads the tbblue register.
+; Changes:
+;  NA
+;===========================================================================
+cmd_get_tbblue_reg:
+	; LOGPOINT [COMMAND] cmd_get_tbblue_reg
+	; Send response
+	ld de,2
+	call send_length_and_seqno
+	; Read register number
+	call read_uart_byte	; Register number
+	call read_tbblue_reg	; Result in A
+	; Send 
+	jp write_uart_byte
+
 
 ;===========================================================================
 ; CMD_SET_BREAKPOINTS
@@ -698,24 +717,6 @@ cmd_restore_mem:
 	pop de 
 	dec de : dec de : dec de
 	jr .loop
-
-
-;===========================================================================
-; CMD_GET_TBBLUE_REG
-; Reads the tbblue register.
-; Changes:
-;  NA
-;===========================================================================
-cmd_get_tbblue_reg:
-	; LOGPOINT [COMMAND] cmd_get_tbblue_reg
-	; Send response
-	ld de,2
-	call send_length_and_seqno
-	; Read register number
-	call read_uart_byte	; Register number
-	call read_tbblue_reg	; Result in A
-	; Send 
-	jp write_uart_byte
 
 
 ;===========================================================================
