@@ -345,10 +345,8 @@ cmd_continue:
 ;===========================================================================
 cmd_pause:
 	; LOGPOINT [COMMAND] cmd_pause
-  
-  ; TODO: Remove
-  ld a,MAGENTA
-  out (BORDER),a
+
+; TODO: Hier fehlt noch was. PAUSE muss in der Schleife bleiben, andere Befehle müssen einfach wieder raus gehen.
 
 	; Send response
 	ld de,1

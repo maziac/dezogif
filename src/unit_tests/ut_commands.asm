@@ -490,24 +490,31 @@ UT_4_cmd_write_bank:
 
 ; Test cmd_continue
 UT_5_continue:
-
 	; Redirect
 	call redirect_uart
 
 	; Prepare
-	;ld hl,5+.cmd_data_end-.cmd_data
+	ld hl,2+PAYLOAD_CONTINUE
 	ld (receive_buffer.length),hl
 
+	; Return
+    ld hl,.continue     ; The jump address
+    ld (backup.pc),hl   ; Continue at return address
+    ld (backup.sp),sp
+
 	; Test
-	;ld iy,.cmd_data
+	ld iy,.cmd_data
 	ld ix,test_memory_output
-	call cmd_init
+	call cmd_continue
+.continue:
 
 	; Test length
-	TEST_MEMORY_WORD test_memory_output, 5+PROGRAM_NAME.end-DZRP_VERSION
+	TEST_MEMORY_WORD test_memory_output, 1
 	TEST_MEMORY_WORD test_memory_output+2, 0
 
 	ret
+
+.cmd_data:	PAYLOAD_CONTINUE 0, 0, 0, 0
 
 
 ; Test cmd_pause
@@ -763,8 +770,42 @@ UT_9_cmd_get_slots:
 
 ; Test cmd_set_slot
 UT_10_set_slot:
-	TEST_FAIL
+	; Redirect
+	call redirect_uart
+
+	; Prepare
+	ld hl,4
+	ld (receive_buffer.length),hl
+
+	; Test
+	ld a,75
+	ld (.bank),a
+	ld iy,.cmd_data
+	ld ix,test_memory_output
+	call cmd_set_slot
+
+	; Check bank
+	ld a,REG_MMU+SWAP_SLOT0
+	call read_tbblue_reg
+	TEST_A	75
+
+	; Test
+	ld a,76
+	ld (.bank),a
+	ld iy,.cmd_data
+	ld ix,test_memory_output
+	call cmd_set_slot
+
+	; Check bank
+	ld a,REG_MMU+SWAP_SLOT0
+	call read_tbblue_reg
+	TEST_A	76
+
 	ret
+
+.cmd_data:	defb SWAP_SLOT0
+.bank:		defb 0
+
 
 
 ; Test cmd_get_tbblue_reg
