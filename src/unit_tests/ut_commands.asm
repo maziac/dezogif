@@ -35,7 +35,7 @@ test_memory_write_mem:
 .end:
 	defb 0	; WPMEM
 
-test_memory_output:	defs 40
+test_memory_output:	defs 1024
 	defb 0 	; WPMEM
 
 
@@ -136,7 +136,7 @@ UT_1_cmd_init:
 	; Test program name
 	TEST_STRING_PTR test_memory_output+6+3, PROGRAM_NAME
 	
-	ret
+ TC_END
 
 .cmd_data:
 	defb 1, 2, 3	; Version 1.2.3
@@ -167,7 +167,7 @@ UT_2_cmd_get_registers:
 	; Test returned data
 	TEST_MEM_CMP test_memory_output+5, .cmp_data, .cmp_data_end-.cmp_data
 
-	ret
+ TC_END
 
 .cmd_data:	; WPMEM, 28, W
 	defw 1001, 1002, 1003, 1004, 1005, 1006, 1007
@@ -197,7 +197,7 @@ UT_3_cmd_set_register.UT_pc:
 	ld hl,(backup.pc)
 	TEST_DREG hl, 0x1112
 
-    ret 
+ TC_END
 
 
 ; Helper function to set a double register.
@@ -275,7 +275,7 @@ UT_3_cmd_set_register.UT_SP_to_HL2:
 	TEST_MEMORY_WORD backup.bc2, 0x2B2C
 	TEST_MEMORY_WORD backup.de2, 0x2D2E
 	TEST_MEMORY_WORD backup.hl2, 0x2122
-	ret
+ TC_END
 
 
 ; Helper function to set a single register.
@@ -366,7 +366,7 @@ UT_3_cmd_set_register.UT_A_to_IR:
 	TEST_MEMORY_WORD backup.hl2, 0x2122
 	TEST_MEMORY_BYTE backup.r, 0x76
 	TEST_MEMORY_BYTE backup.i, 0x98
-	ret
+ TC_END
 
 
 
@@ -392,7 +392,7 @@ UT_3_cmd_set_register.UT_im:
 	ld hl,3
 	ld (payload_set_reg.register_value),hl	; value
 	call cmd_set_register.inner
-	ret
+ TC_END
 
 
 ; Test writing a wrong register index.
@@ -408,10 +408,7 @@ UT_3_cmd_set_register.UT_wrong_register:
 	ld hl,0xCC55
 	ld (payload_set_reg.register_value),hl	; value
 	call cmd_set_register.inner
-	ret
-
-
-
+ TC_END
 
 
 ; Test writing data to a memory bank.
@@ -485,7 +482,7 @@ UT_4_cmd_write_bank:
 	;ld a,.slot+REG_MMU
 	;call write_tbblue_reg	; A=register, D=value
 	WRITE_TBBLUE_REG REG_MMU+SWAP_SLOT0,d
-	ret
+ TC_END
 
 
 ; Test cmd_continue
@@ -512,7 +509,7 @@ UT_5_continue:
 	TEST_MEMORY_WORD test_memory_output, 1
 	TEST_MEMORY_WORD test_memory_output+2, 0
 
-	ret
+ TC_END
 
 .cmd_data:	PAYLOAD_CONTINUE 0, 0, 0, 0
 
@@ -520,7 +517,7 @@ UT_5_continue:
 ; Test cmd_pause
 UT_6_pause:
 	TEST_FAIL
-	ret
+ TC_END
 
 
 ; Test reading memory.
@@ -547,8 +544,7 @@ UT_7_cmd_read_mem.UT_normal:
 	TEST_A (HL)
 	inc hl
 	djnz .loop
-
-	ret
+ TC_END
 
 
 ; Test reading memory in each relevant bank.
@@ -617,7 +613,7 @@ UT_7_cmd_read_mem.UT_banks:
 	; Cleanup
 	nextreg REG_MMU+0,ROM_BANK
 	nextreg REG_MMU+1,ROM_BANK
-	ret
+ TC_END
 
 
 ; Test writing memory.
@@ -643,8 +639,7 @@ UT_8_cmd_write_mem.UT_normal:
 	TEST_MEMORY_BYTE test_memory_dst, 0xD1
 	TEST_MEMORY_BYTE test_memory_dst+1, 0xD2
 	TEST_MEMORY_BYTE test_memory_dst+2, 0xD3
-	ret
-	
+ TC_END
 	
 
 ; Test writing memory in each relevant bank.
@@ -731,7 +726,7 @@ UT_8_cmd_write_mem.UT_banks:
 	; Cleanup
 	nextreg REG_MMU+0,ROM_BANK
 	nextreg REG_MMU+1,ROM_BANK
-	ret
+ TC_END
 
 
 ; Test retrieving the slot/bank association.
@@ -765,7 +760,7 @@ UT_9_cmd_get_slots:
 	TEST_MEMORY_BYTE test_memory_dst+5, 5
 	TEST_MEMORY_BYTE test_memory_dst+6, 0
 	TEST_MEMORY_BYTE test_memory_dst+7, 1
-	ret
+ TC_END
 	
 
 ; Test cmd_set_slot
@@ -800,8 +795,7 @@ UT_10_set_slot:
 	ld a,REG_MMU+SWAP_SLOT0
 	call read_tbblue_reg
 	TEST_A	76
-
-	ret
+ TC_END
 
 .cmd_data:	defb SWAP_SLOT0
 .bank:		defb 0
@@ -839,8 +833,7 @@ UT_11_cmd_get_tbblue_reg:
 	TEST_MEMORY_WORD test_memory_output, 2
 	TEST_MEMORY_WORD test_memory_output+2, 0
 	TEST_MEMORY_BYTE test_memory_output+5, 73
-
-	ret
+ TC_END
 
 .cmd_data:	defb REG_MMU+SWAP_SLOT0
 
@@ -849,7 +842,6 @@ UT_11_cmd_get_tbblue_reg:
 UT_12_cmd_set_border:
 	; Redirect
 	call redirect_uart
-
 	; Prepare
 	ld hl,4
 	ld (receive_buffer.length),hl
@@ -860,8 +852,12 @@ UT_12_cmd_set_border:
 	ld ix,test_memory_output
 	call cmd_set_border
 
+	; Check length
+	TEST_MEMORY_WORD test_memory_output, 1
+	TEST_MEMORY_WORD test_memory_output+2, 0
+
 	; Check result
-	ld a,CYAN ; Required for zxsim as it decodes the full 16 bit IO address
+	ld a,CYAN ; Required for zsim as it decodes the full 16 bit IO address
 	in a,(BORDER)
 	TEST_A CYAN
 
@@ -872,37 +868,280 @@ UT_12_cmd_set_border:
 	call cmd_set_border
 
 	; Check result
-	ld a,BLACK ; Required for zxsim as it decodes the full 16 bit IO address
+	ld a,BLACK ; Required for zsim as it decodes the full 16 bit IO address
 	in a,(BORDER)
 	TEST_A BLACK
-
-	ret
+ TC_END
 
 .cmd_data:	defb 0
 
 
-; Test cmd_set_breakpoints
-UT_13_cmd_set_breakpoints:
-	TEST_FAIL
-	ret
+; Test cmd_set_breakpoints with no breakpoints.
+UT_13_cmd_set_breakpoints.UT_no_bp:
+	; Redirect
+	call redirect_uart
+	; Prepare
+	ld hl,2
+	ld (receive_buffer.length),hl
+
+	; Test
+	ld iy,0		; Not used
+	ld ix,test_memory_output
+	call cmd_set_breakpoints
+
+	; Check length
+	TEST_MEMORY_WORD test_memory_output,	1
+	TEST_MEMORY_WORD test_memory_output+2,	0
+ TC_END
 
 
-; Test cmd_restore_mem
-UT_14_cmd_restore_mem:
-	TEST_FAIL
-	ret
+; Test cmd_set_breakpoints.
+; 2 breakpoints.
+UT_13_cmd_set_breakpoints.UT_2_bps:
+	; Redirect
+	call redirect_uart
+	; Prepare
+	ld hl,2+2*2
+	ld (receive_buffer.length),hl
+
+	; Test
+	xor a
+	ld (0xC000),a
+	ld (0xC0FF),a
+	ld iy,.cmd_data
+	ld ix,test_memory_output
+	call cmd_set_breakpoints
+
+	; Check length
+	TEST_MEMORY_WORD test_memory_output, 	1+2
+	TEST_MEMORY_WORD test_memory_output+2,	0
+
+	; Test
+	TEST_MEMORY_BYTE 0xC000, BP_INSTRUCTION
+	TEST_MEMORY_BYTE 0xC0FF, BP_INSTRUCTION
+ TC_END
+
+.cmd_data:	defw 0xC000, 0xC0FF
 
 
-; Test cmd_get_sprites_palette
+; Test cmd_set_breakpoints.
+; Restore slots.
+UT_13_cmd_set_breakpoints.UT_restore_slots:
+	; Redirect
+	call redirect_uart
+	; Prepare
+	ld hl,2+2*2
+	ld (receive_buffer.length),hl
+
+	; Page in banks in ROM area
+	nextreg REG_MMU+0, 70
+	nextreg REG_MMU+1, 71
+
+	; Test
+	xor a
+	ld (0x0200),a
+	ld (0x3FFF),a
+	ld iy,.cmd_data
+	ld ix,test_memory_output
+	call cmd_set_breakpoints
+
+	; Check length
+	TEST_MEMORY_WORD test_memory_output, 	1+2
+	TEST_MEMORY_WORD test_memory_output+2,	0
+
+	; Test that slots are restored
+	ld a,REG_MMU
+	call read_tbblue_reg
+	TEST_A 70
+	ld a,REG_MMU+1
+	call read_tbblue_reg
+	TEST_A 71
+
+	TEST_MEMORY_BYTE 0x0200, BP_INSTRUCTION
+	TEST_MEMORY_BYTE 0x3FFF, BP_INSTRUCTION
+ TC_END
+
+.cmd_data:	defw 0x0200, 0x3FFF
+
+
+; Test cmd_restore_mem with no values.
+UT_14_cmd_restore_mem.UT_no_values:
+	; Redirect
+	call redirect_uart
+	; Prepare
+	ld hl,2
+	ld (receive_buffer.length),hl
+
+	; Test
+	ld iy,0		; Not used
+	ld ix,test_memory_output
+	call cmd_restore_mem
+
+	; Check length
+	TEST_MEMORY_WORD test_memory_output,	1
+	TEST_MEMORY_WORD test_memory_output+2,	0
+ TC_END
+
+
+; Test cmd_restore_mem.
+; 2 values.
+UT_14_cmd_restore_mem.UT_2_values:
+	; Redirect
+	call redirect_uart
+	; Prepare
+	ld hl,2+2*3
+	ld (receive_buffer.length),hl
+
+	; Test
+	ld a,0xFF
+	ld (0xC000),a
+	ld (0xC0FF),a
+	ld iy,.cmd_data
+	ld ix,test_memory_output
+	call cmd_restore_mem
+
+	; Check length
+	TEST_MEMORY_WORD test_memory_output, 	1
+	TEST_MEMORY_WORD test_memory_output+2,	0
+
+	; Test
+	TEST_MEMORY_BYTE 0xC000, 0xAA
+	TEST_MEMORY_BYTE 0xC0FF, 0x55
+ TC_END
+
+.cmd_data:	
+	defw 0xC000
+	defb 0xAA
+	defw 0xC0FF
+	defb 0x55
+
+
+; Test cmd_restore_mem.
+; Restore slots.
+UT_14_cmd_restore_mem.UT_restore_slots:
+	; Redirect
+	call redirect_uart
+	; Prepare
+	ld hl,2+2*3
+	ld (receive_buffer.length),hl
+
+	; Page in banks in ROM area
+	nextreg REG_MMU+0, 70
+	nextreg REG_MMU+1, 71
+
+	; Test
+	ld a,0xFF
+	ld (0x0200),a
+	ld (0x3FFF),a
+	ld iy,.cmd_data
+	ld ix,test_memory_output
+	call cmd_restore_mem
+
+	; Check length
+	TEST_MEMORY_WORD test_memory_output, 	1
+	TEST_MEMORY_WORD test_memory_output+2,	0
+
+	; Test that slots are restored
+	ld a,REG_MMU
+	call read_tbblue_reg
+	TEST_A 70
+	ld a,REG_MMU+1
+	call read_tbblue_reg
+	TEST_A 71
+
+	TEST_MEMORY_BYTE 0x0200, 0xA5
+	TEST_MEMORY_BYTE 0x3FFF, 0x5A
+ TC_END
+
+.cmd_data:
+	defw 0x0200
+	defb 0xA5
+	defw 0x3FFF
+	defb 0x5A
+
+
+
+; Test cmd_get_sprites_palette.
+; Test that 513 bytes are send for both palettes.
 UT_15_cmd_get_sprites_palette:
-	TEST_FAIL
-	ret
+	; Redirect
+	call redirect_uart
+	; Prepare
+	ld hl,3
+	ld (receive_buffer.length),hl
+
+	; Test
+	xor a	; Palette 0
+	ld (.cmd_data),a
+	ld iy,.cmd_data
+	ld ix,test_memory_output
+	call cmd_get_sprites_palette:
+
+	; Check length
+	TEST_MEMORY_WORD test_memory_output, 	513
+	TEST_MEMORY_WORD test_memory_output+2,	0
+	; Note: the values itself are not checked.
+
+	; Test
+	ld a,1	; Palette 1
+	ld (.cmd_data),a
+	ld iy,.cmd_data
+	ld ix,test_memory_output
+	call cmd_get_sprites_palette:
+
+	; Check length
+	TEST_MEMORY_WORD test_memory_output, 	513
+	TEST_MEMORY_WORD test_memory_output+2,	0
+	; Note: the values itself are not checked.
+ TC_END
+
+.cmd_data:	defb 0	; palette index
 
 
 ; Test cmd_get_sprites_clip_window_and_control
 UT_16_cmd_get_sprites_clip_window_and_control:
-	TEST_FAIL
-	ret
+	; Redirect
+	call redirect_uart
+	; Prepare
+	ld hl,2
+	ld (receive_buffer.length),hl
+
+	/* No zsim support for nextreg
+	; Set clip window
+    nextreg REG_CLIP_WINDOW_CONTROL, 2
+	nextreg REG_CLIP_WINDOW_SPRITES, 55		; xl
+	nextreg REG_CLIP_WINDOW_SPRITES, 100	; xr
+	nextreg REG_CLIP_WINDOW_SPRITES, 20		; yt
+	nextreg REG_CLIP_WINDOW_SPRITES, 200	; yb
+	; Write a 5th time
+	nextreg REG_CLIP_WINDOW_SPRITES, 10		; xl again
+
+	
+    ld a,2 : nextreg 25, a		; 0
+    ld a,200 : nextreg 25, a	; 1
+    ld a,3 : nextreg 25, a		; 2
+    ld a,100 : nextreg 25, a	; 3
+	; Write a 5th time
+	ld a,4 : nextreg 25, a		; 0
+	*/
+
+	; Test
+	ld iy,0	; Not used
+	ld ix,test_memory_output
+	call cmd_get_sprites_clip_window_and_control:
+
+	; Check length
+	TEST_MEMORY_WORD test_memory_output, 	6
+	TEST_MEMORY_WORD test_memory_output+2,	0
+	
+	/*
+	; Check clipping values
+	TEST_MEMORY_WORD test_memory_output+5,	10		; xl
+	TEST_MEMORY_WORD test_memory_output+6,	100		; xr
+	TEST_MEMORY_WORD test_memory_output+7,	20		; yt
+	TEST_MEMORY_WORD test_memory_output+8,	200		; yb
+	*/
+ TC_END
 
 
     ENDMODULE

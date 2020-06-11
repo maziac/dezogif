@@ -36,8 +36,7 @@ UT_write_read_slot:
 	;ld a,.free_slot+REG_MMU
 	;call write_tbblue_reg 
 	WRITE_TBBLUE_REG .free_slot+REG_MMU,d
-
-    ret 
+ TC_END
 
 
 

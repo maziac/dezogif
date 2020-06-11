@@ -607,7 +607,7 @@ cmd_get_tbblue_reg:
 ; Changes:
 ;  NA
 ;===========================================================================
-:
+cmd_set_border:
 	; LOGPOINT [COMMAND] cmd_set_border
 	; Read register number
 	call read_uart_byte
@@ -625,7 +625,7 @@ cmd_get_tbblue_reg:
 ;===========================================================================
 cmd_set_breakpoints:
 	; LOGPOINT [COMMAND] cmd_set_breakpoints
-	call save_slots
+	call save_rom_slots
 	; Calculate the count
 	ld de,(receive_buffer.length)	; Read only the lower bytes
 	add de,-2
@@ -642,7 +642,7 @@ cmd_set_breakpoints:
 	; Check for end
 	ld a,e
 	or d
-	jp z,restore_slots	; Returns
+	jp z,restore_rom_slots	; Returns
 	; Loop
 	push de
 	; Get breakpoint address
@@ -680,7 +680,7 @@ cmd_set_breakpoints:
 
 	; Restore a
 	ld a,e
-	jr .send
+	jr .next
 
 .normal:
 	; Get memory
@@ -688,14 +688,12 @@ cmd_set_breakpoints:
 	; Set breakpoint
 	ld (hl),BP_INSTRUCTION
 
-.send:
+.next:
 	; Send memory
 	call write_uart_byte
 	pop de 
 	dec de 
 	jr .loop
-	
-; TODO: TESTEN: ROM0 und ROM1 banks.
 
 
 ;===========================================================================
@@ -706,6 +704,7 @@ cmd_set_breakpoints:
 ;===========================================================================
 cmd_restore_mem:
 	; LOGPOINT [COMMAND] cmd_restore_mem
+	call save_rom_slots
 	; Send response
 	ld de,1
 	call send_length_and_seqno
@@ -718,21 +717,58 @@ cmd_restore_mem:
 	; Check for end
 	ld a,e
 	or d
-	ret z
+	jp z,restore_rom_slots	; Returns
 	; Loop
 	push de
-	; Get address
+	; Get memory address
 	call read_uart_byte
 	ld l,a
 	call read_uart_byte
 	ld h,a
+	; Check memory area
+	cp 0x40
+	jr nc,.normal
+
+	; It's in the ROM/DivMMc area.
+	; Page in bank
+	ld de,slot_backup.slot0 
+	cp 0x20
+	jr c,.slot0 
+	; slot1
+	inc de
+.slot0:
+	ld a,(de)
+	nextreg REG_MMU+SWAP_SLOT0,a
+	ld a,h
+	and 0x1f
+	add 0xC0		; SWAP_SLOT0*0x20
+	ld h,a
 	; Get value
 	call read_uart_byte
-	; Restore memory
-	ld (hl),a	; LOGPOINT [COMMAND] BP=${HL:hex}h, ${HL}, (HL)=${A:hex}
+	; Set memory
+	ld (hl),a
+
+	; Restore slot/bank
+	ld e,a
+	ld a,(slot_backup+SWAP_SLOT0)
+	nextreg REG_MMU+SWAP_SLOT0,a
+
+	; Restore a
+	ld a,e
+	jr .next
+
+.normal:
+	; Get value
+	call read_uart_byte
+	; Set memory
+	ld (hl),a
+
+.next:
+	; Next address
 	pop de 
-	dec de : dec de : dec de
+	add de,-3
 	jr .loop
+
 
 
 ;===========================================================================

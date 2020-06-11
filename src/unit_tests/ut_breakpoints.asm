@@ -31,7 +31,7 @@ UT_clear_tmp_breakpoints.UT_simple:
     TEST_MEMORY_WORD tmp_breakpoint_1.bp_address, 0
     TEST_MEMORY_BYTE tmp_breakpoint_2.opcode, 0
     TEST_MEMORY_WORD tmp_breakpoint_2.bp_address, 0
-    ret 
+ TC_END
 
 
 ; Test clearing first temporary breakpoint.
@@ -59,7 +59,7 @@ UT_clear_tmp_breakpoints.UT_first:
 
     TEST_MEMORY_BYTE testdata1, 0xAA
     TEST_MEMORY_BYTE testdata2, 0xF0
-    ret 
+ TC_END
 
 
 ; Test clearing second temporary breakpoint.
@@ -87,7 +87,7 @@ UT_clear_tmp_breakpoints.UT_second:
 
     TEST_MEMORY_BYTE testdata2, 0xAA
     TEST_MEMORY_BYTE testdata1, 0xF0
-    ret 
+ TC_END
 
 
 ; Test not setting a breakpoint position.
@@ -104,7 +104,7 @@ UT_set_tmp_breakpoint.UT_not_set_bp:
     TEST_MEMORY_BYTE testdata1, BP_INSTRUCTION
     TEST_MEMORY_BYTE tmp_breakpoint_1.opcode, 0
     TEST_MEMORY_WORD tmp_breakpoint_1.bp_address, 0
-    ret 
+ TC_END
 
 
 ; Test setting a breakpoint position.
@@ -121,7 +121,7 @@ UT_set_tmp_breakpoint.UT_set_bp:
     TEST_MEMORY_BYTE testdata1, BP_INSTRUCTION
     TEST_MEMORY_BYTE tmp_breakpoint_1.opcode, 0xFF
     TEST_MEMORY_WORD tmp_breakpoint_1.bp_address, testdata1
-    ret 
+ TC_END
 
 
 
@@ -140,8 +140,7 @@ UT_check_tmp_breakpoints.UT_no_bp:
     call check_tmp_breakpoints
 
     TEST_FLAG_NZ
-    ret 
-
+ TC_END
 
 
 ; Test check address for tmp breakpoint.
@@ -160,7 +159,7 @@ UT_check_tmp_breakpoints.UT_first_bp:
     call check_tmp_breakpoints
 
     TEST_FLAG_Z
-    ret 
+ TC_END
 
 
 ; Test check address for tmp breakpoint.
@@ -179,7 +178,7 @@ UT_check_tmp_breakpoints.UT_second_bp:
     call check_tmp_breakpoints
 
     TEST_FLAG_Z
-    ret 
+ TC_END
     
 
     ENDMODULE

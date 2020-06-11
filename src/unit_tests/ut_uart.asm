@@ -30,7 +30,7 @@ UT_read_uart_byte_timeout:
 .timeout:
 	; Instead the timeout should be reached
 	ld sp,(sp_backup)	; Restore SP
-    ret 
+ TC_END
 
 
     ENDMODULE

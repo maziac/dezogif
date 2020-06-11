@@ -61,6 +61,28 @@ read_tbblue_reg:
 	in a,(c)
 	ret
 
+;===========================================================================
+; Reads a TBBLUE register.
+; This is meant for multiple use. You need to set BC to IO_NEXTREG_REG
+; before the first call.
+; Is slighlty faster than read_tbblue_reg.
+; Parameters:
+;   A = The register to read
+;   BC = IO_NEXTREG_REG
+; Returns:
+;   A = The value
+; Changes:
+;   F
+;===========================================================================
+read_tbblue_reg_multiple:
+	; Select register in A
+	out (c),a
+	; Read register
+	inc b	; IO_NEXTREG_DAT
+	in a,(c)
+	dec b
+	ret
+
 
 ;===========================================================================
 ; Writes a value to a given TBBLUE register.

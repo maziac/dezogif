@@ -169,16 +169,33 @@ restore_registers:
 save_slots:
 	ld de,8*256+REG_MMU
 	ld hl,slot_backup
+	ld bc,IO_NEXTREG_REG
 .loop:
 	ld a,e
-	call read_tbblue_reg
+	call read_tbblue_reg_multiple
 	ldi (hl),a
 	; next
 	inc e
 	dec d
 	jr nz,.loop
 	ret
-	
+
+
+;===========================================================================
+; Saves the 2 ROM slots.
+; Changes:
+;   A, BC
+; ===========================================================================
+save_rom_slots:
+	ld a,REG_MMU
+	ld bc,IO_NEXTREG_REG
+	call read_tbblue_reg_multiple
+	ld (slot_backup.slot0),a
+	ld a,REG_MMU+1
+	call read_tbblue_reg_multiple
+	ld (slot_backup.slot1),a
+	ret
+
 
 ;===========================================================================
 ; Restores all slots/banks to RAM.
@@ -199,3 +216,15 @@ restore_slots:
 	ret
 	
 
+;===========================================================================
+; Restores all slots/banks to RAM.
+; Changes:
+;   A
+; ===========================================================================
+restore_rom_slots:
+	ld a,(slot_backup.slot0)
+	nextreg REG_MMU,a
+	ld a,(slot_backup.slot1)
+	nextreg REG_MMU+1,a
+	ret
+	

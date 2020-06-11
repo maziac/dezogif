@@ -22,7 +22,7 @@ UT_save_registers.UT_returns:
 
     ; Deinit
     ld sp,(sp_backup)
-    ret 
+ TC_END
 
 
 ; Test that all registers are saved correctly.
@@ -85,7 +85,7 @@ UT_save_registers.UT_save:
 
     ; Deinit
     ld sp,hl
-    ret 
+ TC_END
 
 
 ; Test that all registers are restored correctly.
@@ -150,8 +150,7 @@ UT_save_registers.UT_restore:
 
     TEST_REG i, 0x81
     ;TEST_MEMORY_BYTE backup.r, 0x82   Useless to test
- 
-    ret 
+ TC_END
 
 
 ; Test that save register function for coop works.
@@ -213,7 +212,7 @@ UT_save_registers:
 
     ; Deinit
     ld sp,hl
-    ret 
+ TC_END
 
 
     ENDMODULE
