@@ -124,7 +124,7 @@ UT_1_cmd_init:
 	call cmd_init
 
 	; Test length
-	TEST_MEMORY_WORD test_memory_output, 5+PROGRAM_NAME.end-DZRP_VERSION
+	TEST_MEMORY_WORD test_memory_output, 5+PROGRAM_NAME.end-PROGRAM_NAME
 	TEST_MEMORY_WORD test_memory_output+2, 0
 
 	; Test error

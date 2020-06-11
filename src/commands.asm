@@ -116,7 +116,7 @@ cmd_init:
 	jr nz,.read_loop
 
 	; Send length and seq-no
-	ld de,PROGRAM_NAME.end-DZRP_VERSION + 5
+	ld de,PROGRAM_NAME.end-PROGRAM_NAME + 5
 	call send_length_and_seqno
 	; No error
 	xor a
