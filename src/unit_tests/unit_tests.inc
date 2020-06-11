@@ -17,14 +17,18 @@
 @UNITTEST_CALL_ADDR: 
         call 0x0000 ; Will be changed by the z80 unit tests.
         nop
-        
-@UNITTEST_TEST_READY_SUCCESS:
-        jr UNITTEST_TEST_READY_SUCCESS	; A breakpoint will be set here.
+
+@UNITTEST_TEST_READY_RETURN_FAILURE:
+        jr UNITTEST_TEST_READY_RETURN_FAILURE	; A breakpoint will be set here. The unit test will normally not return here but at UNITTEST_TEST_READY_SUCCESS
 
 @UNITTEST_TEST_READY_FAILURE:
         nop 
 @UNITTEST_TEST_READY_FAILURE_BREAKPOINT:
         ret 	; A breakpoint will be set here. The next step will return to the failed test case
+
+@UNITTEST_TEST_READY_SUCCESS:
+        jr UNITTEST_TEST_READY_SUCCESS	; A breakpoint will be set here.
+
 @UNITTEST_MIN_STACK_GUARD:
         defw 0	; A write watchpoint will be set here to guard the stack
         defs 2*50	; Stack depth of 50 should be enough
@@ -46,6 +50,12 @@
         ; should put his test initialization code.
         ; Note: the stack pointer does not need to be set up.
 
+    ENDM
+
+
+    ; Macro that must be used at the end of the test case (instead of a ret).
+    MACRO TC_END
+        jp UNITTEST_TEST_READY_SUCCESS
     ENDM
 
 
@@ -421,11 +431,53 @@
 
   ELSE
     ; -----------------------------------------------------------
-    ; Code for other assemblers
+
+    ; -------------------------------------------------------
+    ; Code for e.g. Savannah's z80asm, maybe others.
+
+UNITTEST_INITIALIZE:    MACRO
+
+    ; Called to call each unit test.
+UNITTEST_TEST_WRAPPER:  di
+        ld sp,UNITTEST_STACK
+UNITTEST_CALL_ADDR: call 0x0000 ; Will be changed by the z80 unit tests.
+        nop
+
+UNITTEST_TEST_READY_RETURN_FAILURE: jr UNITTEST_TEST_READY_RETURN_FAILURE	; A breakpoint will be set here. The unit test will normally not return here but at UNITTEST_TEST_READY_SUCCESS
+
+UNITTEST_TEST_READY_FAILURE:    nop 
+UNITTEST_TEST_READY_FAILURE_BREAKPOINT: ret 	; A breakpoint will be set here. The next step will return to the failed test case
+
+UNITTEST_TEST_READY_SUCCESS:    jr UNITTEST_TEST_READY_SUCCESS	; A breakpoint will be set here.
+
+
+UNITTEST_MIN_STACK_GUARD:   defw 0	; A write watchpoint will be set here to guard the stack
+        defs 2*50	; Stack depth of 50 should be enough
+UNITTEST_STACK: defw 0
+UNITTEST_MAX_STACK_GUARD:   defw 0	; A write watchpoint will be set here to guard the stack
+
+UNITTEST_SAVE_REG:  defw 0  ; Used to save register values.
+        
+
+    ; The unit test initialization. Provided by the user.
+UNITTEST_START: di       ; Disable interrupts
+        ; Flow through.
+        ; Directly after the UNITTEST_INITIALIZE macro the user
+        ; should put his test initialization code.
+        ; Note: the stack pointer does not need to be set up.
+
+    ENDM
+
+
+    ; Macro that must be used at the end of the test case (instead of a ret).
+TC_END:    MACRO  
+        jp UNITTEST_TEST_READY_SUCCESS
+    ENDM
+
 
 
     ; Tests a memory address for a specific byte value.
-TEST_MEMORY_BYTE:    MACRO addr, value
+TEST_MEMORY_BYTE:    MACRO addr value
         ld (UNITTEST_SAVE_REG),a
         ld a,(addr)
         cp value
@@ -435,7 +487,7 @@ TEST_MEMORY_BYTE:    MACRO addr, value
 
     ; Tests a memory address for a specific word value.
     ; If the test fails the '(addr)' can be found in DE.
-TEST_MEMORY_WORD:    MACRO addr, value
+TEST_MEMORY_WORD:    MACRO addr value
         push de
         push hl
         ld hl,value
@@ -463,7 +515,7 @@ TEST_A_UNEQUAL:    MACRO value
 
     ; Tests a single register for a specific value.
     ; E.g. TEST_REG b, 6 ; Tests if register b == 6
-TEST_REG:    MACRO reg, value
+TEST_REG:    MACRO reg value
         ld (UNITTEST_SAVE_REG),a
         ld a,reg
         cp value
@@ -473,7 +525,7 @@ TEST_REG:    MACRO reg, value
 
     ; Tests that a single register is not a specific value.
     ; E.g. TEST_REG_UNEQUAL b, 6 ; Tests if register b != 6
-TEST_REG_UNEQUAL:    MACRO reg, value
+TEST_REG_UNEQUAL:    MACRO reg value
         ld (UNITTEST_SAVE_REG),a
         ld a,reg
         cp value
@@ -483,7 +535,7 @@ TEST_REG_UNEQUAL:    MACRO reg, value
 
     ; Tests a double register for a specific value.
     ; E.g. TEST_DREG hl, label1 ; Tests if register hl == label1
-TEST_DREG:    MACRO dreg, value
+TEST_DREG:    MACRO dreg value
         push de
         push hl
         push dreg
@@ -499,7 +551,7 @@ TEST_DREG:    MACRO dreg, value
 
     ; Tests a double register is not a specific value.
     ; E.g. TEST_DREG_UNEQUAL hl, label1 ; Tests if register hl != label1
-TEST_DREG_UNEQUAL:    MACRO dreg, value
+TEST_DREG_UNEQUAL:    MACRO dreg value
         push de
         push hl
         push dreg
@@ -516,7 +568,7 @@ TEST_DREG_UNEQUAL:    MACRO dreg, value
 
     ; Test two registers for equality.
     ; Testcase fails if registers are not equal.
-TEST_DREGS:    MACRO dreg1, dreg2
+TEST_DREGS:    MACRO dreg1 dreg2
         push de
         push hl
         push dreg1
@@ -534,7 +586,7 @@ TEST_DREGS:    MACRO dreg1, dreg2
 
     ; Test two registers for unequality.
     ; Testcase fails if registers are equal.
-TEST_DREGS_UNEQUAL:    MACRO dreg1, dreg2
+TEST_DREGS_UNEQUAL:    MACRO dreg1 dreg2
         push de
         push hl
         push dreg1
@@ -548,7 +600,6 @@ TEST_DREGS_UNEQUAL:    MACRO dreg1, dreg2
         call z,UNITTEST_TEST_READY_FAILURE 
         nop
     ENDM
-
 
     ; Compares 2 memory areas containing null terminated strings.
     ; addr1 = the first string
@@ -588,9 +639,9 @@ TEST_STRING_PTR:    MACRO addr1, addr2
 
     ; Tests a memory address for a specific string.
     ; addr = the tested string
-    ; string = the compared string, e.g. "STRING"
+    ; string = the compared string
     ; term0 = If 0 it is also tested that the string (addr) is null terminated
-TEST_STRING:    MACRO addr, string, term0
+TEST_STRING:    MACRO addr string term0
         push af
         push hl
         push de 
@@ -783,6 +834,7 @@ USE_ALL_REGS:    MACRO
         ld hl,0x5566
         exx
     ENDM
+
 
     ; other assemblers end
     ; -----------------------------------------------------------
