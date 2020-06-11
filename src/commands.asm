@@ -345,18 +345,17 @@ cmd_continue:
 ;===========================================================================
 cmd_pause:
 	; LOGPOINT [COMMAND] cmd_pause
-
-; TODO: Hier fehlt noch was. PAUSE muss in der Schleife bleiben, andere Befehle müssen einfach wieder raus gehen.
-
 	; Send response
 	ld de,1
 	call send_length_and_seqno
 	
 	; Send fake break notification
-	ld d,0	; no reason
+	ld d,BREAK_REASON.MANUAL_BREAK
 	ld hl,0 ; bp address
 	call send_ntf_pause
-	ret
+	; Stay in command loop
+.jump:
+	jp enter_cmd_loop
 
 
 ;===========================================================================

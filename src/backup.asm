@@ -22,7 +22,7 @@
 ;    -4 = AF
 ;    -6 = caller of breakpoint (RST) +1
 ; Returns:
-;  SP = debug_stack_top after RET
+;  SP = debug_stack_top after ret_jump
 ; ===========================================================================
 save_registers:
 	; Save

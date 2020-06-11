@@ -489,7 +489,6 @@ UT_4_cmd_write_bank:
 UT_5_continue:
 	; Redirect
 	call redirect_uart
-
 	; Prepare
 	ld hl,2+PAYLOAD_CONTINUE
 	ld (receive_buffer.length),hl
@@ -516,7 +515,34 @@ UT_5_continue:
 
 ; Test cmd_pause
 UT_6_pause:
-	TEST_FAIL
+	; Redirect
+	call redirect_uart
+	; Prepare
+	ld hl,2
+	ld (receive_buffer.length),hl
+
+	; Change jump into ret
+	ld a,0xC9	; RET
+	ld (cmd_pause.jump),a
+
+	; Test
+	ld iy,0		; Not used
+	ld ix,test_memory_output
+	call cmd_pause
+
+	; Test length
+	TEST_MEMORY_WORD test_memory_output, 	1
+	TEST_MEMORY_WORD test_memory_output+2, 	0
+
+	; Afterwards thenotification is written
+	; Length
+	TEST_MEMORY_WORD test_memory_output+5, 	6
+	TEST_MEMORY_WORD test_memory_output+7, 	0
+	TEST_MEMORY_BYTE test_memory_output+9, 	0
+	TEST_MEMORY_BYTE test_memory_output+10, 	1	; NTF_PAUSE
+	TEST_MEMORY_BYTE test_memory_output+11, BREAK_REASON.MANUAL_BREAK	; Break reason
+	TEST_MEMORY_WORD test_memory_output+12,	0	; BP address
+	TEST_MEMORY_BYTE test_memory_output+14, 0	; No error text
  TC_END
 
 

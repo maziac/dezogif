@@ -142,6 +142,7 @@ execute_cmd:
 ; As this could happen from everywhere the call stack is reset
 ; and then the cmd_loop is entered again.
 rx_timeout:
+enter_cmd_loop:	; Used by 'pause'.
 	ld sp,debug_stack_top
 	jp cmd_loop
 ; The receive timeout handler
