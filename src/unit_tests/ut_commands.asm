@@ -832,44 +832,46 @@ UT_10_set_slot:
 	ld (receive_buffer.length),hl
 
 	; Test
-	ld a,75
-	ld (.bank),a
 	ld iy,.cmd_data
 	ld (iy),SWAP_SLOT0
+	ld (iy+1),75
 	ld ix,test_memory_output
 	call cmd_set_slot
-
 	; Check bank
 	ld a,REG_MMU+SWAP_SLOT0
 	call read_tbblue_reg
 	TEST_A	75
-
 	; Check length
 	TEST_MEMORY_WORD test_memory_output, 	2
 	TEST_MEMORY_WORD test_memory_output+2,	0	
 
 	; Test
-	ld a,76
-	ld (.bank),a
 	ld iy,.cmd_data
+	ld (iy+1),76
 	ld ix,test_memory_output
 	call cmd_set_slot
-
 	; Check bank
 	ld a,REG_MMU+SWAP_SLOT0
 	call read_tbblue_reg
 	TEST_A	76
 
 	; Test
-	ld a,70
-	ld (.bank),a
 	ld iy,.cmd_data
 	ld (iy),USED_MAIN_SLOT
+	ld (iy+1),70
 	ld ix,test_memory_output
 	call cmd_set_slot
-
 	; Check bank
 	TEST_MEMORY_BYTE slot_backup.slot0, 70
+
+	; Test ROM in slot 0
+	ld iy,.cmd_data
+	ld (iy),USED_MAIN_SLOT
+	ld (iy+1),0xFE
+	ld ix,test_memory_output
+	call cmd_set_slot
+	; Check bank
+	TEST_MEMORY_BYTE slot_backup.slot0, USED_MAIN_BANK
  TC_END
 
 .cmd_data:	defb 0

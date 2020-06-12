@@ -576,11 +576,11 @@ cmd_set_slot:
 
 	; Slot 0 is handled especially: don't change the slot but only the backed up value
 	call read_uart_byte	; Get bank
-	; Check for special value 0xFE (ROM0) which is converted to 0xFF
+	; Check for special value 0xFE (ROM0) which is converted to USED_MAIN_BANK, i.e. instead of the ROM the modified ROM is set.
 	cp 0xFE
-	jr nz,.no_fe
-	inc a	; Change 0xFE to 0xFF
-.no_fe:
+	jr c,.no_rom
+	ld a,USED_MAIN_BANK
+.no_rom:
 	ld (slot_backup.slot0),a
 	jr .end
 
