@@ -578,8 +578,11 @@ UT_7_cmd_read_mem.UT_normal:
 ; the tested program which is around 0x7000 for unit testing.
 UT_7_cmd_read_mem.UT_banks:
 	; Page in different bank in ROM area 
-	nextreg REG_MMU+0,80	; Bank 80
-	nextreg REG_MMU+1,81	; Bank 81
+	ld a,80
+	nextreg REG_MMU+0,a
+	ld (slot_backup.slot0),a
+	nextreg REG_MMU+1,81
+	nextreg REG_MMU+SWAP_SLOT0,82
 
 	; Redirect
 	call redirect_uart
@@ -636,9 +639,20 @@ UT_7_cmd_read_mem.UT_banks:
 	call cmd_read_mem.inner
 	TEST_MEMORY_BYTE test_memory_dst,0xA6
 
+	; Test that slots are restored
+	ld a,REG_MMU
+	call read_tbblue_reg
+	TEST_A 80
+	ld a,REG_MMU+1
+	call read_tbblue_reg
+	TEST_A 81
+	ld a,REG_MMU+SWAP_SLOT0
+	call read_tbblue_reg
+	TEST_A 82
+
 	; Cleanup
-	nextreg REG_MMU+0,ROM_BANK
-	nextreg REG_MMU+1,ROM_BANK
+	;nextreg REG_MMU+0,ROM_BANK
+	;nextreg REG_MMU+1,ROM_BANK
  TC_END
 
 
@@ -673,8 +687,11 @@ UT_8_cmd_write_mem.UT_normal:
 ; the tested program which is around 0x7000 for unit testing.
 UT_8_cmd_write_mem.UT_banks:
 	; Page in different bank in ROM area 
-	nextreg REG_MMU+0,80	; Bank 80
-	nextreg REG_MMU+1,81	; Bank 81
+	ld a,80
+	nextreg REG_MMU+0,a
+	ld (slot_backup.slot0),a
+	nextreg REG_MMU+1,81
+	nextreg REG_MMU+SWAP_SLOT0,82
 
 	; Redirect
 	call redirect_uart
@@ -749,9 +766,20 @@ UT_8_cmd_write_mem.UT_banks:
 	call cmd_write_mem
 	TEST_MEMORY_BYTE 0xFFFF,0xB6
 
+	; Test that slots are restored
+	ld a,REG_MMU
+	call read_tbblue_reg
+	TEST_A 80
+	ld a,REG_MMU+1
+	call read_tbblue_reg
+	TEST_A 81
+	ld a,REG_MMU+SWAP_SLOT0
+	call read_tbblue_reg
+	TEST_A 82
+
 	; Cleanup
-	nextreg REG_MMU+0,ROM_BANK
-	nextreg REG_MMU+1,ROM_BANK
+	;nextreg REG_MMU+0,ROM_BANK
+	;nextreg REG_MMU+1,ROM_BANK
  TC_END
 
 
@@ -960,8 +988,11 @@ UT_13_cmd_set_breakpoints.UT_restore_slots:
 	ld (receive_buffer.length),hl
 
 	; Page in banks in ROM area
-	nextreg REG_MMU+0, 70
-	nextreg REG_MMU+1, 71
+	ld a,70
+	nextreg REG_MMU+0,a
+	ld (slot_backup.slot0),a
+	nextreg REG_MMU+1,71
+	nextreg REG_MMU+SWAP_SLOT0,72
 
 	; Test
 	xor a
@@ -982,6 +1013,9 @@ UT_13_cmd_set_breakpoints.UT_restore_slots:
 	ld a,REG_MMU+1
 	call read_tbblue_reg
 	TEST_A 71
+	ld a,REG_MMU+SWAP_SLOT0
+	call read_tbblue_reg
+	TEST_A 72
 
 	TEST_MEMORY_BYTE 0x0200, BP_INSTRUCTION
 	TEST_MEMORY_BYTE 0x3FFF, BP_INSTRUCTION
@@ -1052,8 +1086,11 @@ UT_14_cmd_restore_mem.UT_restore_slots:
 	ld (receive_buffer.length),hl
 
 	; Page in banks in ROM area
-	nextreg REG_MMU+0, 70
-	nextreg REG_MMU+1, 71
+	ld a,70
+	nextreg REG_MMU+0,a
+	ld (slot_backup.slot0),a
+	nextreg REG_MMU+1,71
+	nextreg REG_MMU+SWAP_SLOT0,72
 
 	; Test
 	ld a,0xFF
@@ -1074,6 +1111,9 @@ UT_14_cmd_restore_mem.UT_restore_slots:
 	ld a,REG_MMU+1
 	call read_tbblue_reg
 	TEST_A 71
+	ld a,REG_MMU+SWAP_SLOT0
+	call read_tbblue_reg
+	TEST_A 72
 
 	TEST_MEMORY_BYTE 0x0200, 0xA5
 	TEST_MEMORY_BYTE 0x3FFF, 0x5A

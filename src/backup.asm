@@ -155,19 +155,22 @@ restore_registers:
 	push af
 	ld a,(backup.interrupt_state)
 	bit 2,a
-.jump:
-	jp rst_code_return
+	; NZ if interrupts enabled
+	ld a,(slot_backup.slot0)
+;.jump:
+	jp exit_code
 
 
 
 
 ;===========================================================================
 ; Saves all slots/banks to RAM.
+; Note: save only slots 1 to 7 as slot 0 is already saved.
 ; Changes:
 ;   A, HL, DE, BC
 ; ===========================================================================
 save_slots:
-	ld de,8*256+REG_MMU
+	ld de,7*256+REG_MMU+1
 	ld hl,slot_backup
 	ld bc,IO_NEXTREG_REG
 .loop:
@@ -183,19 +186,23 @@ save_slots:
 
 ;===========================================================================
 ; Saves the 2 ROM slots.
+; Note: save only slot 1 as slot 0 is already saved.
 ; Changes:
 ;   A, BC
 ; ===========================================================================
 save_rom_slots:
-	ld a,REG_MMU
-	ld bc,IO_NEXTREG_REG
-	call read_tbblue_reg_multiple
-	ld (slot_backup.slot0),a
+	;ld a,REG_MMU
+	;ld bc,IO_NEXTREG_REG
+	;call read_tbblue_reg_multiple
+	;ld (slot_backup.slot0),a
+	;ld a,REG_MMU+1
+	;call read_tbblue_reg_multiple
+	;ld (slot_backup.slot1),a
+	;ret
 	ld a,REG_MMU+1
-	call read_tbblue_reg_multiple
+	call read_tbblue_reg
 	ld (slot_backup.slot1),a
 	ret
-
 
 ;===========================================================================
 ; Restores all slots/banks to RAM.
@@ -217,7 +224,7 @@ restore_slots:
 	
 
 ;===========================================================================
-; Restores all slots/banks to RAM.
+; Restores the ROM slots/banks to RAM.
 ; Changes:
 ;   A
 ; ===========================================================================
@@ -228,3 +235,15 @@ restore_rom_slots:
 	nextreg REG_MMU+1,a
 	ret
 	
+
+
+save_swap_slot0:
+	ld a,REG_MMU+SWAP_SLOT0
+	call read_tbblue_reg
+	ld (slot_backup + SWAP_SLOT0),a
+	ret
+
+restore_swap_slot0:
+	ld a,(slot_backup + SWAP_SLOT0)
+	nextreg REG_MMU+SWAP_SLOT0,a
+	ret

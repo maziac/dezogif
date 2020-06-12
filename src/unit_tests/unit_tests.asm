@@ -11,9 +11,12 @@
  
 ; Need to be defined
 BAUDRATE:   EQU 999999
-//rst_code_return:    EQU 0
+//exit_code:    EQU 0
 SWAP_SLOT0:      EQU 6   ; 0xC000, used only temporary
 SWAP_SLOT1:      EQU SWAP_SLOT0+1   ; 0xE000, used only temporary
+
+USED_MAIN_BANK: EQU 94  ; Last 8k bank on unexpanded ZXNext.
+USED_MAIN_SLOT:      EQU 0   ; 0x0000
 
     ORG 0x7000
 PRG_START:

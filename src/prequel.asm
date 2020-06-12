@@ -86,6 +86,10 @@ start_entry_point:
     ; Bit 3: Enable multiface NMI by M1 button (hard reset = 0)
     nextreg REG_PERIPHERAL_2,%10110001
 
+    ; Enable DivMMC traps at 0x0000 and 0x0066
+    nextreg REG_DIVMMC_TRAP_ENABLE_1, 0b00000001    ; 0x0000
+    nextreg REG_DIVMMC_TRAP_ENABLE_2, 0b00000001    ; 0x0066 
+
     ; Page in Divmmc memory bank 3
     ; Bit 7: conmem
     ; Bit 6: mapram
@@ -94,13 +98,9 @@ start_entry_point:
     out (DIVIDE_CTRL_REG),a
 
     ; Copy loaded bank to DivMMC bank 3 (0x2000)
-    ;MEMCOPY 0x2000, SWAP_SLOT0*0x2000, 0x2000 
-    ld hl,0x2000
-    ldi (hl),0xAA
-    ldi (hl),0xAA
-    ldi (hl),0xAA
+    MEMCOPY 0x2000, SWAP_SLOT0*0x2000, 0x2000 
 
-    ; Enable mapram
+    ; Enable mapram, RAM bank 0 is at 0x2000
     ld a,%01000000
     out (DIVIDE_CTRL_REG),a
  ELSE 
@@ -119,7 +119,7 @@ start_entry_point:
     ; Initialization.
     ; Setup stack
     ld sp,stack_top
- IF 01
+ IF 0
     ; Without DivMMC we need RAM at 0x2000
     nextreg REG_MMU+USED_DATA_SLOT, USED_DATA_BANK
  ENDIF
@@ -127,7 +127,7 @@ start_entry_point:
     ; Init state
     MEMCLEAR tmp_breakpoint_1, 2*TMP_BREAKPOINT
 
- IF 0   ; Not needed before DivMMc is enabled   
+ IF 01   ; Not needed before DivMMc is enabled   
      ; Backup SWAP_SLOT bank
     ld a,REG_MMU+SWAP_SLOT0
     call read_tbblue_reg    ; returns the bank in A
@@ -137,12 +137,16 @@ start_entry_point:
     ; Copy the ROM at 0x0000 to bank USED_ROM_BANK
     MEMCOPY SWAP_SLOT0*0x2000, 0x0000, 0x2000
 
-    ; Overwrite the RST 0 address with a with code
+    ; Overwrite the RST 0 address with code
     MEMCOPY SWAP_SLOT0*0x2000, copy_rom_start_0000h_code, copy_rom_end-copy_rom_start_0000h_code
 
     ; Restore SWAP_SLOT bank
     nextreg REG_MMU+SWAP_SLOT0,a
  ENDIF
+
+    ; TODO: Remove
+    RST 0
+
 
     ; Set baudrate
     call set_uart_baudrate
@@ -210,6 +214,24 @@ INTRO_TEXT:
 divmmc_init:
     di
     
+    ld sp,0x9000
+
+    ld a,CYAN
+    out (BORDER),a
+
+    ;jr $
+
+    nextreg REG_MMU, 60
+    ld hl,0x0000
+    ldi (hl),0   ; NOP
+    ldi (hl),0   ; NOP
+    ldi (hl),0   ; NOP
+    ldi (hl),0xC9   ; RET
+    ldi (hl),0xC9   ; RET
+    ldi (hl),0x55
+    ldi (hl),0x55
+    ldi (hl),0x55
+
     ; Set border
     ld a,BLUE
     out (BORDER),a
@@ -240,13 +262,20 @@ divmmc_init:
 
 
     ld hl,0x2000
-    ld (hl),0xAA
+    ldi (hl),0xC9   ; RET
+    ldi (hl),0xC9   ; RET
+    ldi (hl),0xAA
+    ldi (hl),0xAA
+    ldi (hl),0xAA
+    ldi (hl),0xAA
 
     ; Enable mapram
     ld      a,%01000000
     out     ($e3),a
 
-    ld a,[0x0000]
+    call 0x0000
+
+    ld a,[0x0002]
     cp 0xAA
     ld a,GREEN
     jr z,.ok

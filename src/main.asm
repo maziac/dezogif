@@ -205,12 +205,14 @@ main_loop:
    
     ; Note: Page and slot doesn't matter as this is bss area and will be located in divmmc.
     ; However for testing (wihtout divmmc) it is better that a bank is mapped
-    MMU USED_DATA_SLOT e, USED_DATA_BANK
-    ORG 0x2000
+    ;MMU USED_DATA_SLOT e, USED_DATA_BANK
+    ;ORG 0x2000
 
     ; Note: The area does not need to be copied. i.e. is initialized on the fly.
     include "data.asm"
 
+    ASSERT $ <= (USED_MAIN_SLOT+1)*0x2000
+    ASSERT $ <= USED_MAIN_SLOT*0x2000+0x1F00
 
     ; TODO: Just for testing. Remove when dbg_check_for_message becomes a 
     ; user routine.
