@@ -13,10 +13,43 @@
 ; slot and jumps there.
 ;===========================================================================
 start_entry_point:
-    ; At startup this program is mapped at 0xC000
+    ; At startup this program is mapped at 0xA000
     di
 
     ;jp divmmc_init
+
+ IF 0
+    ld a,YELLOW
+    out (BORDER),a
+
+    nextreg REG_PERIPHERAL_2,%10110001
+
+    ; Page in Divmmc memory bank 3
+    ; Bit 7: conmem
+    ; Bit 6: mapram
+    ; Bit 0/1: bank
+    ld a,%10000011
+    out (DIVIDE_CTRL_REG),a
+
+    ld hl,0x2000
+    ld (hl),0xAA
+    
+    ; Enable mapram
+    ld a,%01000000
+    out (DIVIDE_CTRL_REG),a
+
+    ld a,(0x0000)
+    cp 0xAA
+    ld a,GREEN
+    jr z,.ok
+    ld a,RED ; Error
+.ok:
+    out (BORDER),a
+    
+    
+    jr $
+
+ ENDIF
 
 
 	; Maximize clock speed
@@ -41,7 +74,7 @@ start_entry_point:
  ENDIF
 
 
- IF 0  ; DivMMC not working on CSpect.
+ IF 0
 
     ; The main program has been loaded into LOADED_BANK and needs to be copied to DivMMC.
 
@@ -61,7 +94,11 @@ start_entry_point:
     out (DIVIDE_CTRL_REG),a
 
     ; Copy loaded bank to DivMMC bank 3 (0x2000)
-    MEMCOPY 0x2000, SWAP_SLOT0*0x2000, 0x2000 
+    ;MEMCOPY 0x2000, SWAP_SLOT0*0x2000, 0x2000 
+    ld hl,0x2000
+    ldi (hl),0xAA
+    ldi (hl),0xAA
+    ldi (hl),0xAA
 
     ; Enable mapram
     ld a,%01000000
@@ -70,11 +107,11 @@ start_entry_point:
 
     ; The main program has been loaded into LOADED_BANK and needs to be copied to USED_MAIN_BANK
     ; Switch in the bank at 0x0000
-    nextreg REG_MMU+USED_SLOT,USED_MAIN_BANK
+    nextreg REG_MMU+USED_MAIN_SLOT,USED_MAIN_BANK
     ; Switch in loaded bank at 0xE000
     nextreg REG_MMU+SWAP_SLOT0,LOADED_BANK
     ; Copy the code
-    MEMCOPY USED_SLOT*0x2000, SWAP_SLOT0*0x2000, 0x2000   
+    MEMCOPY USED_MAIN_SLOT*0x2000, SWAP_SLOT0*0x2000, 0x2000   
 
  ENDIF
 
@@ -82,6 +119,10 @@ start_entry_point:
     ; Initialization.
     ; Setup stack
     ld sp,stack_top
+ IF 01
+    ; Without DivMMC we need RAM at 0x2000
+    nextreg REG_MMU+USED_DATA_SLOT, USED_DATA_BANK
+ ENDIF
 
     ; Init state
     MEMCLEAR tmp_breakpoint_1, 2*TMP_BREAKPOINT
@@ -92,7 +133,7 @@ start_entry_point:
     call read_tbblue_reg    ; returns the bank in A
 
     ; Switch in the bank at 0xC000
-    nextreg REG_MMU+SWAP_SLOT0,USED_ROM_BANK
+    nextreg REG_MMU+SWAP_SLOT0,USED_ROM0_BANK
     ; Copy the ROM at 0x0000 to bank USED_ROM_BANK
     MEMCOPY SWAP_SLOT0*0x2000, 0x0000, 0x2000
 
@@ -170,7 +211,7 @@ divmmc_init:
     di
     
     ; Set border
-    ld a,WHITE
+    ld a,BLUE
     out (BORDER),a
     
     ; TODO: Read and set only required bits.
@@ -197,15 +238,40 @@ divmmc_init:
     ld      bc,RomPatchLen
     ldir
 
+
+    ld hl,0x2000
+    ld (hl),0xAA
+
     ; Enable mapram
     ld      a,%01000000
     out     ($e3),a
+
+    ld a,[0x0000]
+    cp 0xAA
+    ld a,GREEN
+    jr z,.ok
+    ld a,RED ; Error
+.ok:
+    out (BORDER),a
 
     jr      $
 
 
 TestRoutine:
-    ;ld a,YELLOW
+    ld a,YELLOW
+    out (BORDER),a
+
+
+    ld a,[0x0000]
+    cp 0xAA
+    ld a,GREEN
+    jr z,.ok
+    ld a,CYAN ; Error
+.ok:
+    out (BORDER),a
+
+    jr $
+
     inc a
     and 7
     out (BORDER),a

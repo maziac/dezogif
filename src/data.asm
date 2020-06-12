@@ -2,6 +2,8 @@
 ; data.asm
 ;
 ; All volatile data is defined here.
+; 
+; Note: The area does not need to be copied. i.e. is initiatlized on the fly.
 ;===========================================================================
 
 

@@ -15,17 +15,29 @@
     ENDM
  ENDIF
 
+
+; The program is loaded here first, then copied to USED_MAIN_BANK. So dezogif can also load itself. Debugged programs may use this bank.
+LOADED_BANK:    EQU 92    
+
+; Bank used to copy the ROM (0x0000) to and change the RST 0 address into a jump. Debugged programs cannot use this bank.
+USED_ROM0_BANK: EQU 93  
+
 ; The 8k memory bank to store the code to.
-USED_MAIN_BANK: EQU 95  ; Last 8k bank on unexpanded ZXNext. Debugged programs cannot use this bank.
-USED_ROM_BANK:  EQU 94  ; Bank used to copy the ROM (0x0000) to and change the RST 0 address into a jump. Debugged programs cannot use this bank.
-LOADED_BANK:    EQU 93    ; The program is loaded here first, then copied to USED_MAIN_BANK. So dezogif can also load itself. Debugged programs may use this bank.
-USED_SLOT:      EQU 0   ; 0x0000
-SWAP_SLOT0:      EQU 6   ; 0xC000, used only temporary
-SWAP_SLOT1:      EQU SWAP_SLOT0+1   ; 0xE000, used only temporary
+; Debugged programs cannot use this bank.
+USED_MAIN_BANK: EQU 94  ; Last 8k bank on unexpanded ZXNext.
+
+; Bank used for the data.
+USED_DATA_BANK: EQU 95  
+
+; TODO: When using DivMMC I can change the USED_... slots to addresses.
+USED_MAIN_SLOT:      EQU 0   ; 0x0000
+USED_DATA_SLOT:      EQU 1   ; 0x2000
+SWAP_SLOT0:     EQU 6   ; 0xC000, used only temporary
+SWAP_SLOT1:     EQU SWAP_SLOT0+1   ; 0xE000, used only temporary
 
 
-    MMU USED_SLOT e, LOADED_BANK ; e -> Everything should fit into one page, error if not.
-    ORG USED_SLOT*0x2000
+    MMU USED_MAIN_SLOT e, LOADED_BANK ; e -> Everything should fit into one page, error if not.
+    ORG USED_MAIN_SLOT*0x2000
     ;ORG 0x8000
 
 
@@ -42,13 +54,11 @@ SWAP_SLOT1:      EQU SWAP_SLOT0+1   ; 0xE000, used only temporary
     include "commands.asm"
     include "backup.asm"
     include "coop.asm"
-    include "data.asm"
 
  IFDEF LOOPBACK
     include "loopback.asm"
  ENDIF
  
-
 
 
 ;===========================================================================
@@ -188,18 +198,30 @@ main_loop:
     jr main_loop
 
 
+;===========================================================================
+; DATA: All (writable) data needs to be located in
+; area 0x2000-0x3FFF.
+;===========================================================================
+   
+    ; Note: Page and slot doesn't matter as this is bss area and will be located in divmmc.
+    ; However for testing (wihtout divmmc) it is better that a bank is mapped
+    MMU USED_DATA_SLOT e, USED_DATA_BANK
+    ORG 0x2000
+
+    ; Note: The area does not need to be copied. i.e. is initialized on the fly.
+    include "data.asm"
 
 
     ; TODO: Just for testing. Remove when dbg_check_for_message becomes a 
     ; user routine.
-    ORG USED_SLOT*0x2000+0x1F00 ; I.e. 0x1F00
+    ORG USED_MAIN_SLOT*0x2000+0x1F00 ; I.e. 0x1F00
     jp  dbg_check_for_message
 
 
 ;===========================================================================
 ; After loading the program starts here. 
 ;===========================================================================
-    ORG 0xA000 
+    MMU 5 e, 5, 0xA000 ; Slot 5 = Bank 5 (standard)
 
     include "prequel.asm"
     include "print.asm"
@@ -207,7 +229,7 @@ main_loop:
 
     ; Save NEX file
     SAVENEX OPEN BIN_FILE, start_entry_point, stack_top //stack_top: CSpect has a problem (crashes the program immediately when it is run) if stack points to stack_top 
-    SAVENEX CORE 2, 0, 0        ; Next core 2.0.0 required as minimum
+    SAVENEX CORE 2, 0, 0        ; TODO: Choose right core ; Next core 2.0.0 required as minimum
     ;SAVENEX CFG 0               ; black border
     ;SAVENEX BAR 0, 0            ; no load bar
     SAVENEX AUTO
