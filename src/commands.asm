@@ -12,6 +12,8 @@
 
 
 ; CMD_READ_MEM/CMD_WRITE_MEM
+
+; TODO: Ich brauche ein backup nur von slot0 und SWAP_SLOT0.
 	STRUCT SLOT_BACKUP
 slot0:	defb
 slot1:	defb
@@ -537,8 +539,11 @@ cmd_get_slots:
 	ld de,9
 	call send_length_and_seqno
 
-.inner:
-	ld de,256*REG_MMU+8	; Load D and E at the same time
+	; Get and send slot 0
+	ld a,(slot_backup.slot0)
+	call write_uart_byte
+	; Send the other 7 slots
+	ld de,256*(REG_MMU+1)+7	; Load D and E at the same time
 .loop:
 	; Get bank for slot
 	ld a,d
@@ -548,7 +553,6 @@ cmd_get_slots:
 	inc d
 	dec e
 	jr nz,.loop
-
 	ret
 
 
@@ -560,16 +564,27 @@ cmd_get_slots:
 ;===========================================================================
 cmd_set_slot:
 	; LOGPOINT [COMMAND] cmd_set_slot
-	; Send response
-	ld de,2
-	call send_length_and_seqno
 
 	; Get slot
 	call read_uart_byte
 	; TODO: If dezog is in DivMMC, maybe I don't need the check. Although some bytes around address 0x0000 need to be set.
-	; Check slot. Slots 0 and 1 (ROM) are occupied by dezogif itself
-	cp 2
-	jr c,.error
+	; Check slot. Slots 0 is occupied by dezogif itself
+	;cp 2
+	;jr c,.error
+	or a
+	jr nz,.not_slot0
+
+	; Slot 0 is handled especially: don't change the slot but only the backed up value
+	call read_uart_byte	; Get bank
+	; Check for special value 0xFE (ROM0) which is converted to 0xFF
+	cp 0xFE
+	jr nz,.no_fe
+	inc a	; Change 0xFE to 0xFF
+.no_fe:
+	ld (slot_backup.slot0),a
+	jr .end
+
+.not_slot0:
 	add a,REG_MMU
 	ld (.nextreg_register+2),a	; Modify opcode
 	; Get bank
@@ -579,14 +594,18 @@ cmd_set_slot:
 	jr nz,.nextreg_register
 	inc a	; Change 0xFE to 0xFF
 .nextreg_register:
-	nextreg 0x00, a	; Self-modifying code
+	nextreg 0x00,a	; Self-modifying code
+.end:
+	; Send response
+	ld de,2
+	call send_length_and_seqno
 	xor a	; no error
 	jp write_uart_byte
-	
-.error:
-	call read_uart_byte	; read dummy value
-	ld a,1	; error
-	jp write_uart_byte
+
+;.error:
+;	call read_uart_byte	; read dummy value
+;	ld a,1	; error
+;	jp write_uart_byte
 	
 
 ;===========================================================================

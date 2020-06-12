@@ -145,7 +145,7 @@ start_entry_point:
  ENDIF
 
     ; TODO: Remove
-    RST 0
+    ;RST 0
 
 
     ; Set baudrate

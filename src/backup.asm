@@ -162,7 +162,7 @@ restore_registers:
 
 
 
-
+/*
 ;===========================================================================
 ; Saves all slots/banks to RAM.
 ; Note: save only slots 1 to 7 as slot 0 is already saved.
@@ -234,15 +234,26 @@ restore_rom_slots:
 	ld a,(slot_backup.slot1)
 	nextreg REG_MMU+1,a
 	ret
-	
+*/
 
 
+;===========================================================================
+; Saves the swap slot bank.
+; Changes:
+;   A
+; ===========================================================================
 save_swap_slot0:
 	ld a,REG_MMU+SWAP_SLOT0
 	call read_tbblue_reg
 	ld (slot_backup + SWAP_SLOT0),a
 	ret
 
+
+;===========================================================================
+; Restores the swap slot bank.
+; Changes:
+;   A
+; ===========================================================================
 restore_swap_slot0:
 	ld a,(slot_backup + SWAP_SLOT0)
 	nextreg REG_MMU+SWAP_SLOT0,a

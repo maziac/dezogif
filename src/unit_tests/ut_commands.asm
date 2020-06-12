@@ -787,6 +787,9 @@ UT_8_cmd_write_mem.UT_banks:
 ; Note: This will also fail if some other test that changes the default
 ; slot/bank association fails.
 UT_9_cmd_get_slots:
+	; Redirect
+	call redirect_uart
+
 	; Set standard config
 	nextreg REG_MMU, ROM_BANK
 	nextreg REG_MMU+1, ROM_BANK
@@ -796,32 +799,34 @@ UT_9_cmd_get_slots:
 	nextreg REG_MMU+5, 5
 	nextreg REG_MMU+6, 0
 	nextreg REG_MMU+7, 1
+	ld a,70
+	ld (slot_backup.slot0),a
 	; Redirect
 	call redirect_uart
 
-	; Pointer to write to
-	ld ix,test_memory_dst
-
 	; Test
-	call cmd_get_slots.inner
+	ld ix,test_memory_output
+	call cmd_get_slots
 
+	; Check length
+	TEST_MEMORY_WORD test_memory_output, 	9
+	TEST_MEMORY_WORD test_memory_output+2,	0	
 	; Compare with standard slots
-	TEST_MEMORY_BYTE test_memory_dst, 	0xFF	; ROM
-	TEST_MEMORY_BYTE test_memory_dst+1, 0xFF	; ROM
-	TEST_MEMORY_BYTE test_memory_dst+2, 10
-	TEST_MEMORY_BYTE test_memory_dst+3, 11
-	TEST_MEMORY_BYTE test_memory_dst+4, 4
-	TEST_MEMORY_BYTE test_memory_dst+5, 5
-	TEST_MEMORY_BYTE test_memory_dst+6, 0
-	TEST_MEMORY_BYTE test_memory_dst+7, 1
+	TEST_MEMORY_BYTE test_memory_output+5, 	70
+	TEST_MEMORY_BYTE test_memory_output+6, 0xFF	; ROM
+	TEST_MEMORY_BYTE test_memory_output+7, 10
+	TEST_MEMORY_BYTE test_memory_output+8, 11
+	TEST_MEMORY_BYTE test_memory_output+9, 4
+	TEST_MEMORY_BYTE test_memory_output+10, 5
+	TEST_MEMORY_BYTE test_memory_output+11, 0
+	TEST_MEMORY_BYTE test_memory_output+12, 1
  TC_END
-	
+
 
 ; Test cmd_set_slot
 UT_10_set_slot:
 	; Redirect
 	call redirect_uart
-
 	; Prepare
 	ld hl,4
 	ld (receive_buffer.length),hl
@@ -830,6 +835,7 @@ UT_10_set_slot:
 	ld a,75
 	ld (.bank),a
 	ld iy,.cmd_data
+	ld (iy),SWAP_SLOT0
 	ld ix,test_memory_output
 	call cmd_set_slot
 
@@ -837,6 +843,10 @@ UT_10_set_slot:
 	ld a,REG_MMU+SWAP_SLOT0
 	call read_tbblue_reg
 	TEST_A	75
+
+	; Check length
+	TEST_MEMORY_WORD test_memory_output, 	2
+	TEST_MEMORY_WORD test_memory_output+2,	0	
 
 	; Test
 	ld a,76
@@ -849,9 +859,20 @@ UT_10_set_slot:
 	ld a,REG_MMU+SWAP_SLOT0
 	call read_tbblue_reg
 	TEST_A	76
+
+	; Test
+	ld a,70
+	ld (.bank),a
+	ld iy,.cmd_data
+	ld (iy),USED_MAIN_SLOT
+	ld ix,test_memory_output
+	call cmd_set_slot
+
+	; Check bank
+	TEST_MEMORY_BYTE slot_backup.slot0, 70
  TC_END
 
-.cmd_data:	defb SWAP_SLOT0
+.cmd_data:	defb 0
 .bank:		defb 0
 
 
@@ -861,7 +882,6 @@ UT_10_set_slot:
 UT_11_cmd_get_tbblue_reg:
 	; Redirect
 	call redirect_uart
-
 	; Prepare
 	ld hl,4
 	ld (receive_buffer.length),hl
