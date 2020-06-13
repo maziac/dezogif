@@ -28,7 +28,7 @@ tmp_slot:	defb	; Normally SWAP_SLOT but could be also other.
 
 ; The dezogif program version:
  MACRO PRG_VERSION
- 	defb "v0.6.0"
+ 	defb "v0.7.0"
  ENDM 
 
 ; DZRP version 1.4.0
@@ -565,7 +565,7 @@ cmd_set_slot:
 	; Check for special value 0xFE (ROM0) which is converted to USED_MAIN_BANK, i.e. instead of the ROM the modified ROM is set.
 	cp 0xFE
 	jr c,.no_rom
-	ld a,USED_MAIN_BANK
+	ld a,USED_ROM0_BANK
 .no_rom:
 	ld (slot_backup.slot0),a
 	jr .end

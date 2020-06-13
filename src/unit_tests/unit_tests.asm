@@ -17,6 +17,7 @@ SWAP_SLOT1:      EQU SWAP_SLOT0+1   ; 0xE000, used only temporary
 
 USED_MAIN_BANK: EQU 94  ; Last 8k bank on unexpanded ZXNext.
 USED_MAIN_SLOT:      EQU 0   ; 0x0000
+USED_ROM0_BANK: EQU 93  
 
     ORG 0x7000
 PRG_START:
@@ -29,7 +30,6 @@ PRG_START:
     include "message.asm"
     include "commands.asm"
     include "backup.asm"
-    include "coop.asm"
     include "data.asm"
 
      

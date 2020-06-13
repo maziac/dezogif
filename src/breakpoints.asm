@@ -42,10 +42,8 @@ bp_address			defw	; The location of the temporary breakpoint
 
 
 ;===========================================================================
-; This instruction needs to be copied to address 0x0000.
+; This instructions needs to be copied to address 0x0000.
 ; It will be executed whenever a RST 0 happens.
-; Right after executing the instruction the DivMMC memory is paged in.
-; I.e. the following instructions do not matter.
 ;===========================================================================
 copy_rom_start_0000h_code:	; Located at 0x0000
     ;DISP 0x0000 ; Displacement/Compile for address 0x0000
@@ -77,13 +75,7 @@ entry_code:
 
 
 ;===========================================================================
-; Jump here to return from debugger/DivMMC.
-; This code is located at 0x1FF8, i.e. it is in the DivMMC off-area 
-; (0x1FF8-0x1FFF). If an instruction is executed here the DivMMC
-; memory is paged out.
-; This happens already on the first instruction, so it is only required that 
-; the instruction at address 0x1FF8 is the same. The rest is executed at
-; bank currently mapped to slot 0 (usually the ROM).
+; Jump here to return from debugger.
 ; When jumped here:
 ; - AF is on the stack and need to be popped.
 ; - Another RET will return to the breaked instruction.
@@ -113,9 +105,10 @@ exit_code:
 copy_rom_end
     ;ENT 
 
-	;ASSERT $ <= 0x2000	; Check that program does not flow over to next bank
+	ASSERT $ <= copy_rom_start_0000h_code+0x2000	; Check that program does not flow over to next bank
 
 
+/*
 	ORG copy_rom_start_0000h_code+0x0038	; 0x0038 (this is expresssed as relative for the unit tests)
 interrupt:
 	nop
@@ -123,6 +116,7 @@ interrupt:
 	nop
 	ei
 	ret
+*/
 
 
 ;===========================================================================

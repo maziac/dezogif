@@ -135,13 +135,18 @@ start_entry_point:
     ; Switch in the bank at 0xC000
     nextreg REG_MMU+SWAP_SLOT0,USED_ROM0_BANK
     ; Copy the ROM at 0x0000 to bank USED_ROM_BANK
+    nextreg REG_MMU+USED_MAIN_SLOT,ROM_BANK
     MEMCOPY SWAP_SLOT0*0x2000, 0x0000, 0x2000
+
+    ; Switch in the bank at 0x0000
+    nextreg REG_MMU+USED_MAIN_SLOT,USED_MAIN_BANK
 
     ; Overwrite the RST 0 address with code
     MEMCOPY SWAP_SLOT0*0x2000, copy_rom_start_0000h_code, copy_rom_end-copy_rom_start_0000h_code
 
     ; Restore SWAP_SLOT bank
     nextreg REG_MMU+SWAP_SLOT0,a
+
  ENDIF
 
     ; TODO: Remove

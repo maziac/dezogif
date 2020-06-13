@@ -53,7 +53,6 @@ SWAP_SLOT1:     EQU SWAP_SLOT0+1   ; 0xE000, used only temporary
     include "message.asm"
     include "commands.asm"
     include "backup.asm"
-    include "coop.asm"
 
  IFDEF LOOPBACK
     include "loopback.asm"
@@ -214,10 +213,6 @@ main_loop:
     ASSERT $ <= (USED_MAIN_SLOT+1)*0x2000
     ASSERT $ <= USED_MAIN_SLOT*0x2000+0x1F00
 
-    ; TODO: Just for testing. Remove when dbg_check_for_message becomes a 
-    ; user routine.
-    ORG USED_MAIN_SLOT*0x2000+0x1F00 ; I.e. 0x1F00
-    jp  dbg_check_for_message
 
 
 ;===========================================================================

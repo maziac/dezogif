@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.7.0
+- DivMMC removed. ROM used instead.
+
 ## 0.6.0
 - DivMMC used.
 
