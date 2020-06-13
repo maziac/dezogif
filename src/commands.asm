@@ -15,14 +15,8 @@
 
 ; TODO: Ich brauche ein backup nur von slot0 und SWAP_SLOT0.
 	STRUCT SLOT_BACKUP
-slot0:	defb
-slot1:	defb
-slot2:	defb
-slot3:	defb
-slot4:	defb
-slot5:	defb
-slot6:	defb
-slot7:	defb
+slot0:		defb
+tmp_slot:	defb	; Normally SWAP_SLOT but could be also other.
 	ENDS
 
 
@@ -266,10 +260,7 @@ cmd_write_bank:
 	; Choose the right slot: don't use a slot where this program is located.
 ;.slot:	equ ((cmd_write_bank+2*0x2000)>>13)&0x07
 	; Remember current bank for slot
-	;ld a,.slot+REG_MMU
-	ld a,REG_MMU+SWAP_SLOT0
-	call read_tbblue_reg	; Result in A
-	push af	; remember
+	call save_swap_slot0
 
 	; Change bank for slot 
 	; Read bank number of message
@@ -282,12 +273,7 @@ cmd_write_bank:
 	call receive_bytes
 
 	; Restore slot/bank (D)
-	pop de
-	; register, D=value
-	;WRITE_TBBLUE_REG .slot+REG_MMU,d
-	WRITE_TBBLUE_REG REG_MMU+SWAP_SLOT0,d
-	ret
-
+	jp restore_swap_slot0
 
 
 ;===========================================================================

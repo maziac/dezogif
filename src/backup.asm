@@ -157,84 +157,7 @@ restore_registers:
 	bit 2,a
 	; NZ if interrupts enabled
 	ld a,(slot_backup.slot0)
-;.jump:
 	jp exit_code
-
-
-
-/*
-;===========================================================================
-; Saves all slots/banks to RAM.
-; Note: save only slots 1 to 7 as slot 0 is already saved.
-; Changes:
-;   A, HL, DE, BC
-; ===========================================================================
-save_slots:
-	ld de,7*256+REG_MMU+1
-	ld hl,slot_backup
-	ld bc,IO_NEXTREG_REG
-.loop:
-	ld a,e
-	call read_tbblue_reg_multiple
-	ldi (hl),a
-	; next
-	inc e
-	dec d
-	jr nz,.loop
-	ret
-
-
-;===========================================================================
-; Saves the 2 ROM slots.
-; Note: save only slot 1 as slot 0 is already saved.
-; Changes:
-;   A, BC
-; ===========================================================================
-save_rom_slots:
-	;ld a,REG_MMU
-	;ld bc,IO_NEXTREG_REG
-	;call read_tbblue_reg_multiple
-	;ld (slot_backup.slot0),a
-	;ld a,REG_MMU+1
-	;call read_tbblue_reg_multiple
-	;ld (slot_backup.slot1),a
-	;ret
-	ld a,REG_MMU+1
-	call read_tbblue_reg
-	ld (slot_backup.slot1),a
-	ret
-
-;===========================================================================
-; Restores all slots/banks to RAM.
-; Changes:
-;   HL, DE, B
-; ===========================================================================
-restore_slots:
-	ld b,8
-	ld hl,slot_backup
-	ld e,REG_MMU
-.loop:
-	ldi d,(hl)
-	ld (.reg+2),de	; E=MMU register, D=bank
-.reg:
-	nextreg 0,0
-	inc e
-	djnz .loop
-	ret
-	
-
-;===========================================================================
-; Restores the ROM slots/banks to RAM.
-; Changes:
-;   A
-; ===========================================================================
-restore_rom_slots:
-	ld a,(slot_backup.slot0)
-	nextreg REG_MMU,a
-	ld a,(slot_backup.slot1)
-	nextreg REG_MMU+1,a
-	ret
-*/
 
 
 ;===========================================================================
@@ -244,8 +167,9 @@ restore_rom_slots:
 ; ===========================================================================
 save_swap_slot0:
 	ld a,REG_MMU+SWAP_SLOT0
+save_slot:	; Save the slot in A
 	call read_tbblue_reg
-	ld (slot_backup + SWAP_SLOT0),a
+	ld (slot_backup.tmp_slot),a
 	ret
 
 
@@ -255,6 +179,7 @@ save_swap_slot0:
 ;   A
 ; ===========================================================================
 restore_swap_slot0:
-	ld a,(slot_backup + SWAP_SLOT0)
+	ld a,(slot_backup.tmp_slot)
+restore_slot:	; Restore the slot in A
 	nextreg REG_MMU+SWAP_SLOT0,a
 	ret
