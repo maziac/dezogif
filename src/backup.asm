@@ -166,7 +166,7 @@ restore_registers:
 ;   A
 ; ===========================================================================
 save_swap_slot0:
-	ld a,REG_MMU+SWAP_SLOT0
+	ld a,REG_MMU+SWAP_SLOT
 save_slot:	; Save the slot in A
 	call read_tbblue_reg
 	ld (slot_backup.tmp_slot),a
@@ -181,5 +181,5 @@ save_slot:	; Save the slot in A
 restore_swap_slot0:
 	ld a,(slot_backup.tmp_slot)
 restore_slot:	; Restore the slot in A
-	nextreg REG_MMU+SWAP_SLOT0,a
+	nextreg REG_MMU+SWAP_SLOT,a
 	ret

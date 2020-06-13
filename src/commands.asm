@@ -10,10 +10,7 @@
 ; Structs
 ;===========================================================================
 
-
-; CMD_READ_MEM/CMD_WRITE_MEM
-
-; TODO: Ich brauche ein backup nur von slot0 und SWAP_SLOT0.
+	; Used in backup/restore of the slots.
 	STRUCT SLOT_BACKUP
 slot0:		defb
 tmp_slot:	defb	; Normally SWAP_SLOT but could be also other.
@@ -265,10 +262,10 @@ cmd_write_bank:
 	; Change bank for slot 
 	; Read bank number of message
 	call read_uart_byte
-	nextreg REG_MMU+SWAP_SLOT0,a
+	nextreg REG_MMU+SWAP_SLOT,a
 
 	; Read bytes from UART and put into bank
-	ld hl,SWAP_SLOT0*0x2000		;.slot<<13	; Start address
+	ld hl,SWAP_SLOT*0x2000		;.slot<<13	; Start address
 	ld de,0x2000	; Bank size
 	call receive_bytes
 
@@ -349,8 +346,9 @@ cmd_pause:
 ;===========================================================================
 ; CMD_READ_MEM
 ; Reads a memory area.
-; Special is that if the DivMMC (ROM) area is read, 
-; then the memory is paged in (SWAP_SLOT) and read.
+; Special is that if slot 0 area is read, 
+; then the memory bank of slot_backup.slot0 is temporarily paged into 
+; SWAP_SLOT and read.
 ; Changes:
 ;  NA
 ;===========================================================================
@@ -404,7 +402,7 @@ loop_memory:
 	
 	; Page in ROM area to swap slots
 	ld a,(slot_backup.slot0)
-	nextreg REG_MMU+SWAP_SLOT0,a
+	nextreg REG_MMU+SWAP_SLOT,a
 	;ld a,(slot_backup.slot1)
 	;nextreg REG_MMU+SWAP_SLOT1,a
 
@@ -475,6 +473,9 @@ cmd_read_mem.read:
 ;===========================================================================
 ; CMD_WRITE_MEM
 ; Writes a memory area.
+; Special is that if slot 0 area is read, 
+; then the memory bank of slot_backup.slot0 is temporarily paged into 
+; SWAP_SLOT and written.
 ; Changes:
 ;  NA
 ;===========================================================================
@@ -553,10 +554,6 @@ cmd_set_slot:
 
 	; Get slot
 	call read_uart_byte
-	; TODO: If dezog is in DivMMC, maybe I don't need the check. Although some bytes around address 0x0000 need to be set.
-	; Check slot. Slots 0 is occupied by dezogif itself
-	;cp 2
-	;jr c,.error
 	or a
 	jr nz,.not_slot0
 
@@ -665,23 +662,12 @@ cmd_set_breakpoints:
 	call read_uart_byte
 	ld h,a
 	; Check memory area
-;	cp 0x40
-;	jr nc,.normal
-
-	; It's in the ROM/DivMMc area.
-	; Page in bank
-;	ld de,slot_backup.slot0 
-;	cp 0x20
-;	jr c,.slot0 
-	; slot1
-;	inc de
-;.slot0:
 	cp 0x20
 	jr nc,.normal
 
 	; Page in bank
 	ld a,(slot_backup.slot0)
-	nextreg REG_MMU+SWAP_SLOT0,a
+	nextreg REG_MMU+SWAP_SLOT,a
 	ld a,h
 	and 0x1f
 	add 0xC0		; SWAP_SLOT0*0x20
@@ -747,24 +733,11 @@ cmd_restore_mem:
 	call read_uart_byte
 	ld h,a
 	; Check memory area
-;	cp 0x40
-;	jr nc,.normal
-
-	; It's in the ROM/DivMMc area.
-	; Page in bank
-;	ld de,slot_backup.slot0 
-;	cp 0x20
-;	jr c,.slot0 
-	; slot1
-;	inc de
-;.slot0:
-;	ld a,(de)
-
 	cp 0x20
 	jr nc,.normal
 
 	ld a,(slot_backup.slot0)
-	nextreg REG_MMU+SWAP_SLOT0,a
+	nextreg REG_MMU+SWAP_SLOT,a
 	ld a,h
 	and 0x1f
 	add 0xC0		; SWAP_SLOT0*0x20
@@ -930,17 +903,6 @@ cmd_get_sprites_clip_window_and_control:
 	; Prepare response
 	ld de,6
 	call send_length_and_seqno
-
-    /* Testing:
-	WRITE_TBBLUE_REG REG_CLIP_WINDOW_CONTROL, 0x02 ; TODO: REMOVE
-    ld a,2 
-    nextreg 28, a
-    ld a,2 : nextreg 25, a		; 0
-    ld a,200 : nextreg 25, a	; 1
-    ld a,3 : nextreg 25, a		; 2
-    ld a,100 : nextreg 25, a	; 3
-	ld a,4 : nextreg 25, a		; 0
-	*/
 
     ; Get index 
 	ld a,REG_CLIP_WINDOW_CONTROL

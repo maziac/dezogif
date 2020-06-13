@@ -24,21 +24,14 @@ USED_ROM0_BANK: EQU 93
 
 ; The 8k memory bank to store the code to.
 ; Debugged programs cannot use this bank.
-USED_MAIN_BANK: EQU 94  ; Last 8k bank on unexpanded ZXNext.
+USED_BANK: EQU 94  ; Last 8k bank on unexpanded ZXNext.
 
-; Bank used for the data.
-USED_DATA_BANK: EQU 95  
-
-; TODO: When using DivMMC I can change the USED_... slots to addresses.
-USED_MAIN_SLOT:      EQU 0   ; 0x0000
-USED_DATA_SLOT:      EQU 1   ; 0x2000
-SWAP_SLOT0:     EQU 6   ; 0xC000, used only temporary
-SWAP_SLOT1:     EQU SWAP_SLOT0+1   ; 0xE000, used only temporary
+USED_SLOT:      EQU 0   ; 0x0000
+SWAP_SLOT:     EQU 6   ; 0xC000, used only temporary
 
 
-    MMU USED_MAIN_SLOT e, LOADED_BANK ; e -> Everything should fit into one page, error if not.
-    ORG USED_MAIN_SLOT*0x2000
-    ;ORG 0x8000
+    MMU USED_SLOT e, LOADED_BANK ; e -> Everything should fit into one page, error if not.
+    ORG USED_SLOT*0x2000
 
 
 ;===========================================================================
@@ -210,8 +203,8 @@ main_loop:
     ; Note: The area does not need to be copied. i.e. is initialized on the fly.
     include "data.asm"
 
-    ASSERT $ <= (USED_MAIN_SLOT+1)*0x2000
-    ASSERT $ <= USED_MAIN_SLOT*0x2000+0x1F00
+    ASSERT $ <= (USED_SLOT+1)*0x2000
+    ASSERT $ <= USED_SLOT*0x2000+0x1F00
 
 
 
@@ -226,7 +219,7 @@ main_loop:
 
     ; Save NEX file
     SAVENEX OPEN BIN_FILE, start_entry_point, stack_top //stack_top: CSpect has a problem (crashes the program immediately when it is run) if stack points to stack_top 
-    SAVENEX CORE 2, 0, 0        ; TODO: Choose right core ; Next core 2.0.0 required as minimum
+    SAVENEX CORE 3, 1, 5  
     ;SAVENEX CFG 0               ; black border
     ;SAVENEX BAR 0, 0            ; no load bar
     SAVENEX AUTO

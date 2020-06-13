@@ -18,40 +18,6 @@ start_entry_point:
 
     ;jp divmmc_init
 
- IF 0
-    ld a,YELLOW
-    out (BORDER),a
-
-    nextreg REG_PERIPHERAL_2,%10110001
-
-    ; Page in Divmmc memory bank 3
-    ; Bit 7: conmem
-    ; Bit 6: mapram
-    ; Bit 0/1: bank
-    ld a,%10000011
-    out (DIVIDE_CTRL_REG),a
-
-    ld hl,0x2000
-    ld (hl),0xAA
-    
-    ; Enable mapram
-    ld a,%01000000
-    out (DIVIDE_CTRL_REG),a
-
-    ld a,(0x0000)
-    cp 0xAA
-    ld a,GREEN
-    jr z,.ok
-    ld a,RED ; Error
-.ok:
-    out (BORDER),a
-    
-    
-    jr $
-
- ENDIF
-
-
 	; Maximize clock speed
 	ld a,RTM_28MHZ
 	nextreg REG_TURBO_MODE,a
@@ -61,7 +27,7 @@ start_entry_point:
     nextreg REG_MMU+1,ROM_BANK
 
  IF 0
-    ;ld sp,stack_prequel.top
+    ld sp,stack_prequel.top
 
 
     ; Clear screen
@@ -74,12 +40,11 @@ start_entry_point:
  ENDIF
 
 
- IF 0
-
+ IF 0   ; DIVMMC
     ; The main program has been loaded into LOADED_BANK and needs to be copied to DivMMC.
 
     ; Switch in loaded bank at SWAP_SLOT (0xE000)
-    nextreg REG_MMU+SWAP_SLOT0,LOADED_BANK
+    nextreg REG_MMU+SWAP_SLOT,LOADED_BANK
 
     ; TODO: Read and set only required bits.
     ; Bit 4: Enable DivMMC automap and DivMMC NMI by DRIVE button (0 after Hard-reset)
@@ -98,7 +63,7 @@ start_entry_point:
     out (DIVIDE_CTRL_REG),a
 
     ; Copy loaded bank to DivMMC bank 3 (0x2000)
-    MEMCOPY 0x2000, SWAP_SLOT0*0x2000, 0x2000 
+    MEMCOPY 0x2000, SWAP_SLOT*0x2000, 0x2000 
 
     ; Enable mapram, RAM bank 0 is at 0x2000
     ld a,%01000000
@@ -107,11 +72,11 @@ start_entry_point:
 
     ; The main program has been loaded into LOADED_BANK and needs to be copied to USED_MAIN_BANK
     ; Switch in the bank at 0x0000
-    nextreg REG_MMU+USED_MAIN_SLOT,USED_MAIN_BANK
+    nextreg REG_MMU+USED_SLOT,USED_BANK
     ; Switch in loaded bank at 0xE000
-    nextreg REG_MMU+SWAP_SLOT0,LOADED_BANK
+    nextreg REG_MMU+SWAP_SLOT,LOADED_BANK
     ; Copy the code
-    MEMCOPY USED_MAIN_SLOT*0x2000, SWAP_SLOT0*0x2000, 0x2000   
+    MEMCOPY USED_SLOT*0x2000, SWAP_SLOT*0x2000, 0x2000   
 
  ENDIF
 
@@ -119,7 +84,7 @@ start_entry_point:
     ; Initialization.
     ; Setup stack
     ld sp,stack_top
- IF 0
+ IF 0   ; DIVMMC
     ; Without DivMMC we need RAM at 0x2000
     nextreg REG_MMU+USED_DATA_SLOT, USED_DATA_BANK
  ENDIF
@@ -127,31 +92,24 @@ start_entry_point:
     ; Init state
     MEMCLEAR tmp_breakpoint_1, 2*TMP_BREAKPOINT
 
- IF 01   ; Not needed before DivMMc is enabled   
-     ; Backup SWAP_SLOT bank
-    ld a,REG_MMU+SWAP_SLOT0
+    ; Backup SWAP_SLOT bank
+    ld a,REG_MMU+SWAP_SLOT
     call read_tbblue_reg    ; returns the bank in A
 
     ; Switch in the bank at 0xC000
-    nextreg REG_MMU+SWAP_SLOT0,USED_ROM0_BANK
+    nextreg REG_MMU+SWAP_SLOT,USED_ROM0_BANK
     ; Copy the ROM at 0x0000 to bank USED_ROM_BANK
-    nextreg REG_MMU+USED_MAIN_SLOT,ROM_BANK
-    MEMCOPY SWAP_SLOT0*0x2000, 0x0000, 0x2000
+    nextreg REG_MMU+USED_SLOT,ROM_BANK
+    MEMCOPY SWAP_SLOT*0x2000, 0x0000, 0x2000
 
     ; Switch in the bank at 0x0000
-    nextreg REG_MMU+USED_MAIN_SLOT,USED_MAIN_BANK
+    nextreg REG_MMU+USED_SLOT,USED_BANK
 
     ; Overwrite the RST 0 address with code
-    MEMCOPY SWAP_SLOT0*0x2000, copy_rom_start_0000h_code, copy_rom_end-copy_rom_start_0000h_code
+    MEMCOPY SWAP_SLOT*0x2000, copy_rom_start_0000h_code, copy_rom_end-copy_rom_start_0000h_code
 
     ; Restore SWAP_SLOT bank
-    nextreg REG_MMU+SWAP_SLOT0,a
-
- ENDIF
-
-    ; TODO: Remove
-    ;RST 0
-
+    nextreg REG_MMU+SWAP_SLOT,a
 
     ; Set baudrate
     call set_uart_baudrate
@@ -241,7 +199,6 @@ divmmc_init:
     ld a,BLUE
     out (BORDER),a
     
-    ; TODO: Read and set only required bits.
     ; Bit 4: Enable DivMMC automap and DivMMC NMI by DRIVE button (0 after Hard-reset)
     ; Bit 3: Enable multiface NMI by M1 button (hard reset = 0)
     nextreg REG_PERIPHERAL_2,%10110001

@@ -415,7 +415,7 @@ UT_3_cmd_set_register.UT_wrong_register:
 ; The test simulates the receive_bytes function call.
 UT_4_cmd_write_bank:
 	; Remember current bank for slot
-	ld a,REG_MMU+SWAP_SLOT0
+	ld a,REG_MMU+SWAP_SLOT
 	call read_tbblue_reg	; Result in A
 	push af	; remember
 
@@ -436,7 +436,7 @@ UT_4_cmd_write_bank:
 	call cmd_write_bank
 
 	; Check that slot/bank has been restored
-	ld a,REG_MMU+SWAP_SLOT0
+	ld a,REG_MMU+SWAP_SLOT
 	call read_tbblue_reg	; Result in A
 	pop de		; Get original bank in D 
 	push de
@@ -444,9 +444,9 @@ UT_4_cmd_write_bank:
 
 	; Page in the memory bank
 ;.slot:	equ ((cmd_write_bank+2*0x2000)>>13)&0x07
-	nextreg REG_MMU+SWAP_SLOT0,28
+	nextreg REG_MMU+SWAP_SLOT,28
 	
-	ld hl,SWAP_SLOT0*0x2000	; .slot<<13	; Start address
+	ld hl,SWAP_SLOT*0x2000	; .slot<<13	; Start address
 	ld a,(hl)
 	TEST_A 0x55
 	add hl,0x2000-1
@@ -467,9 +467,9 @@ UT_4_cmd_write_bank:
 	call cmd_write_bank
 
 	; Page in the memory bank
-	nextreg REG_MMU+SWAP_SLOT0,28
+	nextreg REG_MMU+SWAP_SLOT,28
 	
-	ld hl,SWAP_SLOT0*0x2000	;.slot<<13	; Start address
+	ld hl,SWAP_SLOT*0x2000	;.slot<<13	; Start address
 	ld a,(hl)
 	TEST_A 0xAA
 	add hl,0x2000-1
@@ -481,7 +481,7 @@ UT_4_cmd_write_bank:
 	pop de
 	;ld a,.slot+REG_MMU
 	;call write_tbblue_reg	; A=register, D=value
-	WRITE_TBBLUE_REG REG_MMU+SWAP_SLOT0,d
+	WRITE_TBBLUE_REG REG_MMU+SWAP_SLOT,d
  TC_END
 
 
@@ -582,7 +582,7 @@ UT_7_cmd_read_mem.UT_banks:
 	nextreg REG_MMU+0,a
 	ld (slot_backup.slot0),a
 	nextreg REG_MMU+1,81
-	nextreg REG_MMU+SWAP_SLOT0,82
+	nextreg REG_MMU+SWAP_SLOT,82
 
 	; Redirect
 	call redirect_uart
@@ -646,7 +646,7 @@ UT_7_cmd_read_mem.UT_banks:
 	ld a,REG_MMU+1
 	call read_tbblue_reg
 	TEST_A 81
-	ld a,REG_MMU+SWAP_SLOT0
+	ld a,REG_MMU+SWAP_SLOT
 	call read_tbblue_reg
 	TEST_A 82
 
@@ -691,7 +691,7 @@ UT_8_cmd_write_mem.UT_banks:
 	nextreg REG_MMU+0,a
 	ld (slot_backup.slot0),a
 	nextreg REG_MMU+1,81
-	nextreg REG_MMU+SWAP_SLOT0,82
+	nextreg REG_MMU+SWAP_SLOT,82
 
 	; Redirect
 	call redirect_uart
@@ -773,7 +773,7 @@ UT_8_cmd_write_mem.UT_banks:
 	ld a,REG_MMU+1
 	call read_tbblue_reg
 	TEST_A 81
-	ld a,REG_MMU+SWAP_SLOT0
+	ld a,REG_MMU+SWAP_SLOT
 	call read_tbblue_reg
 	TEST_A 82
 
@@ -833,12 +833,12 @@ UT_10_set_slot:
 
 	; Test
 	ld iy,.cmd_data
-	ld (iy),SWAP_SLOT0
+	ld (iy),SWAP_SLOT
 	ld (iy+1),75
 	ld ix,test_memory_output
 	call cmd_set_slot
 	; Check bank
-	ld a,REG_MMU+SWAP_SLOT0
+	ld a,REG_MMU+SWAP_SLOT
 	call read_tbblue_reg
 	TEST_A	75
 	; Check length
@@ -851,13 +851,13 @@ UT_10_set_slot:
 	ld ix,test_memory_output
 	call cmd_set_slot
 	; Check bank
-	ld a,REG_MMU+SWAP_SLOT0
+	ld a,REG_MMU+SWAP_SLOT
 	call read_tbblue_reg
 	TEST_A	76
 
 	; Test
 	ld iy,.cmd_data
-	ld (iy),USED_MAIN_SLOT
+	ld (iy),USED_SLOT
 	ld (iy+1),70
 	ld ix,test_memory_output
 	call cmd_set_slot
@@ -866,12 +866,12 @@ UT_10_set_slot:
 
 	; Test ROM in slot 0
 	ld iy,.cmd_data
-	ld (iy),USED_MAIN_SLOT
+	ld (iy),USED_SLOT
 	ld (iy+1),0xFE
 	ld ix,test_memory_output
 	call cmd_set_slot
 	; Check bank
-	TEST_MEMORY_BYTE slot_backup.slot0, USED_MAIN_BANK
+	TEST_MEMORY_BYTE slot_backup.slot0, USED_BANK
  TC_END
 
 .cmd_data:	defb 0
@@ -889,7 +889,7 @@ UT_11_cmd_get_tbblue_reg:
 	ld (receive_buffer.length),hl
 
 	; Test
-	nextreg REG_MMU+SWAP_SLOT0, 74
+	nextreg REG_MMU+SWAP_SLOT, 74
 	ld iy,.cmd_data
 	ld ix,test_memory_output
 	call cmd_get_tbblue_reg
@@ -900,7 +900,7 @@ UT_11_cmd_get_tbblue_reg:
 	TEST_MEMORY_BYTE test_memory_output+5, 74
 
 	; Test
-	nextreg REG_MMU+SWAP_SLOT0, 73
+	nextreg REG_MMU+SWAP_SLOT, 73
 	ld iy,.cmd_data
 	ld ix,test_memory_output
 	call cmd_get_tbblue_reg
@@ -911,7 +911,7 @@ UT_11_cmd_get_tbblue_reg:
 	TEST_MEMORY_BYTE test_memory_output+5, 73
  TC_END
 
-.cmd_data:	defb REG_MMU+SWAP_SLOT0
+.cmd_data:	defb REG_MMU+SWAP_SLOT
 
 
 ; Test cmd_set_border
@@ -1014,7 +1014,7 @@ UT_13_cmd_set_breakpoints.UT_restore_slots:
 	nextreg REG_MMU+0,a
 	ld (slot_backup.slot0),a
 	nextreg REG_MMU+1,71
-	nextreg REG_MMU+SWAP_SLOT0,72
+	nextreg REG_MMU+SWAP_SLOT,72
 
 	; Test
 	xor a
@@ -1035,7 +1035,7 @@ UT_13_cmd_set_breakpoints.UT_restore_slots:
 	ld a,REG_MMU+1
 	call read_tbblue_reg
 	TEST_A 71
-	ld a,REG_MMU+SWAP_SLOT0
+	ld a,REG_MMU+SWAP_SLOT
 	call read_tbblue_reg
 	TEST_A 72
 
@@ -1112,7 +1112,7 @@ UT_14_cmd_restore_mem.UT_restore_slots:
 	nextreg REG_MMU+0,a
 	ld (slot_backup.slot0),a
 	nextreg REG_MMU+1,71
-	nextreg REG_MMU+SWAP_SLOT0,72
+	nextreg REG_MMU+SWAP_SLOT,72
 
 	; Test
 	ld a,0xFF
@@ -1133,7 +1133,7 @@ UT_14_cmd_restore_mem.UT_restore_slots:
 	ld a,REG_MMU+1
 	call read_tbblue_reg
 	TEST_A 71
-	ld a,REG_MMU+SWAP_SLOT0
+	ld a,REG_MMU+SWAP_SLOT
 	call read_tbblue_reg
 	TEST_A 72
 

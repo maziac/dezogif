@@ -64,13 +64,13 @@ entry_code:
 	; Get current bank for slot 0
 	push bc
 	ld bc,IO_NEXTREG_REG
-	ld a,REG_MMU+USED_MAIN_SLOT
+	ld a,REG_MMU+USED_SLOT
 	out (c),a
 	inc b	; IO_NEXTREG_DAT
 	in a,(c)
 
 	; Page in debugger code
-	nextreg REG_MMU+USED_MAIN_SLOT,USED_MAIN_BANK
+	nextreg REG_MMU+USED_SLOT,USED_BANK
 	jp enter_debugger
 
 
@@ -82,10 +82,9 @@ entry_code:
 ; - Flags: NZ=Interrupts need to be enabled.
 ; - A contains the bank to restore for slot 0
 ;===========================================================================
-	; ORG 0x1FF8 ; If DivMMC to exit
 exit_code:
 	; Restore slot 0 bank
-	nextreg REG_MMU+USED_MAIN_SLOT,a
+	nextreg REG_MMU+USED_SLOT,a
 
     ; Check interrupt state
 	jr z,.not_enable_interrupt
