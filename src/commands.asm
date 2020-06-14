@@ -816,6 +816,7 @@ cmd_loopback:
 
 	; Send all data
 	ld de,(receive_buffer.length)
+	dec de : dec de
 	ld hl,SWAP_SLOT*0x2000
 	jr .send_check_end
 

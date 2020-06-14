@@ -33,6 +33,15 @@ ROM_OPEN_CHANNEL        EQU  0x1601
 ROM_PRINT               EQU  0x203C              
 
 
+; The address of the original ZX Spectrum character set in ROM.
+ROM_FONT:  equ 0x3D00
+ROM_FONT_SIZE: equ 0x0300  ; 96 chars, [0x20..0x7F]
+
+; The ROM start address and the ROM size (16k) of the Spectrum.
+ROM_START:  equ 0x0000
+ROM_SIZE: equ 0x4000  ; 16k
+
+
 ; DivMMC, see https://velesoft.speccy.cz/zx/divide/divide-memory.htm
 ; DivIDE control register (write only) 227 ($E3) in original DivIDE mode:
 ; D7		D6		D5	D4	D3	D2	D1		D0

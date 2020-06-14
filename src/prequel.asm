@@ -15,6 +15,7 @@
 start_entry_point:
     ; At startup this program is mapped at 0xA000
     di
+    ld sp,stack_prequel.top
 
     ;jp divmmc_init
 
@@ -29,10 +30,9 @@ start_entry_point:
  IF 0
     ld sp,stack_prequel.top
 
-
     ; Clear screen
 	ld iy,VAR_ERRNR
-    call ROM_CLS
+    ;call ROM_CLS
     
     ; Print text    
     ld hl,INTRO_TEXT
@@ -108,6 +108,10 @@ start_entry_point:
     ; Overwrite the RST 0 address with code
     MEMCOPY SWAP_SLOT*0x2000, copy_rom_start_0000h_code, copy_rom_end-copy_rom_start_0000h_code
 
+    ; Copy the ZX character font from address ROM_FONT (0x3D00)
+    ; to the debugger area at the end of the bank (0x2000-ROM_FONT_SIZE).
+    MEMCOPY (USED_SLOT+1)*0x2000-ROM_FONT_SIZE, ROM_FONT, ROM_FONT_SIZE
+
     ; Restore SWAP_SLOT bank
     nextreg REG_MMU+SWAP_SLOT,a
 
@@ -121,11 +125,11 @@ start_entry_point:
     ld e,2  ; Joy 2
     call set_text_and_joyport
 
-    ; Border color timer
-    ld c,1     
-    ld de,0
+    ; Init text printing
+    call text.init
+    
     ; The main program has been copied into USED_MAIN_BANK
-    jp main_loop
+    jp main
     
 
 
@@ -133,41 +137,6 @@ start_entry_point:
 stack_prequel:
 	defs 2*20
 .top
-
-
-
-; The info text to show.
-JOY1_ROW:	equ 3
-JOY2_ROW:	equ 4
-NOJOY_ROW:	equ 5
-
-
-INTRO_TEXT: 
-    defb OVER, 0
-    defb AT, 0, 0
-    PROGRAM_TITLE   ; E.g. "ZX Next UART DeZog Interface"
-    defb AT, 1, 0
-    PRG_VERSION
-    defb AT, 2, 0
-    defb "ESP UART Baudrate: "
-    STRINGIFY BAUDRATE
-
-    defb AT, JOY1_ROW, 0, "Using Joy 1 (left)"
-    defb AT, JOY2_ROW, 0, "Using Joy 2 (right)"
-    defb AT, NOJOY_ROW, 0, "No joystick port used."
-
-    defb AT, 6, 0
-    defb "Tx=7, Rx=9"
-    defb AT, 7, 0
-    defb "Keys:"
-    defb AT, 8, 0
-    defb "1 = Joy 1"
-    defb AT, 9, 0
-    defb "2 = Joy 2"
-    defb AT, 10, 0
-    defb "3 = No joystick port"
-;.end
-    defb EOS
 
 
 

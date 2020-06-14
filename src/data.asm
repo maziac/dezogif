@@ -7,6 +7,50 @@
 ;===========================================================================
 
 
+
+
+;===========================================================================
+; Const data
+;===========================================================================
+ 
+; The info text to show.
+JOY1_ROW:	equ 3*8
+JOY2_ROW:	equ 4*8
+NOJOY_ROW:	equ 5*8
+
+
+INTRO_TEXT: 
+    defb AT, 0, 0
+    PROGRAM_TITLE   ; E.g. "ZX Next UART DeZog Interface"
+    defb AT, 0, 1*8
+    PRG_VERSION
+    defb AT, 0, 2*8
+    defb "ESP UART Baudrate: "
+    STRINGIFY BAUDRATE
+
+    defb AT, 0, JOY1_ROW, "Using Joy 1 (left)"
+    defb AT, 0, JOY2_ROW, "Using Joy 2 (right)"
+    defb AT, 0, NOJOY_ROW, "No joystick port used."
+
+    defb AT, 0, 6*8
+    defb "Tx=7, Rx=9"
+    defb AT, 0, 7*8
+    defb "Keys:"
+    defb AT, 0, 8*8
+    defb "1 = Joy 1"
+    defb AT, 0, 9*8
+    defb "2 = Joy 2"
+    defb AT, 0, 10*8
+    defb "3 = No joystick port"
+;.end
+    defb 0
+
+
+
+;===========================================================================
+; BSS data
+;===========================================================================
+ 
 ;===========================================================================
 ; Stack. 
 ;===========================================================================
@@ -101,3 +145,11 @@ tmp_data:   defs SLOT_BACKUP	; SLOT_BACKUP is the max. usage (8 bytes)
 tmp_clip_window = tmp_data
 slot_backup:	SLOT_BACKUP = tmp_data
 
+
+;===========================================================================
+; Used by: text.asm
+
+; The address of character 0 of the font. Each font character is 8 byte in size
+; and there can be up to 256 of them (although 0 is not used).
+; I.e. you can safely set this 8 bytes below character at index 1.
+font_address:   defw    ROM_START+ROM_SIZE-ROM_FONT_SIZE-0x20*8

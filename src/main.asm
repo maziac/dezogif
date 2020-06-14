@@ -4,16 +4,10 @@
 
     DEVICE ZXSPECTRUMNEXT
 
-; Program can be compiled as simple loopback program.
- IFDEF LOOPBACK
-    MACRO PROGRAM_TITLE
-    defb "UART Loopback"
-    ENDM
- ELSE
+; Program title shown on screen.
     MACRO PROGRAM_TITLE
     defb "ZX Next UART DeZog Interface"
     ENDM
- ENDIF
 
 
 ; The program is loaded here first, then copied to USED_MAIN_BANK. So dezogif can also load itself. Debugged programs may use this bank.
@@ -35,18 +29,21 @@ LOOPBACK_BANK:  EQU LOADED_BANK ; Used for the loopback test. Could be any bank 
     ORG USED_SLOT*0x2000
 
 
+
 ;===========================================================================
 ; Include modules
 ;===========================================================================
 
     include "macros.asm"
-    include "zxnext/zxnext_regs.inc"
+    include "zx/zx.inc"
+    include "zx/zxnext_regs.inc"
     include "breakpoints.asm"
     include "utilities.asm"
     include "uart.asm"
     include "message.asm"
     include "commands.asm"
     include "backup.asm"
+    include "text.asm"
 
  IFDEF LOOPBACK
     include "loopback.asm"
@@ -151,6 +148,19 @@ read_key_joyport:
 ;===========================================================================
 ; main routine - The main loop of the program.
 ;===========================================================================
+main:
+    ; Clear the screen
+    MEMCLEAR SCREEN, SCREEN_SIZE
+    ; Black on white
+    MEMFILL COLOR_SCREEN, (WHITE<<3)+BLACK, COLOR_SCREEN_SIZE
+
+    ; Print text 
+    ld de,INTRO_TEXT
+	call text.ula.print_string
+
+    ; Border color timer
+    ld c,1     
+    ld de,0
 main_loop:
     push bc, de
 
@@ -215,7 +225,6 @@ main_loop:
     MMU 5 e, 5, 0xA000 ; Slot 5 = Bank 5 (standard)
 
     include "prequel.asm"
-    include "print.asm"
 
 
     ; Save NEX file

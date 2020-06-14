@@ -21,17 +21,24 @@ USED_ROM0_BANK: EQU 93
 LOOPBACK_BANK:  EQU 92
 
 
+; Program title shown on screen.
+    MACRO PROGRAM_TITLE
+    defb "ZX Next UART DeZog Interface"
+    ENDM
+
+
     ORG 0x7000
 PRG_START:
     include "macros.asm"
-    include "zxnext/zxnext_regs.inc"
+    include "zx/zx.inc"
+    include "zx/zxnext_regs.inc"
     include "breakpoints.asm"
     include "utilities.asm"
-    include "print.asm"
     include "uart.asm"
     include "message.asm"
     include "commands.asm"
     include "backup.asm"
+    include "text.asm"
     include "data.asm"
 
      
