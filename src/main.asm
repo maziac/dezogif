@@ -27,8 +27,9 @@ USED_ROM0_BANK: EQU 93
 USED_BANK: EQU 94  ; Last 8k bank on unexpanded ZXNext.
 
 USED_SLOT:      EQU 0   ; 0x0000
-SWAP_SLOT:     EQU 6   ; 0xC000, used only temporary
+SWAP_SLOT:      EQU 6   ; 0xC000, used only temporary
 
+LOOPBACK_BANK:  EQU LOADED_BANK ; Used for the loopback test. Could be any bank as the loopback test is not done with a running debugged program.
 
     MMU USED_SLOT e, LOADED_BANK ; e -> Everything should fit into one page, error if not.
     ORG USED_SLOT*0x2000

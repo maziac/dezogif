@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.8.0
+- Use of DZRP 1.5.0: Support of loop back test.
+
 ## 0.7.0
 - DivMMC removed. ROM used instead.
 

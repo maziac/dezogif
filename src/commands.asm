@@ -25,11 +25,11 @@ tmp_slot:	defb	; Normally SWAP_SLOT but could be also other.
 
 ; The dezogif program version:
  MACRO PRG_VERSION
- 	defb "v0.7.0"
+ 	defb "v0.8.0"
  ENDM 
 
-; DZRP version 1.4.0
-DZRP_VERSION:	defb 1, 4, 0
+; DZRP version 1.5.0
+DZRP_VERSION:	defb 1, 5, 0
 ; Flow through to program name.
 
 ; The own program name and version
@@ -55,8 +55,9 @@ cmd_jump_table:
 .set_border:		defw cmd_set_border			; 12
 .set_breakpoints:	defw cmd_set_breakpoints	; 13
 .restore_mem:		defw cmd_restore_mem		; 14
-.get_sprites_palette:	defw cmd_get_sprites_palette	; 15
-.get_sprites_clip_window_and_control:	defw cmd_get_sprites_clip_window_and_control	; 16
+.loopback:			defw cmd_loopback			; 15
+.get_sprites_palette:	defw cmd_get_sprites_palette	; 16
+.get_sprites_clip_window_and_control:	defw cmd_get_sprites_clip_window_and_control	; 17
 
 ;.get_sprites:			defw 0	; not supported on a ZX Next
 ;.get_sprite_patterns:	defw 0	; not supported on a ZX Next
@@ -769,6 +770,71 @@ cmd_restore_mem:
 	add de,-3
 	jr .loop
 
+
+
+;===========================================================================
+; CMD_LOOPBACK
+; The received data is looped back to the sender.
+; Changes:
+;  NA
+;===========================================================================
+cmd_loopback:
+	; LOGPOINT [COMMAND] cmd_loopback
+	; Save swap slot
+	call save_swap_slot0
+
+	; Page in bank for storage
+	nextreg REG_MMU+SWAP_SLOT,LOOPBACK_BANK
+	; Get length
+	ld de,(receive_buffer.length)
+	dec de : dec de
+	
+	; Read all data in swap slot
+	ld hl,SWAP_SLOT*0x2000
+	jr .rcv_check_end
+
+.rcv_loop:
+	; Loop
+	push de
+	; Get value
+	call read_uart_byte
+	; Store
+	ldi (hl),a
+	; Next
+	pop de
+	dec de
+.rcv_check_end:
+	; Check for end
+	ld a,e
+	or d
+	jr nz,.rcv_loop
+
+	; Send response
+	ld de,(receive_buffer.length)
+	dec de
+	call send_length_and_seqno
+
+	; Send all data
+	ld de,(receive_buffer.length)
+	ld hl,SWAP_SLOT*0x2000
+	jr .send_check_end
+
+.send_loop:
+	; Loop
+	; Get value
+	ldi a,(hl)
+	; Send
+	call write_uart_byte
+	; Next
+	dec de
+.send_check_end:
+	; Check for end
+	ld a,e
+	or d
+	jr nz,.send_loop
+	
+	; Restore slot
+	jp restore_swap_slot0
 
 
 ;===========================================================================

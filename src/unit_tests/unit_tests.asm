@@ -18,6 +18,8 @@ SWAP_SLOT1:      EQU SWAP_SLOT+1   ; 0xE000, used only temporary
 USED_BANK: EQU 94  ; Last 8k bank on unexpanded ZXNext.
 USED_SLOT:      EQU 0   ; 0x0000
 USED_ROM0_BANK: EQU 93  
+LOOPBACK_BANK:  EQU 92
+
 
     ORG 0x7000
 PRG_START:

@@ -871,7 +871,7 @@ UT_10_set_slot:
 	ld ix,test_memory_output
 	call cmd_set_slot
 	; Check bank
-	TEST_MEMORY_BYTE slot_backup.slot0, USED_BANK
+	TEST_MEMORY_BYTE slot_backup.slot0, USED_ROM0_BANK
  TC_END
 
 .cmd_data:	defb 0
@@ -1149,9 +1149,42 @@ UT_14_cmd_restore_mem.UT_restore_slots:
 
 
 
+; Test cmd_loopback.
+; Test looping back received data.
+UT_15_cmd_loopback:
+	; Redirect
+	call redirect_uart
+	; Prepare
+	ld hl,2+30
+	ld (receive_buffer.length),hl
+
+	; Test
+	nextreg REG_MMU+SWAP_SLOT, 69
+	ld iy,.cmd_data
+	ld ix,test_memory_output
+	call cmd_loopback
+
+	; Test that slot was restored
+	ld a,REG_MMU+SWAP_SLOT
+	call read_tbblue_reg
+	TEST_A 69
+
+	; Check length
+	TEST_MEMORY_WORD test_memory_output, 	1+30
+	TEST_MEMORY_WORD test_memory_output+2,	0
+	; Check all value
+	TEST_MEM_CMP test_memory_output+5, .cmd_data, .cmd_data_end-.cmd_data
+ TC_END
+
+.cmd_data:	defb 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
+	defb 10, 11, 21, 13, 14, 15, 16, 17, 18, 19
+	defb 20, 21, 22, 23, 24, 25, 26, 27, 28, 29
+.cmd_data_end
+
+
 ; Test cmd_get_sprites_palette.
 ; Test that 513 bytes are send for both palettes.
-UT_15_cmd_get_sprites_palette:
+UT_16_cmd_get_sprites_palette:
 	; Redirect
 	call redirect_uart
 	; Prepare
@@ -1163,7 +1196,7 @@ UT_15_cmd_get_sprites_palette:
 	ld (.cmd_data),a
 	ld iy,.cmd_data
 	ld ix,test_memory_output
-	call cmd_get_sprites_palette:
+	call cmd_get_sprites_palette
 
 	; Check length
 	TEST_MEMORY_WORD test_memory_output, 	513
@@ -1187,7 +1220,7 @@ UT_15_cmd_get_sprites_palette:
 
 
 ; Test cmd_get_sprites_clip_window_and_control
-UT_16_cmd_get_sprites_clip_window_and_control:
+UT_17_cmd_get_sprites_clip_window_and_control:
 	; Redirect
 	call redirect_uart
 	; Prepare
@@ -1216,7 +1249,7 @@ UT_16_cmd_get_sprites_clip_window_and_control:
 	; Test
 	ld iy,0	; Not used
 	ld ix,test_memory_output
-	call cmd_get_sprites_clip_window_and_control:
+	call cmd_get_sprites_clip_window_and_control
 
 	; Check length
 	TEST_MEMORY_WORD test_memory_output, 	6
