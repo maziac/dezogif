@@ -42,6 +42,8 @@ INTRO_TEXT:
     defb "2 = Joy 2"
     defb AT, 0, 10*8
     defb "3 = No joystick port"
+    defb AT, 0, 11*8
+    defb "0 = Reset"
 ;.end
     defb 0
 

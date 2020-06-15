@@ -18,7 +18,7 @@ USED_ROM0_BANK: EQU 93
 
 ; The 8k memory bank to store the code to.
 ; Debugged programs cannot use this bank.
-USED_BANK: EQU 94  ; Last 8k bank on unexpanded ZXNext.
+USED_BANK:      EQU 94  ; Last 8k bank on unexpanded ZXNext.
 
 USED_SLOT:      EQU 0   ; 0x0000
 SWAP_SLOT:      EQU 6   ; 0xC000, used only temporary
@@ -110,6 +110,26 @@ set_text_and_joyport:
 
 
 ;===========================================================================
+; Checks key "0".
+; If pressed a reset (jp 0) is done.
+;===========================================================================
+check_key_reset:
+    ; Read port
+    ld bc,PORT_KEYB_67890
+    in a,(c)
+    bit 0,a ; "0"
+    ret nz 
+    ; Reset
+    nextreg REG_MMU+SWAP_SLOT,USED_BANK
+    ; Do the reset from a different slot, because this slot need to be exchanged with ROM
+    jp .jump_reset+(SWAP_SLOT)*0x2000
+.jump_reset:
+    nextreg REG_MMU,ROM_BANK
+    nextreg REG_MMU+1,ROM_BANK
+    jp 0
+
+
+;===========================================================================
 ; Reads the joyport from the keyboard.
 ; Returns:
 ;  E: 0x00=00b => "3": no joystick port used
@@ -180,6 +200,7 @@ main_loop:
 
 .no_uart_byte:
     ; Check keyboard
+    call check_key_reset
     call read_key_joyport
     inc e
     jr z,.no_keyboard

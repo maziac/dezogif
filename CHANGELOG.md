@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.9.1
+- Key "0" to reset.
+
 ## 0.9.0
 - Use of DZRP 1.6.0: Support of CMD_CLOSE.
 
