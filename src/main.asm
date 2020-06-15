@@ -155,7 +155,7 @@ main:
     ; Clear the screen
     MEMCLEAR SCREEN, SCREEN_SIZE
     ; Black on white
-    MEMFILL COLOR_SCREEN, (WHITE<<3)+BLACK, COLOR_SCREEN_SIZE
+    MEMFILL COLOR_SCREEN, WHITE+(BLACK<<3), COLOR_SCREEN_SIZE
 
     ; Print text 
     ld de,INTRO_TEXT

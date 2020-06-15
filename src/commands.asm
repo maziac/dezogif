@@ -131,7 +131,8 @@ cmd_init:
 	call write_uart_byte
 	or a
 	jr nz,.write_prg_name_loop
-	ret
+	; Afterwards start all over again / show the "UI"
+	jp main
 
 
 ;===========================================================================
