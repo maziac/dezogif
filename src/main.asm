@@ -44,10 +44,6 @@ LOOPBACK_BANK:  EQU LOADED_BANK ; Used for the loopback test. Could be any bank 
     include "commands.asm"
     include "backup.asm"
     include "text.asm"
-
- IFDEF LOOPBACK
-    include "loopback.asm"
- ENDIF
  
 
 
@@ -187,16 +183,10 @@ main:
 main_loop:
     push bc, de
 
- IFDEF LOOPBACK
-    ; Special loopback functionality.
-    call uart_loopback
- ELSE
-    ; Normal dezog functionality.
     ; Check if byte available.
     call check_uart_byte_available
     ; If so leave loop and enter command loop
     jp nz,cmd_loop    
- ENDIF
 
 .no_uart_byte:
     ; Check keyboard
