@@ -135,7 +135,6 @@ UT_1_cmd_init:
 
 	; Test program name
 	TEST_STRING_PTR test_memory_output+6+3, PROGRAM_NAME
-	
  TC_END
 
 .cmd_data:
@@ -144,8 +143,27 @@ UT_1_cmd_init:
 .cmd_data_end
 
 
+; Test response of cmd_close.
+UT_2_cmd_close:
+	; Redirect
+	call redirect_uart
+
+	; Test
+	ld iy,0	; not used
+	ld ix,test_memory_output
+	call cmd_close
+
+	; Test length
+	TEST_MEMORY_WORD test_memory_output, 1
+	TEST_MEMORY_WORD test_memory_output+2, 0
+ TC_END
+
+; cmd_close jumps here:
+@main:
+	ret
+
 ; Test cmd_get_registers.
-UT_2_cmd_get_registers:	
+UT_3_cmd_get_registers:	
 	; Redirect
 	call redirect_uart
 
@@ -180,7 +198,7 @@ UT_2_cmd_get_registers:
 
 
 ; Test that register is set correctly.
-UT_3_cmd_set_register.UT_pc:
+UT_4_cmd_set_register.UT_pc:
 	; Init values
 	call cmd_data_init
     ; Init
@@ -214,7 +232,7 @@ cmd_set_dreg:
 
 
 ; Test that register SP to HL' are set correctly.
-UT_3_cmd_set_register.UT_SP_to_HL2:
+UT_4_cmd_set_register.UT_SP_to_HL2:
 	; Init values
 	call cmd_data_init
 	; First set all double registers
@@ -304,7 +322,7 @@ set_reg:
 
 
 ; Test that register A to H' are set correctly.
-UT_3_cmd_set_register.UT_A_to_IR:
+UT_4_cmd_set_register.UT_A_to_IR:
 	; Init values
 	call cmd_data_init
 	; First set all single registers
@@ -373,7 +391,7 @@ UT_3_cmd_set_register.UT_A_to_IR:
 ; Test setting of interrupt modes.
 ; A real check is not possible, IM cannot be read.
 ; The check only allows a visual check that all lines have been covered.
-UT_3_cmd_set_register.UT_im:
+UT_4_cmd_set_register.UT_im:
 	ld a,13	; IM register
 	ld (payload_set_reg.register_number),a
 	; IM 0
@@ -397,7 +415,7 @@ UT_3_cmd_set_register.UT_im:
 
 ; Test writing a wrong register index.
 ; The check is simply that no crash happens.
-UT_3_cmd_set_register.UT_wrong_register:
+UT_4_cmd_set_register.UT_wrong_register:
 	ld a,35	; First non existing register
 	ld (payload_set_reg.register_number),a
 	ld hl,0xCC55
@@ -413,7 +431,7 @@ UT_3_cmd_set_register.UT_wrong_register:
 
 ; Test writing data to a memory bank.
 ; The test simulates the receive_bytes function call.
-UT_4_cmd_write_bank:
+UT_5_cmd_write_bank:
 	; Remember current bank for slot
 	ld a,REG_MMU+SWAP_SLOT
 	call read_tbblue_reg	; Result in A
@@ -486,7 +504,7 @@ UT_4_cmd_write_bank:
 
 
 ; Test cmd_continue
-UT_5_continue:
+UT_6_continue:
 	; Redirect
 	call redirect_uart
 	; Prepare
@@ -514,7 +532,7 @@ UT_5_continue:
 
 
 ; Test cmd_pause
-UT_6_pause:
+UT_7_pause:
 	; Redirect
 	call redirect_uart
 	; Prepare
@@ -547,7 +565,7 @@ UT_6_pause:
 
 
 ; Test reading memory.
-UT_7_cmd_read_mem.UT_normal:
+UT_8_cmd_read_mem.UT_normal:
 	; Redirect
 	call redirect_uart
 
@@ -657,7 +675,7 @@ UT_7_cmd_read_mem.UT_banks:
 
 
 ; Test writing memory.
-UT_8_cmd_write_mem.UT_normal:
+UT_9_cmd_write_mem.UT_normal:
 	; Redirect
 	call redirect_uart
 
@@ -685,7 +703,7 @@ UT_8_cmd_write_mem.UT_normal:
 ; Test writing memory in each relevant bank.
 ; Note: The locations should not contain any code/data of
 ; the tested program which is around 0x7000 for unit testing.
-UT_8_cmd_write_mem.UT_banks:
+UT_9_cmd_write_mem.UT_banks:
 	; Page in different bank in ROM area 
 	ld a,80
 	nextreg REG_MMU+0,a
@@ -786,7 +804,7 @@ UT_8_cmd_write_mem.UT_banks:
 ; Test retrieving the slot/bank association.
 ; Note: This will also fail if some other test that changes the default
 ; slot/bank association fails.
-UT_9_cmd_get_slots:
+UT_10_cmd_get_slots:
 	; Redirect
 	call redirect_uart
 
@@ -824,7 +842,7 @@ UT_9_cmd_get_slots:
 
 
 ; Test cmd_set_slot
-UT_10_set_slot:
+UT_11_set_slot:
 	; Redirect
 	call redirect_uart
 	; Prepare
@@ -881,7 +899,7 @@ UT_10_set_slot:
 
 ; Test cmd_get_tbblue_reg.
 ; Check a set slot.
-UT_11_cmd_get_tbblue_reg:
+UT_12_cmd_get_tbblue_reg:
 	; Redirect
 	call redirect_uart
 	; Prepare
@@ -915,7 +933,7 @@ UT_11_cmd_get_tbblue_reg:
 
 
 ; Test cmd_set_border
-UT_12_cmd_set_border:
+UT_13_cmd_set_border:
 	; Redirect
 	call redirect_uart
 	; Prepare
@@ -953,7 +971,7 @@ UT_12_cmd_set_border:
 
 
 ; Test cmd_set_breakpoints with no breakpoints.
-UT_13_cmd_set_breakpoints.UT_no_bp:
+UT_14_cmd_set_breakpoints.UT_no_bp:
 	; Redirect
 	call redirect_uart
 	; Prepare
@@ -973,7 +991,7 @@ UT_13_cmd_set_breakpoints.UT_no_bp:
 
 ; Test cmd_set_breakpoints.
 ; 2 breakpoints.
-UT_13_cmd_set_breakpoints.UT_2_bps:
+UT_14_cmd_set_breakpoints.UT_2_bps:
 	; Redirect
 	call redirect_uart
 	; Prepare
@@ -1002,7 +1020,7 @@ UT_13_cmd_set_breakpoints.UT_2_bps:
 
 ; Test cmd_set_breakpoints.
 ; Restore slots.
-UT_13_cmd_set_breakpoints.UT_restore_slots:
+UT_14_cmd_set_breakpoints.UT_restore_slots:
 	; Redirect
 	call redirect_uart
 	; Prepare
@@ -1047,7 +1065,7 @@ UT_13_cmd_set_breakpoints.UT_restore_slots:
 
 
 ; Test cmd_restore_mem with no values.
-UT_14_cmd_restore_mem.UT_no_values:
+UT_15_cmd_restore_mem.UT_no_values:
 	; Redirect
 	call redirect_uart
 	; Prepare
@@ -1067,7 +1085,7 @@ UT_14_cmd_restore_mem.UT_no_values:
 
 ; Test cmd_restore_mem.
 ; 2 values.
-UT_14_cmd_restore_mem.UT_2_values:
+UT_15_cmd_restore_mem.UT_2_values:
 	; Redirect
 	call redirect_uart
 	; Prepare
@@ -1100,7 +1118,7 @@ UT_14_cmd_restore_mem.UT_2_values:
 
 ; Test cmd_restore_mem.
 ; Restore slots.
-UT_14_cmd_restore_mem.UT_restore_slots:
+UT_15_cmd_restore_mem.UT_restore_slots:
 	; Redirect
 	call redirect_uart
 	; Prepare
@@ -1151,7 +1169,7 @@ UT_14_cmd_restore_mem.UT_restore_slots:
 
 ; Test cmd_loopback.
 ; Test looping back received data.
-UT_15_cmd_loopback:
+UT_16_cmd_loopback:
 	; Redirect
 	call redirect_uart
 	; Prepare
@@ -1184,7 +1202,7 @@ UT_15_cmd_loopback:
 
 ; Test cmd_get_sprites_palette.
 ; Test that 513 bytes are send for both palettes.
-UT_16_cmd_get_sprites_palette:
+UT_17_cmd_get_sprites_palette:
 	; Redirect
 	call redirect_uart
 	; Prepare
@@ -1220,7 +1238,7 @@ UT_16_cmd_get_sprites_palette:
 
 
 ; Test cmd_get_sprites_clip_window_and_control
-UT_17_cmd_get_sprites_clip_window_and_control:
+UT_18_cmd_get_sprites_clip_window_and_control:
 	; Redirect
 	call redirect_uart
 	; Prepare

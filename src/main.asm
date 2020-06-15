@@ -149,6 +149,9 @@ read_key_joyport:
 ; main routine - The main loop of the program.
 ;===========================================================================
 main:
+    ; Setup stack
+    ld sp,stack_top
+    
     ; Clear the screen
     MEMCLEAR SCREEN, SCREEN_SIZE
     ; Black on white

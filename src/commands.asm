@@ -41,23 +41,24 @@ PROGRAM_NAME:	defb "dezogif "
 
 ; Command number <-> subroutine association
 cmd_jump_table:
-.get_config:		defw cmd_init				; 1
-.get_registers:		defw cmd_get_registers		; 2
-.set_register:		defw cmd_set_register		; 3
-.write_bank:		defw cmd_write_bank			; 4
-.continue:			defw cmd_continue			; 5
-.pause:				defw cmd_pause				; 6
-.read_mem:			defw cmd_read_mem			; 7 
-.write_mem:			defw cmd_write_mem			; 8
-.get_slots:			defw cmd_get_slots			; 9
-.set_slot:			defw cmd_set_slot			; 10
-.get_tbblue_reg:	defw cmd_get_tbblue_reg		; 11
-.set_border:		defw cmd_set_border			; 12
-.set_breakpoints:	defw cmd_set_breakpoints	; 13
-.restore_mem:		defw cmd_restore_mem		; 14
-.loopback:			defw cmd_loopback			; 15
-.get_sprites_palette:	defw cmd_get_sprites_palette	; 16
-.get_sprites_clip_window_and_control:	defw cmd_get_sprites_clip_window_and_control	; 17
+.init:				defw cmd_init				; 1
+.close:				defw cmd_close				; 2
+.get_registers:		defw cmd_get_registers		; 3
+.set_register:		defw cmd_set_register		; 4
+.write_bank:		defw cmd_write_bank			; 5
+.continue:			defw cmd_continue			; 6
+.pause:				defw cmd_pause				; 7
+.read_mem:			defw cmd_read_mem			; 8 
+.write_mem:			defw cmd_write_mem			; 9
+.get_slots:			defw cmd_get_slots			; 10
+.set_slot:			defw cmd_set_slot			; 11
+.get_tbblue_reg:	defw cmd_get_tbblue_reg		; 12
+.set_border:		defw cmd_set_border			; 13
+.set_breakpoints:	defw cmd_set_breakpoints	; 14
+.restore_mem:		defw cmd_restore_mem		; 15
+.loopback:			defw cmd_loopback			; 16
+.get_sprites_palette:	defw cmd_get_sprites_palette	; 17
+.get_sprites_clip_window_and_control:	defw cmd_get_sprites_clip_window_and_control	; 18spec
 
 ;.get_sprites:			defw 0	; not supported on a ZX Next
 ;.get_sprite_patterns:	defw 0	; not supported on a ZX Next
@@ -92,7 +93,7 @@ cmd_call:	; Get pointer to subroutine
 	
 
 ;===========================================================================
-; CMD_GET_CONFIG
+; CMD_INIT
 ; Sends a response with the supported features.
 ; Changes:
 ;  NA
@@ -131,6 +132,21 @@ cmd_init:
 	or a
 	jr nz,.write_prg_name_loop
 	ret
+
+
+;===========================================================================
+; CMD_CLOSE
+; Closes the debug session.
+; Changes:
+;  NA
+;===========================================================================
+cmd_close:
+	; LOGPOINT [COMMAND] cmd_close
+	; Send response
+	ld de,1
+	call send_length_and_seqno
+	; Afterwards start all over again / show the "UI"
+	jp main
 
 
 ;===========================================================================
