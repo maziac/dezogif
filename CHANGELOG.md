@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.9.0
+- Use of DZRP 1.6.0: Support of CMD_CLOSE.
+
 ## 0.8.0
 - Use of DZRP 1.5.0: Support of loop back test.
 
