@@ -58,7 +58,7 @@
 
 
 ;===========================================================================
-; Macro to clear a memory area with zeroes.a certain value.
+; Macro to clear a memory area with zeroes.
 ; Parameters:
 ;	dest = Pointer to destination
 ;   count = The number of bytes to clear.
@@ -67,6 +67,21 @@
 ;===========================================================================
 	MACRO MEMCLEAR dest?, count?
 	MEMFILL dest?, 0, count?
+	ENDM
+
+;===========================================================================
+; Macro to clear the memory area at HL with zeroes.
+; Parameters:
+;   count = The number of bytes to clear.
+; Changes:
+;   BC, DE, HL
+;===========================================================================
+	MACRO MEMCLEARHL count?
+	ld bc,count?-1
+	ld (hl),0
+    ld de,hl
+	inc de
+    ldir
 	ENDM
 
 

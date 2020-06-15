@@ -62,50 +62,6 @@ BAUDRATE:   equ 921600
 
 
 ;===========================================================================
-; Sets up the ESP UART at joystick port and displays a text.
-; Parameters:
-;  E: 0x0=00b => no joystick port used
-;     0x1=01b => joyport 1
-;     0x2=10b => joyport 2
-;===========================================================================
-set_text_and_joyport:
-    call set_uart_joystick
-    ; Make all text invisible: INK color = paper color
-    push de
-    ld a,(COLOR_SCREEN) ; Get current PAPER and INK color
-    ld c,a
-    and 11111000b
-    ld b,a
-    ld a,c
-    rrca : rrca : rrca
-    and 00000111b
-    or b
-    ; Fill all 3 lines
-    MEMFILL COLOR_SCREEN+32*JOY1_ROW, a, 3*32
-    pop de
-
-    ; Now make right line visible
-    ld d,JOY1_ROW
-    bit 0,e
-    jr nz,.show
-    inc d
-    bit 1,e
-    jr nz,.show
-    inc d
-.show:
-    ld e,32
-    mul de
-    add de,COLOR_SCREEN
-    ld bc,32-1
-    ld hl,de
-    inc de
-    ld a,(COLOR_SCREEN) ; Get current PAPER and INK color
-    ld (hl),a
-    ldir
-    ret 
-
-
-;===========================================================================
 ; Checks key "0".
 ; If pressed a reset (jp 0) is done.
 ;===========================================================================
@@ -177,6 +133,14 @@ main:
     ld de,INTRO_TEXT
 	call text.ula.print_string
 
+    ; Show right selected option
+    ld hl,SELECTED_TEXT_TABLE
+    ld a,(uart_joyport_selection)
+    add a   ; *2
+    add hl,a
+    ld de,(hl)
+	call text.ula.print_string
+
     ; Border color timer
     ld c,1     
     ld de,0
@@ -197,7 +161,9 @@ main_loop:
     
     ; Key pressed
     dec e
-    call set_text_and_joyport
+    ld a,e
+    ld (uart_joyport_selection),a
+    jr main
 
 .no_keyboard:
     pop de, bc
