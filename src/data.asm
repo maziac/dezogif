@@ -22,8 +22,8 @@ INTRO_TEXT:
     defb "ESP UART Baudrate: "
     STRINGIFY BAUDRATE
 
-    defb AT, 0, 4*8
-    defb "Tx=7, Rx=9"
+;    defb AT, 0, 4*8
+;    defb "Tx=7, Rx=9"
     defb AT, 0, 5*8
     defb "Keys:"
     defb AT, 0, 6*8

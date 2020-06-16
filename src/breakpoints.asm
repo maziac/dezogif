@@ -46,7 +46,65 @@ bp_address			defw	; The location of the temporary breakpoint
 ; It will be executed whenever a RST 0 happens.
 ;===========================================================================
 copy_rom_start_0000h_code:	; Located at 0x0000
-    ;DISP 0x0000 ; Displacement/Compile for address 0x0000
+entry_code:
+   ; Store current AF
+    push af  ; LOGPOINT [BP] RST 0, called from ${w@(SP):hex}h (${w@(SP)})
+ 	jp dbg_enter
+copy_rom_start_0000h_code_end
+
+
+	ORG 0x0066
+copy_rom_start_0066h_code:
+	nop	; For trap/NMI
+
+dbg_enter:
+    ; Get current interrupt state
+	ld a,i
+    jp pe,.int_found     ; IFF was 1 (interrupts enabled)
+	; if P/V read "0", try a 2nd time
+    ld a,i
+.int_found:
+	di
+    ; F = P/V flag.
+	; Get current bank for slot 0
+	push bc
+	ld bc,IO_NEXTREG_REG
+	ld a,REG_MMU+USED_SLOT
+	out (c),a
+	inc b	; IO_NEXTREG_DAT
+	in a,(c)
+
+	; Page in debugger code
+	nextreg REG_MMU+USED_SLOT,USED_BANK
+	jp enter_debugger
+
+
+;===========================================================================
+; Jump here to return from debugger.
+; When jumped here:
+; - AF is on the stack and need to be popped.
+; - Another RET will return to the breaked instruction.
+; - A contains the bank to restore for slot 0
+;===========================================================================
+exit_code:
+	; Restore slot 0 bank
+	nextreg REG_MMU+USED_SLOT,a
+
+	; Interrupts were enabled
+	pop af	; Restore
+.ei:
+	ei 	; Re-enable interrupts
+	; Jump to the address on the stack, i.e. the PC
+    ret 
+copy_rom_start_0066h_code_end
+
+
+ IF 0
+;===========================================================================
+; This instructions needs to be copied to address 0x0000.
+; It will be executed whenever a RST 0 happens.
+;===========================================================================
+copy_rom_start_0000h_code:	; Located at 0x0000
 entry_code:
     ; Store current AF
     push af  ; LOGPOINT [BP] RST 0, called from ${w@(SP):hex}h (${w@(SP)})
@@ -102,7 +160,8 @@ exit_code:
 	; Jump to the address on the stack, i.e. the PC
     ret 
 copy_rom_end
-    ;ENT 
+
+ ENDIF 
 
 	ASSERT $ <= copy_rom_start_0000h_code+0x2000	; Check that program does not flow over to next bank
 

@@ -151,13 +151,30 @@ restore_registers:
 	; Load correct value of HL
 	ld hl,(backup.hl)
 
-	; Get interrupt state
-	push af
+	; Get interrupt state.
+	; Do as much as possible here to save memory in the
+	; 'exit_code' routine.
+	; Therefore the code is modified in slot0 (EI or NOP to enable or kep interrupts disabled).
+
+	push af	; Is popped at exit_code
+	
+	; Load slot0 into swap slot to modify it
+	call save_swap_slot0
+	ld a,(slot_backup.slot0)
+	nextreg REG_MMU+SWAP_SLOT,a
 	ld a,(backup.interrupt_state)
 	bit 2,a
 	; NZ if interrupts enabled
+	ld a,0	; NOP
+	jr z,.no_interrupts
+	ld a,0xFB	; EI
+.no_interrupts:
+	; Self-modify code: EI or NOP
+	ld (exit_code.ei-copy_rom_start_0000h_code+SWAP_SLOT*0x2000),a
+	call restore_swap_slot0
 	ld a,(slot_backup.slot0)
 	jp exit_code
+
 
 
 ;===========================================================================
