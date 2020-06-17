@@ -124,6 +124,8 @@ main:
     ; Setup stack
     ld sp,stack_top
     
+    ; TODO Switch to ULA
+
     ; Clear the screen
     MEMCLEAR SCREEN, SCREEN_SIZE
     ; Black on white

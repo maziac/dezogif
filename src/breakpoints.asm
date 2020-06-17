@@ -95,84 +95,6 @@ copy_rom_start_0066h_code_end
 
 
 
- IF 0
-;===========================================================================
-; This instructions needs to be copied to address 0x0000.
-; It will be executed whenever a RST 0 happens.
-;===========================================================================
-copy_rom_start_0000h_code:	; Located at 0x0000
-entry_code:
-    ; Store current AF
-    push af  ; LOGPOINT [BP] RST 0, called from ${w@(SP):hex}h (${w@(SP)})
-
-    ; Get current interrupt state
-	ld a,i
-    jp pe,.int_found     ; IFF was 1 (interrupts enabled)
-
-	; if P/V read "0", try a 2nd time
-    ld a,i
-
-.int_found:
-	di
-    ; F = P/V flag.
-	; Get current bank for slot 0
-	push bc
-	ld bc,IO_NEXTREG_REG
-	ld a,REG_MMU+USED_SLOT
-	out (c),a
-	inc b	; IO_NEXTREG_DAT
-	in a,(c)
-
-	; Page in debugger code
-	nextreg REG_MMU+USED_SLOT,USED_BANK
-	jp enter_debugger
-
-
-;===========================================================================
-; Jump here to return from debugger.
-; When jumped here:
-; - AF is on the stack and need to be popped.
-; - Another RET will return to the breaked instruction.
-; - Flags: NZ=Interrupts need to be enabled.
-; - A contains the bank to restore for slot 0
-;===========================================================================
-exit_code:
-	; Restore slot 0 bank
-	nextreg REG_MMU+USED_SLOT,a
-
-    ; Check interrupt state
-	jr z,.not_enable_interrupt
-
-	; Interrupts were enabled
-	pop af	; Restore
-	ei 	; Re-enable interrupts
-	; LOGPOINT [INT] Restoring interrupt state: enabled
-	; Jump to the address on the stack, i.e. the PC
-    ret 
-	
-.not_enable_interrupt:
-	pop af	; Restore
-	; LOGPOINT [INT] Restoring interrupt state: disabled
-	; Jump to the address on the stack, i.e. the PC
-    ret 
-copy_rom_end
-
- ENDIF 
-
-	ASSERT $ <= copy_rom_start_0000h_code+0x2000	; Check that program does not flow over to next bank
-
-
-/*
-	ORG copy_rom_start_0000h_code+0x0038	; 0x0038 (this is expresssed as relative for the unit tests)
-interrupt:
-	nop
-	nop
-	nop
-	ei
-	ret
-*/
-
-
 ;===========================================================================
 ; Called by RST 0 or JP 0.
 ; This point is reached when the program e.g. runs into a RST 0.
@@ -185,12 +107,18 @@ interrupt:
 ; - Coop code: A 0 has been put on the stack. The next value on the stack is
 ;   the return address to the debugged program.
 ; When entered:
-; - AF was put on the stack
-; - optionally a 0x0000 was put on the stack
-; - the return address is on the stack
-; - F contains the interrupt enabled state in P/V (PE=interrrupts enabled)
+; - F/PUSHED AF contains the interrupt enabled state in P/V (PE=interrrupts enabled)
 ; - A contains the last used memory bank for USED_SLOT
 ; - interrupts are turned off (DI)
+;
+; Stack for a SW breakpoint (RST 0):
+; - [SP+2]:	The return address (!=0)
+; - [SP]:	AF was put on the stack
+; Stack for a function call from the debugged program
+; - [SP+6]:	The return address
+; - [SP+4]:	Function number
+; - [SP+2]: 0x0000, to distinguish from SW breakpoint
+; - [SP]:	AF was put on the stack
 ;===========================================================================
 enter_debugger:
 	; Save slot 0 bank
@@ -224,15 +152,28 @@ enter_debugger:
 	dec sp : dec sp
 	jp nz,enter_breakpoint
 	
-	; Remove 0 from stack
+	; Get the function number from the stack 
+	inc sp : inc sp : inc sp : inc sp	; Now points to function number
+	pop af ; A=Function number
+	ld (tmp_data),a	; Save value
+	dec sp : dec sp
+
+	; Move AF up by 2 positions
 	pop af 	; Get AF
 	; Skip 0x0000
-	inc sp : inc sp
+	inc sp : inc sp : inc sp : inc sp
 	push af
 	; The stack is now:
-	; - AF
 	; - return address
-	jp execute_cmd
+	; - AF
+	ld a,(tmp_data)	; Restore function number
+	dec a
+	jp z,execute_cmd	; A = 1
+	dec a
+	jp z,execute_init_slot0_bank	; A = 2 ; TODO: wo sind die Parameter, i.e. die Bank Nummer
+	; ERROR ; TODO: Do error handling, e.g. print error on screen
+	; ASSERT 
+	jr $
 
 
 ;===========================================================================
