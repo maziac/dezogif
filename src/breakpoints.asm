@@ -43,60 +43,56 @@ bp_address			defw	; The location of the temporary breakpoint
 
 ;===========================================================================
 ; This instructions needs to be copied to address 0x0000.
-; It will be executed whenever a RST 0 happens.
 ;===========================================================================
 copy_rom_start_0000h_code:	; Located at 0x0000
+
+; Will be executed whenever a RST 0 (SW breakpoint) happens.
 entry_code:
-   ; Store current AF
-    push af  ; LOGPOINT [BP] RST 0, called from ${w@(SP):hex}h (${w@(SP)})
- 	jp dbg_enter
-copy_rom_start_0000h_code_end
+ 	jr dbg_enter
 
-
-	ORG 0x0066
-copy_rom_start_0066h_code:
-	nop	; For trap/NMI
-
-dbg_enter:
-    ; Get current interrupt state
-	ld a,i
-    jp pe,.int_found     ; IFF was 1 (interrupts enabled)
-	; if P/V read "0", try a 2nd time
-    ld a,i
-.int_found:
-	di
-    ; F = P/V flag.
-	; Get current bank for slot 0
-	push bc
-	ld bc,IO_NEXTREG_REG
-	ld a,REG_MMU+USED_SLOT
-	out (c),a
-	inc b	; IO_NEXTREG_DAT
-	in a,(c)
-
-	; Page in debugger code
-	nextreg REG_MMU+USED_SLOT,USED_BANK
-	jp enter_debugger
-
-
-;===========================================================================
 ; Jump here to return from debugger.
 ; When jumped here:
 ; - AF is on the stack and need to be popped.
 ; - Another RET will return to the breaked instruction.
 ; - A contains the bank to restore for slot 0
-;===========================================================================
-exit_code:
-	; Restore slot 0 bank
+exit_code:	; Restore slot 0 bank
 	nextreg REG_MMU+USED_SLOT,a
-
-	; Interrupts were enabled
-	pop af	; Restore
+	; Restore
+	pop af	
+	; Enable interrupts (or not)
 .ei:
-	ei 	; Re-enable interrupts
+	ei 	; Self-modified code
 	; Jump to the address on the stack, i.e. the PC
     ret 
+copy_rom_start_0000h_code_end
+
+
+	ORG copy_rom_start_0000h_code+0x0066
+copy_rom_start_0066h_code:
+	nop	; For trap/NMI
+
+dbg_enter:
+    ; Store current AF
+    push af  ; LOGPOINT [BP] RST 0, called from ${w@(SP):hex}h (${w@(SP)})
+	; Get interrupt state 2 times, analyze it later
+	ld a,i
+	push af
+	ld a,i
+    ; Flags and pushed AF (P/V): the interrupt state.
+	di
+	; Get current bank for slot 0
+.bank:	EQU $+1 ; TODO
+	ld a,0	; Self-modified code. Here the bank is inserted.
+
+	; Page in debugger code
+	nextreg REG_MMU+USED_SLOT,USED_BANK
+	; This code is executed in another bank (the USED_BANK)
+	; ...
 copy_rom_start_0066h_code_end
+
+	; Executed in USED_BANK
+	jp enter_debugger
+
 
 
  IF 0
@@ -197,17 +193,25 @@ interrupt:
 ; - interrupts are turned off (DI)
 ;===========================================================================
 enter_debugger:
-	; Reconstruct bc
-	pop bc 	
 	; Save slot 0 bank
 	ld (slot_backup.slot0),a
-	; Check interrupt state
+	; Check interrupt state: Flags and pushed AF (P/V): the interrupt state. If either one is PE then the interrupts are enabled.
+
 	ld a,0100b
-	jp pe,.int_enabled
-	xor a	
-.int_enabled:
+	inc sp : inc sp		; Correct SP
+    jp pe,.int_found   	; IFF was 1 (interrupts enabled)
+
+	; 2nd try
+	dec sp : dec sp
+	pop af
+    jp pe,.int_found   	; IFF was 1 (interrupts enabled)
+
+	; Interrupts were disabled
+	xor a
+
+.int_found:
 	; Store interrupt state in bit 2
-	ld (backup.interrupt_state),a	; 
+	ld (backup.interrupt_state),a
 	; LOGPOINT [INT] Saving interrupt state: ${A:hex}h
 
 	; Determine if breakpoint or coop code

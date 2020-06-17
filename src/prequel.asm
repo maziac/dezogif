@@ -105,9 +105,9 @@ start_entry_point:
     ; Switch in the bank at 0x0000
     nextreg REG_MMU+USED_SLOT,USED_BANK
 
-    ; Overwrite the RST 0 address with code
-    MEMCOPY SWAP_SLOT*0x2000+copy_rom_start_0000h_code, copy_rom_start_0000h_code, copy_rom_start_0000h_code_end-copy_rom_start_0000h_code
-    MEMCOPY SWAP_SLOT*0x2000+copy_rom_start_0066h_code, copy_rom_start_0066h_code, copy_rom_start_0066h_code_end-copy_rom_start_0066h_code
+    ; Initialize the bank for slot 0 with the required code.
+    ld a,USED_ROM0_BANK
+    call init_slot0_bank
 
     ; Copy the ZX character font from address ROM_FONT (0x3D00)
     ; to the debugger area at the end of the bank (0x2000-ROM_FONT_SIZE).
@@ -130,6 +130,27 @@ start_entry_point:
     ld (uart_joyport_selection),a
     jp main
     
+
+
+;===========================================================================
+; Initializes the given bank with debugger code.
+; 8 bytes at address 0 and 14 bytes at address 66h.
+; Parameters:
+;   A = bank to initialize.
+;===========================================================================
+init_slot0_bank:
+    ; Save slot
+    call save_swap_slot0
+    ; Switch in the bank at 0xC000
+    nextreg REG_MMU+SWAP_SLOT,a
+     ; Overwrite the address 0 and 66h with code
+    MEMCOPY SWAP_SLOT*0x2000+copy_rom_start_0000h_code, copy_rom_start_0000h_code, copy_rom_start_0000h_code_end-copy_rom_start_0000h_code
+    MEMCOPY SWAP_SLOT*0x2000+copy_rom_start_0066h_code, copy_rom_start_0066h_code, copy_rom_start_0066h_code_end-copy_rom_start_0066h_code
+    ; Save the bank number inside the bank (self modifying code)
+    ld (SWAP_SLOT*0x2000+dbg_enter.bank),a
+    ; Restore slot
+    jp restore_swap_slot0
+
 
 
 ; The preliminary stack
