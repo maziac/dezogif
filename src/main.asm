@@ -38,6 +38,7 @@ LOOPBACK_BANK:  EQU LOADED_BANK ; Used for the loopback test. Could be any bank 
     include "zx/zx.inc"
     include "zx/zxnext_regs.inc"
     include "breakpoints.asm"
+    include "functions.asm"
     include "utilities.asm"
     include "uart.asm"
     include "message.asm"

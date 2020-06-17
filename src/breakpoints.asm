@@ -119,6 +119,12 @@ copy_rom_start_0066h_code_end
 ; - [SP+4]:	Function number
 ; - [SP+2]: 0x0000, to distinguish from SW breakpoint
 ; - [SP]:	AF was put on the stack
+; Stack for a function call from the debugged program if a parameter is used
+; - [SP+8]:	The return address
+; - [SP+6]:	Parameter
+; - [SP+4]:	Function number
+; - [SP+2]: 0x0000, to distinguish from SW breakpoint
+; - [SP]:	AF was put on the stack
 ;===========================================================================
 enter_debugger:
 	; Save slot 0 bank
@@ -151,29 +157,7 @@ enter_debugger:
 	ex (sp),hl	; Restore stack
 	dec sp : dec sp
 	jp nz,enter_breakpoint
-	
-	; Get the function number from the stack 
-	inc sp : inc sp : inc sp : inc sp	; Now points to function number
-	pop af ; A=Function number
-	ld (tmp_data),a	; Save value
-	dec sp : dec sp
-
-	; Move AF up by 2 positions
-	pop af 	; Get AF
-	; Skip 0x0000
-	inc sp : inc sp : inc sp : inc sp
-	push af
-	; The stack is now:
-	; - return address
-	; - AF
-	ld a,(tmp_data)	; Restore function number
-	dec a
-	jp z,execute_cmd	; A = 1
-	dec a
-	jp z,execute_init_slot0_bank	; A = 2 ; TODO: wo sind die Parameter, i.e. die Bank Nummer
-	; ERROR ; TODO: Do error handling, e.g. print error on screen
-	; ASSERT 
-	jr $
+	jp exec_user_function
 
 
 ;===========================================================================
@@ -183,10 +167,9 @@ enter_debugger:
 ; The location just after the breakpoint can be found from the SP.
 ; I.e. it was pushed on stack because of the RST.
 ; When entered:
-; - AF was put on the stack
-; - F contains the interrupt enabled state in P/V (PE=interrrupts enabled)
-; - A contains the last used memory bank for USED_SLOT
-; - interrupts are turned off (DI)
+; Stack for a SW breakpoint (RST 0):
+; - [SP+2]:	The return address (!=0)
+; - [SP]:	AF was put on the stack
 ;===========================================================================
 enter_breakpoint:
 	; LOGPOINT [DEFAULT] enter_breakpoint

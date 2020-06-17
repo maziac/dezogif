@@ -310,3 +310,16 @@ RomPatch:
                 jp      TestRoutine
 RomPatchLen     equ     $-RomPatch
 */
+
+
+/*
+Multiface:
+
+garryl:
+So pressing the NMI button will swap the Multface ROM in, how can one switch back?
+@Maziac Once the NMI button is pressed, paging is under software control:
+IN A,($bf): pages the MF ROM/RAM out
+IN A,($3f): pages the MF ROM/RAM back in
+If you do an OUT ($3f),A before the IN A,($bf) then the MF is again hidden and can only be paged back by pressing the NMI button.
+
+*/
