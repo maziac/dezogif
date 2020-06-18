@@ -144,9 +144,15 @@ border_color:	defb BLACK
 ; Main use: utilities.asm, breakpoints.asm
 
 ; Temporary data area to be used by several subroutines.
-tmp_data:   defs SLOT_BACKUP	; SLOT_BACKUP is the max. usage (8 bytes)
+tmp_data:   defs 4
 tmp_clip_window = tmp_data
-slot_backup:	SLOT_BACKUP = tmp_data
+
+
+
+;===========================================================================
+; Used by backup.asm
+
+slot_backup:	SLOT_BACKUP
 
 
 ;===========================================================================

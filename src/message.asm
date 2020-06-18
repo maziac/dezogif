@@ -105,6 +105,7 @@ cmd_loop:
 ;  At the end the registers are restored.
 ;===========================================================================
 execute_cmd:
+ ld a,0x33
 	; Backup all registers 
 	call save_registers
 	; SP is now at debug_stack_top

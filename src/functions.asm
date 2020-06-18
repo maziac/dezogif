@@ -32,6 +32,8 @@ exec_user_function:
 	pop af ; A=Function number
 	ld (tmp_data),a	; Save value
 	dec sp : dec sp
+	dec sp : dec sp
+	dec sp : dec sp
 
 	; Move AF up by 2 positions
 	pop af 	; Get AF
@@ -42,6 +44,7 @@ exec_user_function:
 	; - return address
 	; - AF
 	ld a,(tmp_data)	; Restore function number
+ and 0xF
 	dec a
 	jp z,execute_cmd	; A = 1
 	dec a
@@ -49,7 +52,6 @@ exec_user_function:
 	; ERROR ; TODO: Do error handling, e.g. print error on screen
 	; ASSERT 
 	jr $
-
 
 
 ;===========================================================================
@@ -84,17 +86,24 @@ execute_init_slot0_bank:
 
     ; Save slot
     call save_swap_slot0
-    ; Switch in the bank at 0xC000
+
+	; Copy
 	ld a,(tmp_data)	; Get bank
-    nextreg REG_MMU+SWAP_SLOT,a
-     ; Overwrite the address 0 and 66h with code
-    MEMCOPY SWAP_SLOT*0x2000+copy_rom_start_0000h_code, copy_rom_start_0000h_code, copy_rom_start_0000h_code_end-copy_rom_start_0000h_code
-    MEMCOPY SWAP_SLOT*0x2000+copy_rom_start_0066h_code, copy_rom_start_0066h_code, copy_rom_start_0066h_code_end-copy_rom_start_0066h_code
-    ; Save the bank number inside the bank (self modifying code)
-    ld (SWAP_SLOT*0x2000+dbg_enter.bank),a
+ 	call .inner
+
     ; Restore slot
     call restore_swap_slot0
 	
 	; Restore registers
 	jp restore_registers
 
+	; A contains the bank.
+.inner:
+    ; Switch in the bank at 0xC000
+    nextreg REG_MMU+SWAP_SLOT,a
+     ; Overwrite the address 0 and 66h with code
+    MEMCOPY SWAP_SLOT*0x2000, copy_rom_start_0000h_code, copy_rom_start_0000h_code_end-copy_rom_start_0000h_code
+    MEMCOPY SWAP_SLOT*0x2000+copy_rom_start_0066h_code-copy_rom_start_0000h_code, copy_rom_start_0066h_code, copy_rom_start_0066h_code_end-copy_rom_start_0066h_code
+    ; Save the bank number inside the bank (self modifying code)
+    ld (SWAP_SLOT*0x2000+dbg_enter.bank-copy_rom_start_0000h_code),a
+	ret

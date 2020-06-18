@@ -3,6 +3,7 @@
 ## 0.9.1
 - Key "0" to reset.
 - Moved debug code from address 0x0000 to 0x0066.
+- Extended interface to debugged program to init bank at slot 0.
 
 ## 0.9.0
 - Use of DZRP 1.6.0: Support of CMD_CLOSE.

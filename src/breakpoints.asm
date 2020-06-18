@@ -84,6 +84,7 @@ dbg_enter:
 .bank:	EQU $+1 ; TODO
 	ld a,0	; Self-modified code. Here the bank is inserted.
 
+ ; LOGPOINT Bank=${A}, 0x${A:hex}
 	; Page in debugger code
 	nextreg REG_MMU+USED_SLOT,USED_BANK
 	; This code is executed in another bank (the USED_BANK)

@@ -583,6 +583,7 @@ cmd_set_slot:
 	ld a,USED_ROM0_BANK
 .no_rom:
 	ld (slot_backup.slot0),a
+	; LOGPOINT cmd_set_slot=${A}, 0x${A:hex}
 	jr .end
 
 .not_slot0:
