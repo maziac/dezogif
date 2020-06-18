@@ -161,7 +161,6 @@ restore_registers:
 	; Load slot0 into swap slot to modify it
 	call save_swap_slot0
 	ld a,(slot_backup.slot0)
-	; LOGPOINT a slot_backup.slot0=${A}, 0x${A:hex}
 	nextreg REG_MMU+SWAP_SLOT,a
 	ld a,(backup.interrupt_state)
 	bit 2,a
@@ -174,7 +173,6 @@ restore_registers:
 	ld (exit_code.ei-copy_rom_start_0000h_code+SWAP_SLOT*0x2000),a
 	call restore_swap_slot0
 	ld a,(slot_backup.slot0)
-	; LOGPOINT b slot_backup.slot0=${A}, 0x${A:hex}
 	jp exit_code
 
 

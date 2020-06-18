@@ -44,11 +44,10 @@ exec_user_function:
 	; - return address
 	; - AF
 	ld a,(tmp_data)	; Restore function number
- and 0xF
 	dec a
 	jp z,execute_cmd	; A = 1
 	dec a
-	jp z,execute_init_slot0_bank	; A = 2 ; TODO: wo sind die Parameter, i.e. die Bank Nummer
+	jp z,execute_init_slot0_bank	; A = 2 
 	; ERROR ; TODO: Do error handling, e.g. print error on screen
 	; ASSERT 
 	jr $
@@ -68,11 +67,9 @@ exec_user_function:
 execute_init_slot0_bank:
 	; Get bank/change stack
 	inc sp : inc sp
-	ex (sp),hl	; Get value from stack
-	inc hl
-	ldd a,(hl)	; Get bank in high byte
+	pop af  	; Get bank in high byte
 	ld (tmp_data),a	; Save value
-	ex (sp),hl	; Restore stack
+	dec sp : dec sp
 	dec sp : dec sp
 
 	; Move AF up by 1 position
