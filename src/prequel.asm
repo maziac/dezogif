@@ -23,6 +23,11 @@ start_entry_point:
 	ld a,RTM_28MHZ
 	nextreg REG_TURBO_MODE,a
 
+    ; Reset layer 2 writing/reading
+    ld bc,LAYER_2_PORT
+    xor a
+    out (c),a
+
     ; Switch in ROM bank
     nextreg REG_MMU+0,ROM_BANK
     nextreg REG_MMU+1,ROM_BANK
