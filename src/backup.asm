@@ -23,9 +23,25 @@
 ;    -6 = caller of breakpoint (RST) +1
 ; Returns:
 ;  SP = debug_stack_top after ret_jump
+; Important Note:
+; This function also turns off layer 2 reading/writing.
+; I.e. up to this point it is not save to read from/write to
+; slot 0.
+; I.e. before calling this function no self-modifying code is 
+; allowed.
 ; ===========================================================================
 save_registers:
-	; Save
+	; Save layer 2 reading/writing
+	push bc
+    ld bc,LAYER_2_PORT
+    in a,(c)
+	ld (backup.layer_2_port),a
+	; Turn off layer 2 reading /writing
+	xor a
+	out (c),a
+	pop bc
+
+	; Save hl
 	ld (backup.hl),hl
 	pop hl  ; Save return address to HL
 	ld (.ret_jump+1),hl	; self.modifying code, used instead of a return
@@ -173,6 +189,14 @@ restore_registers:
 	ld (exit_code.ei-copy_rom_start_0000h_code+SWAP_SLOT*0x2000),a
 	call restore_swap_slot0
 	ld a,(slot_backup.slot0)
+	push af	; Put on stack which should be in a safe readable area
+	; Restore layer 2 reading/writing
+	ld a,(backup.layer_2_port)
+	push bc 
+	ld bc,LAYER_2_PORT
+	out (c),a
+	pop bc
+	pop af	; Restore bank
 	jp exit_code
 
 

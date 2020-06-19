@@ -110,6 +110,7 @@ backup:
 .interrupt_state:	defb 0	; P/V flag -> Bit 2: 0=disabled, 1=enabled
 ;.save_mem_bank:		defb 0
 .speed:				defb 0
+.layer_2_port:		defb 0
 .border_color:		defb 0
 backup_top:
 
