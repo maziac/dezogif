@@ -68,8 +68,8 @@ BAUDRATE:   equ 921600
 ;===========================================================================
 check_key_reset:
     ; Read port
-    ld bc,PORT_KEYB_67890
-    in a,(c)
+    ld a,HIGH PORT_KEYB_67890
+    in a,(LOW PORT_KEYB_67890)
     bit 0,a ; "0"
     ret nz 
     ; Reset

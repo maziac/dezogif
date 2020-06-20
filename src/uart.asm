@@ -122,8 +122,8 @@ wait_for_uart_rx:
     ld b,20
 .loop:
     ; Check if byte available.
-	ld a,PORT_UART_TX>>8
-	in a,(PORT_UART_TX&0xFF)	; Read status bits
+	ld a,HIGH PORT_UART_TX
+	in a,(LOW PORT_UART_TX)	; Read status bits
     bit UART_RX_FIFO_EMPTY,a
     ret nz      ; RET if byte available
     
@@ -138,15 +138,17 @@ wait_for_uart_rx:
 
 
 ;===========================================================================
-; Cheks if a byte is avaialble at the UART.
+; Checks if a byte is available at the UART.
 ; Returns:
 ;   NZ = Byte available
 ;   Z = No byte available
+; Changes:
+;   AF
 ;===========================================================================
 check_uart_byte_available:
-	ld bc,PORT_UART_TX
-.wait_loop:
-	in a,(c)					; Read status bits
+	ld a,HIGH PORT_UART_TX
+	in a,(LOW PORT_UART_TX)
+	; Read status bits
     bit UART_RX_FIFO_EMPTY,a
     ret
 
