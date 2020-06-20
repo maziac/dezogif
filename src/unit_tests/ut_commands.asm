@@ -889,7 +889,16 @@ UT_11_set_slot:
 	ld ix,test_memory_output
 	call cmd_set_slot
 	; Check bank
-	TEST_MEMORY_BYTE slot_backup.slot0, USED_ROM0_BANK
+	TEST_MEMORY_BYTE slot_backup.slot0, ROM_BANK
+
+	; Test ROM in slot 0
+	ld iy,.cmd_data
+	ld (iy),USED_SLOT
+	ld (iy+1),ROM_BANK
+	ld ix,test_memory_output
+	call cmd_set_slot
+	; Check bank
+	TEST_MEMORY_BYTE slot_backup.slot0, ROM_BANK
  TC_END
 
 .cmd_data:	defb 0

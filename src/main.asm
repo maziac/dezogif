@@ -13,8 +13,9 @@
 ; The program is loaded here first, then copied to USED_MAIN_BANK. So dezogif can also load itself. Debugged programs may use this bank.
 LOADED_BANK:    EQU 92    
 
-; Bank used to copy the ROM (0x0000) to and change the RST 0 address into a jump. Debugged programs cannot use this bank.
-USED_ROM0_BANK: EQU 93  
+; Is temporarily used. E.g. to change the AltROM. The debugged program can use this bank.
+TMP_BANK:       EQU 90  
+TMP_BANKB:       EQU TMP_BANK+1  
 
 ; The 8k memory bank to store the code to.
 ; Debugged programs cannot use this bank.
@@ -22,6 +23,7 @@ USED_BANK:      EQU 94  ; Last 8k bank on unexpanded ZXNext.
 
 USED_SLOT:      EQU 0   ; 0x0000
 SWAP_SLOT:      EQU 6   ; 0xC000, used only temporary
+SWAP_SLOTB:     EQU SWAP_SLOT+1   ; 0xE000, used only temporary
 
 LOOPBACK_BANK:  EQU LOADED_BANK ; Used for the loopback test. Could be any bank as the loopback test is not done with a running debugged program.
 

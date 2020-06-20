@@ -101,18 +101,13 @@ start_entry_point:
     ld a,REG_MMU+SWAP_SLOT
     call read_tbblue_reg    ; returns the bank in A
 
-    ; Switch in the bank at 0xC000
-    nextreg REG_MMU+SWAP_SLOT,USED_ROM0_BANK
-    ; Copy the ROM at 0x0000 to bank USED_ROM_BANK
-    nextreg REG_MMU+USED_SLOT,ROM_BANK
-    MEMCOPY SWAP_SLOT*0x2000, 0x0000, 0x2000
-
     ; Switch in the bank at 0x0000
     nextreg REG_MMU+USED_SLOT,USED_BANK
 
     ; Initialize the bank for slot 0 with the required code.
-    ld a,USED_ROM0_BANK
-    call execute_init_slot0_bank.inner
+    ;ld a,USED_ROM0_BANK
+    ;call execute_init_slot0_bank.inner
+    call copy_altrom
 
     ; Copy the ZX character font from address ROM_FONT (0x3D00)
     ; to the debugger area at the end of the bank (0x2000-ROM_FONT_SIZE).
@@ -142,6 +137,92 @@ start_entry_point:
 stack_prequel:
 	defs 2*20
 .top
+
+
+
+;===========================================================================
+; Copies the ROM to AltROM and modifies 
+; 8 bytes at address 0 and 14 bytes at address 66h.
+; As the ROM banks (0xFF) can't be paged to other slots than 0 and 1
+; the contents is first copied to SWAP_SLOT/B, then the altrom is paged in
+; and the SWAP_SLOT contents is copied to slot 0/1.
+;===========================================================================
+copy_altrom:
+ IF 0
+    ; Test code
+    nextreg REG_ALTROM,00000000b
+    nextreg REG_MMU,ROM_BANK
+    nextreg REG_ALTROM,11000000b
+    ld hl,0
+    ld (hl),0xAA    ; AA to AltROM
+
+    nextreg REG_ALTROM,10000000b
+    nextreg REG_ALTROM,00000000b
+    nextreg REG_ALTROM,10000000b
+    nextreg REG_ALTROM,00000000b
+ ENDIF
+
+    ; First 128K ROM
+    ld a,0
+    call copy_modify_altrom
+    ; Then 48K ROM
+    ld a,00010000b
+    call copy_modify_altrom
+    ret
+
+
+;===========================================================================
+; Copies the ROM to AltROM and modifies 
+; 8 bytes at address 0 and 14 bytes at address 66h.
+; Does ti for both, the 48K ROM and the 128K ROM.
+;===========================================================================
+copy_modify_altrom:
+    ; 128k or 48K ROM
+    ld bc,MEMORY_PAGING_CONTROL
+    out (c),a
+
+ IF 0
+.loop
+    ld a,0
+    out (c),a
+    ld a,00010000b
+    out (c),a
+    jr .loop
+ ENDIF
+
+    ; Disable ALTROM
+    nextreg REG_ALTROM,0
+    ; Copy ROM0
+    nextreg REG_MMU+SWAP_SLOT,TMP_BANK
+    nextreg REG_MMU+SWAP_SLOTB,TMP_BANKB
+    nextreg REG_MMU,ROM_BANK
+    MEMCOPY SWAP_SLOT*0x2000, 0x0000, 0x4000
+    ; Restore USED_BANK
+    nextreg REG_MMU,USED_BANK
+    ; Modify
+    nextreg REG_MMU+SWAP_SLOT,TMP_BANK
+    ld a,ROM_BANK
+    call modify_bank
+    ; Copy to AltROM: Enable AltRom and make it writable
+    nextreg REG_MMU,ROM_BANK
+    nextreg REG_MMU+1,ROM_BANK
+    nextreg REG_ALTROM,11000000b
+    MEMCOPY 0x0000, SWAP_SLOT*0x2000, 0x4000
+    nextreg REG_ALTROM,10000000b
+
+ IF 0
+    ; For testing
+    nextreg REG_ALTROM,00000000b
+    nextreg REG_ALTROM,10000000b
+    nextreg REG_ALTROM,00000000b
+    nextreg REG_ALTROM,10000000b
+    nextreg REG_ALTROM,00000000b
+    nextreg REG_ALTROM,10000000b
+ ENDIF
+        
+    ; Switch back debugger code in used bank
+    nextreg REG_MMU,USED_BANK
+    ret
 
 
 

@@ -192,10 +192,9 @@ restore_registers:
 	push af	; Put on stack which should be in a safe readable area
 	; Restore layer 2 reading/writing
 	ld a,(backup.layer_2_port)
-	push bc 
 	ld bc,LAYER_2_PORT
 	out (c),a
-	pop bc
+	ld bc,(backup.bc)
 	pop af	; Restore bank
 	jp exit_code
 

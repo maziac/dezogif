@@ -99,7 +99,7 @@ cmd_call:	; Get pointer to subroutine
 ;  NA
 ;===========================================================================
 cmd_init:
-	; LOGPOINT [COMMAND] cmd_init
+	; LOGPOINT [CMD] cmd_init
 	; Read version number
 	ld hl,receive_buffer.payload
 	ld de,3
@@ -142,7 +142,7 @@ cmd_init:
 ;  NA
 ;===========================================================================
 cmd_close:
-	; LOGPOINT [COMMAND] cmd_close
+	; LOGPOINT [CMD] cmd_close
 	; Send response
 	ld de,1
 	call send_length_and_seqno
@@ -157,7 +157,7 @@ cmd_close:
 ;  NA
 ;===========================================================================
 cmd_get_registers:
-	; LOGPOINT [COMMAND] cmd_get_regs
+	; LOGPOINT [CMD] cmd_get_regs
 	; Send response
 	ld de,29
 	call send_length_and_seqno
@@ -185,7 +185,7 @@ cmd_get_registers:
 ;  NA
 ;===========================================================================
 cmd_set_register:
-	; LOGPOINT [COMMAND] cmd_set_reg
+	; LOGPOINT [CMD] cmd_set_reg
 	; Read rest of message
 	ld hl,receive_buffer.payload
 	ld de,3
@@ -264,7 +264,7 @@ cmd_set_register:
 ;  NA
 ;===========================================================================
 cmd_write_bank:
-	; LOGPOINT [COMMAND] cmd_write_bank
+	; LOGPOINT [CMD] cmd_write_bank
 	; Execute command
 	call cmd_write_bank.inner
 	; Send response
@@ -301,7 +301,7 @@ cmd_write_bank:
 ;  NA
 ;===========================================================================
 cmd_continue:
-	; LOGPOINT [COMMAND] cmd_continue
+	; LOGPOINT [CMD] cmd_continue
 	; Read breakpoints etc. from message
 	ld hl,receive_buffer.payload
 	ld de,PAYLOAD_CONTINUE
@@ -347,7 +347,7 @@ cmd_continue:
 ;  NA
 ;===========================================================================
 cmd_pause:
-	; LOGPOINT [COMMAND] cmd_pause
+	; LOGPOINT [CMD] cmd_pause
 	; Send response
 	ld de,1
 	call send_length_and_seqno
@@ -371,7 +371,7 @@ cmd_pause:
 ;  NA
 ;===========================================================================
 cmd_read_mem:
-	; LOGPOINT [COMMAND] cmd_read_mem
+	; LOGPOINT [CMD] cmd_read_mem
 	; Read address and size from message
 	ld hl,receive_buffer.payload
 	ld de,5
@@ -498,7 +498,7 @@ cmd_read_mem.read:
 ;  NA
 ;===========================================================================
 cmd_write_mem:
-	; LOGPOINT [COMMAND] cmd_write_mem
+	; LOGPOINT [CMD] cmd_write_mem
 	; Read address from message
 	ld hl,receive_buffer.payload
 	ld de,3
@@ -539,13 +539,14 @@ cmd_write_mem:
 ;  NA
 ;===========================================================================
 cmd_get_slots:
-	; LOGPOINT [COMMAND] cmd_get_slots
+	; LOGPOINT [CMD] cmd_get_slots
 	; Send response
 	ld de,9
 	call send_length_and_seqno
 
 	; Get and send slot 0
 	ld a,(slot_backup.slot0)
+	; LOGPOINT cmd_get_slots slot0: ${A}
 	call write_uart_byte
 	; Send the other 7 slots
 	ld de,256*(REG_MMU+1)+7	; Load D and E at the same time
@@ -568,32 +569,36 @@ cmd_get_slots:
 ;  NA
 ;===========================================================================
 cmd_set_slot:
-	; LOGPOINT [COMMAND] cmd_set_slot
+	; LOGPOINT [CMD] cmd_set_slot
 
 	; Get slot
 	call read_uart_byte
-	or a
+	ld l,a
+	; Get bank
+	call read_uart_byte
+	cp 0xFE
+	jr nz,.no_fe
+	inc a	; Change 0xFE to 0xFF
+.no_fe:
+	; A = bank
+
+	; Get slot
+	inc l
+	dec l	; check for 0
 	jr nz,.not_slot0
 
+	; LOGPOINT cmd_set_slot slot0: ${A}
+
 	; Slot 0 is handled especially: don't change the slot but only the backed up value
-	call read_uart_byte	; Get bank
-	; Check for special value 0xFE (ROM0) which is converted to USED_MAIN_BANK, i.e. instead of the ROM the modified ROM is set.
-	cp 0xFE
-	jr c,.no_rom
-	ld a,USED_ROM0_BANK
-.no_rom:
 	ld (slot_backup.slot0),a
 	jr .end
 
 .not_slot0:
+	ld h,a	; H = bank
+	ld a,l	; slot
 	add a,REG_MMU
 	ld (.nextreg_register+2),a	; Modify opcode
-	; Get bank
-	call read_uart_byte
-	; Check for special value 0xFE (ROM0) which is converted to 0xFF
-	cp 0xFE
-	jr nz,.nextreg_register
-	inc a	; Change 0xFE to 0xFF
+	ld a,h	; A = bank
 .nextreg_register:
 	nextreg 0x00,a	; Self-modifying code
 .end:
@@ -616,7 +621,7 @@ cmd_set_slot:
 ;  NA
 ;===========================================================================
 cmd_get_tbblue_reg:
-	; LOGPOINT [COMMAND] cmd_get_tbblue_reg
+	; LOGPOINT [CMD] cmd_get_tbblue_reg
 	; Send response
 	ld de,2
 	call send_length_and_seqno
@@ -634,7 +639,7 @@ cmd_get_tbblue_reg:
 ;  NA
 ;===========================================================================
 cmd_set_border:
-	; LOGPOINT [COMMAND] cmd_set_border
+	; LOGPOINT [CMD] cmd_set_border
 	; Read register number
 	call read_uart_byte
 	out (BORDER),a
@@ -650,7 +655,7 @@ cmd_set_border:
 ;  NA
 ;===========================================================================
 cmd_set_breakpoints:
-	; LOGPOINT [COMMAND] cmd_set_breakpoints
+	; LOGPOINT [CMD] cmd_set_breakpoints
 	;call save_rom_slots
 	call save_swap_slot0
 	; Calculate the count
@@ -691,7 +696,7 @@ cmd_set_breakpoints:
 	add 0xC0		; SWAP_SLOT0*0x20
 	ld h,a
 	; Get memory
-	ld a,(hl)	; LOGPOINT [COMMAND] BP=${HL:hex}h, ${HL} (SWAP)
+	ld a,(hl)	; LOGPOINT [CMD] BP=${HL:hex}h, ${HL} (SWAP)
 	; Set breakpoint
 	ld (hl),BP_INSTRUCTION
 
@@ -707,7 +712,7 @@ cmd_set_breakpoints:
 
 .normal:
 	; Get memory
-	ld a,(hl)	; LOGPOINT [COMMAND] BP=${HL:hex}h, ${HL}
+	ld a,(hl)	; LOGPOINT [CMD] BP=${HL:hex}h, ${HL}
 	; Set breakpoint
 	ld (hl),BP_INSTRUCTION
 
@@ -726,7 +731,7 @@ cmd_set_breakpoints:
 ;  NA
 ;===========================================================================
 cmd_restore_mem:
-	; LOGPOINT [COMMAND] cmd_restore_mem
+	; LOGPOINT [CMD] cmd_restore_mem
 	;call save_rom_slots
 	call save_swap_slot0
 	; Send response
@@ -796,7 +801,7 @@ cmd_restore_mem:
 ;  NA
 ;===========================================================================
 cmd_loopback:
-	; LOGPOINT [COMMAND] cmd_loopback
+	; LOGPOINT [CMD] cmd_loopback
 	; Save swap slot
 	call save_swap_slot0
 
@@ -862,7 +867,7 @@ cmd_loopback:
 ;  NA
 ;===========================================================================
 cmd_get_sprites_palette:
-	; LOGPOINT [COMMAND] cmd_get_sprites_palette
+	; LOGPOINT [CMD] cmd_get_sprites_palette
 	; Start response
 	ld de,513
 	call send_length_and_seqno
@@ -983,7 +988,7 @@ cmd_get_sprites_palette:
 ;  NA
 ;===========================================================================
 cmd_get_sprites_clip_window_and_control:
-	; LOGPOINT [COMMAND] cmd_get_sprites_clip_window_and_control
+	; LOGPOINT [CMD] cmd_get_sprites_clip_window_and_control
 	; Prepare response
 	ld de,6
 	call send_length_and_seqno

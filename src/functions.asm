@@ -12,7 +12,7 @@
 
 ;===========================================================================
 ; Called by enter_debugger to execute a user function. 
-; I.e. a function that was called by teh debugged program.
+; I.e. a function that was called by the debugged program.
 ; When entered:
 ; Stack for a function call from the debugged program
 ; - [SP+6]:	The return address
@@ -42,6 +42,7 @@ exec_user_function:
 	push af
 	; The stack is now:
 	; - return address
+	; - optionally parameter
 	; - AF
 	ld a,(tmp_data)	; Restore function number
 	dec a
@@ -58,11 +59,6 @@ exec_user_function:
 ; 8 bytes at address 0 and 14 bytes at address 66h.
 ; Parameters:
 ;   A = bank to initialize.
-; When entered:
-; Stack:
-; - [SP+4]:	The return address
-; - [SP+2]:	Parameter
-; - [SP]:	AF was put on the stack
 ;===========================================================================
 execute_init_slot0_bank:
 	; Get bank/change stack
@@ -86,7 +82,9 @@ execute_init_slot0_bank:
 
 	; Copy
 	ld a,(tmp_data)	; Get bank
- 	call .inner
+    ; Switch in the bank at 0xC000
+    nextreg REG_MMU+SWAP_SLOT,a
+ 	call modify_bank
 
     ; Restore slot
     call restore_swap_slot0
@@ -94,10 +92,15 @@ execute_init_slot0_bank:
 	; Restore registers
 	jp restore_registers
 
-	; A contains the bank.
-.inner:
-    ; Switch in the bank at 0xC000
-    nextreg REG_MMU+SWAP_SLOT,a
+
+;===========================================================================
+; Modifies the
+; 8 bytes at address 0 and 14 bytes at address 66h
+; of the bank at 0xC000.
+; Parameters:
+;   A = bank number to write into the bank.
+;===========================================================================
+modify_bank:
      ; Overwrite the address 0 and 66h with code
     MEMCOPY SWAP_SLOT*0x2000, copy_rom_start_0000h_code, copy_rom_start_0000h_code_end-copy_rom_start_0000h_code
     MEMCOPY SWAP_SLOT*0x2000+copy_rom_start_0066h_code-copy_rom_start_0000h_code, copy_rom_start_0066h_code, copy_rom_start_0066h_code_end-copy_rom_start_0066h_code

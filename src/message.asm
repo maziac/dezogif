@@ -320,7 +320,7 @@ send_4bytes_length_and_seqno:
 ;  A, E, BC
 ;===========================================================================
 send_ntf_pause:
-	; LOGPOINT [COMMAND] send_ntf_pause: reason=${D}, breakpoint=${HL:hex}h (${HL})
+	; LOGPOINT [CMD] send_ntf_pause: reason=${D}, breakpoint=${HL:hex}h (${HL})
 	; First length byte
 	ld a,6
 	call write_uart_byte

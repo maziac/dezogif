@@ -62,11 +62,12 @@
                     ]
                 }
             ],
-            "startAutomatically": false,
+            "startAutomatically": true,
             "skipInterrupt": true,
             "commandsAfterLaunch": [
                 //"-sprites",
                 //"-patterns"
+                "-md 0x000 0x0100 0xC000 0x0100"
             ],
             "disassemblerArgs": {
                 "esxdosRst": true
@@ -105,8 +106,7 @@
                 //"-logpoint enable",
                 "-assert enable",
                 //"-logpoint enable DEFAULT"
-                //"-sprites",
-                //"-patterns"
+                "-md 0x000 0x0100 0xC000 0x0100"
             ],
             "disassemblerArgs": {
                 "esxdosRst": true
