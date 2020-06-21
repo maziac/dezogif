@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.10.0
+- Interoperable with Layer 2 read/write.
+
 ## 0.9.1
 - Key "0" to reset.
 - Moved debug code from address 0x0000 to 0x0066.
