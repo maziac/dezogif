@@ -72,9 +72,9 @@ execute_init_slot0_bank:
 
 	; Get bank/change stack
 	ld ix,(backup.sp)
-	ld a,(ix+4)		; Get bank in high byte
-	ld hl,(ix+2)	; Get AF
-	ld (ix+4),hl	; Move up
+	ld a,(ix+3)		; Get bank in high byte
+	ld hl,(ix)		; Get AF
+	ld (ix+2),hl	; Move up
 	
     ; Switch in the bank at 0xC000
     nextreg REG_MMU+SWAP_SLOT,a
@@ -88,13 +88,12 @@ execute_init_slot0_bank:
 	ld sp,(backup.sp)
 
 	; Load bank
-	ld a,(backup.layer_2_port)
+	ld a,(slot_backup.slot0)
 	push af
 
 	; Restore layer 2 read/write
 	call restore_layer2_rw
 	pop af	; A contains right bank
-	pop bc
 
 	; Correct SP
 	inc sp : inc sp
