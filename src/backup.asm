@@ -165,6 +165,7 @@ restore_registers:
 	push af	; Is popped at exit_code
 	
 	; Load slot0 into swap slot to modify it
+	push bc
 	call save_swap_slot0
 	ld a,(slot_backup.slot0)
 	nextreg REG_MMU+SWAP_SLOT,a
@@ -183,6 +184,7 @@ restore_registers:
 	; Restore layer 2 reading/writing
 	call restore_layer2_rw
 	pop af	; Restore bank
+	pop bc
 	jp exit_code
 
 
