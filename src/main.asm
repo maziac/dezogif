@@ -79,6 +79,7 @@ check_key_reset:
     ; Do the reset from a different slot, because this slot need to be exchanged with ROM
     jp .jump_reset+(SWAP_SLOT)*0x2000
 .jump_reset:
+    nextreg REG_ALTROM,0
     nextreg REG_MMU,ROM_BANK
     nextreg REG_MMU+1,ROM_BANK
     jp 0
@@ -168,7 +169,7 @@ main_loop:
     dec e
     ld a,e
     ld (uart_joyport_selection),a
-    jr main
+    jp main
 
 .no_keyboard:
     pop de, bc
@@ -213,7 +214,7 @@ main_loop:
 
 
     ; Save NEX file
-    SAVENEX OPEN BIN_FILE, start_entry_point, stack_top //stack_top: CSpect has a problem (crashes the program immediately when it is run) if stack points to stack_top 
+    SAVENEX OPEN BIN_FILE, start_entry_point, stack_prequel.top //stack_top: The ZX Next has a problem (crashes the program immediately when it is run) if stack points to stack_top 
     SAVENEX CORE 3, 1, 5  
     ;SAVENEX CFG 0               ; black border
     ;SAVENEX BAR 0, 0            ; no load bar

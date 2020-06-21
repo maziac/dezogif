@@ -122,9 +122,10 @@ start_entry_point:
     ; Init
     call drain_rx_buffer
 
+
     ; Init text printing
     call text.init
-    
+
     ; The main program has been copied into USED_MAIN_BANK
     ld a,2  ; Joy 2 selected
     ld (uart_joyport_selection),a

@@ -82,7 +82,7 @@ dbg_enter:
 	di
 	; Get current bank for slot 0
 .bank:	EQU $+1 ; TODO
-	ld a,0	; Self-modified code. Here the bank is inserted.
+	ld a,USED_BANK	; Self-modified code. Here the bank is inserted.
 
 	; Page in debugger code
 	nextreg REG_MMU+USED_SLOT,USED_BANK

@@ -94,6 +94,30 @@ read_tbblue_reg_multiple:
 
 
 ;===========================================================================
+; Writes a color to the border and waits on press
+; of SPACE.
+; Changes:
+;   A
+;===========================================================================
+	MACRO WAIT_SPACE color?
+	ld a,color?
+	out (BORDER),a
+	; Wait on key press
+.not_pressed:
+	ld a,HIGH PORT_KEYB_BNMSHIFTSPACE
+	in a,(LOW PORT_KEYB_BNMSHIFTSPACE)
+	bit 0,a	; SPACE
+	jr nz,.not_pressed
+	; Wait on key release
+.pressed:
+	ld a,HIGH PORT_KEYB_BNMSHIFTSPACE
+	in a,(LOW PORT_KEYB_BNMSHIFTSPACE)
+	bit 0,a	; SPACE
+	jr z,.pressed
+	ENDM
+
+
+;===========================================================================
 ; Writes a value to a given TBBLUE register.
 ; Parameters:
 ;   A = register
