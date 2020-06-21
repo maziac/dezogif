@@ -31,16 +31,6 @@
 ; allowed.
 ; ===========================================================================
 save_registers:
-	; Save layer 2 reading/writing
-	push bc
-    ld bc,LAYER_2_PORT
-    in a,(c)
-	ld (backup.layer_2_port),a
-	; Turn off layer 2 reading /writing
-	xor a
-	out (c),a
-	pop bc
-
 	; Save hl
 	ld (backup.hl),hl
 	pop hl  ; Save return address to HL
@@ -191,13 +181,42 @@ restore_registers:
 	ld a,(slot_backup.slot0)
 	push af	; Put on stack which should be in a safe readable area
 	; Restore layer 2 reading/writing
-	ld a,(backup.layer_2_port)
-	ld bc,LAYER_2_PORT
-	out (c),a
-	ld bc,(backup.bc)
+	call restore_layer2_rw
 	pop af	; Restore bank
 	jp exit_code
 
+
+
+;===========================================================================
+; Saves layer 2 reading/writing.
+; Changes:
+;   A, BC
+; ===========================================================================
+save_layer2_rw:
+	; Save layer 2 reading/writing
+    ld bc,LAYER_2_PORT
+    in a,(c)
+	push af
+	; Turn off layer 2 reading /writing
+	xor a
+	out (c),a
+	; Store
+	pop af
+	ld (backup.layer_2_port),a
+	ret
+
+
+;===========================================================================
+; Restores layer 2 reading/writing.
+; Changes:
+;   A, BC
+; ===========================================================================
+restore_layer2_rw:
+	; Restore layer 2 reading/writing
+	ld a,(backup.layer_2_port)
+	ld bc,LAYER_2_PORT
+	out (c),a
+	ret
 
 
 ;===========================================================================

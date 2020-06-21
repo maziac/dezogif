@@ -128,9 +128,17 @@ copy_rom_start_0066h_code_end
 ;===========================================================================
 enter_debugger:
 	; Save slot 0 bank
-	ld (slot_backup.slot0),a
-	; Check interrupt state: Flags and pushed AF (P/V): the interrupt state. If either one is PE then the interrupts are enabled.
+	push af 
+	; Save layer 2 read/write
+	push bc 
+	call save_layer2_rw
+	pop bc 
 
+	; Save slot 0 bank
+	pop af
+	ld (slot_backup.slot0),a
+
+	; Check interrupt state: Flags and pushed AF (P/V): the interrupt state. If either one is PE then the interrupts are enabled.
 	ld a,0100b
 	inc sp : inc sp		; Correct SP
     jp pe,.int_found   	; IFF was 1 (interrupts enabled)
