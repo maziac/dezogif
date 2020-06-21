@@ -110,13 +110,24 @@ change_border_color:
 ; Waits until an RX byte is available.
 ; Changes the border color slowly to indicate waiting state (like for tape
 ; loading).
+; Note: This runs when possibly the layer 2 read/write is set. I.e. it is not
+; allowed to read/write data.
+; I.e. also no CALLs, no PUSH/POP.
 ; Changes:
-;   A, DE, B
+;   A, DE, BC
 ;===========================================================================
 wait_for_uart_rx:
+    ; Write layer 2 previous value
+    ld a,(backup.layer_2_port)
+    ld bc,LAYER_2_PORT
+    out (c),a
 .color_change:
     ; Change border color
-    call change_border_color
+    ld a,c
+    inc a
+    and 0x07
+    out (BORDER),a
+    ld c,a
     ; Counter
     ld de,0
     ld b,20
@@ -125,8 +136,15 @@ wait_for_uart_rx:
 	ld a,HIGH PORT_UART_TX
 	in a,(LOW PORT_UART_TX)	; Read status bits
     bit UART_RX_FIFO_EMPTY,a
-    ret nz      ; RET if byte available
-    
+    jr z,.no_byte   ; Jump if no byte available
+
+    ; Disable layer 2 read/write
+    xor a
+    ld bc,LAYER_2_PORT
+    out (c),a 
+    ret       ; RET if byte available
+
+.no_byte:   
     ; Decrement counter for changing the color
     dec e
     jr nz,.loop
