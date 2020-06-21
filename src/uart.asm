@@ -54,7 +54,7 @@ UART_TX_READY:      equ 1   ; 0=ready for next byte, 1=byte is being transmitted
 ;===========================================================================
 
 ; Baudrate timing calculation table.
-; BAUDRATE must be 230400 at least otherwise a 1 byte table is not enough.
+; BAUDRATE must be 230400 at least otherwise a 1 byte table is not sufficient.
 baudrate_table:
 	defb 28000000/BAUDRATE
     defb 28571429/BAUDRATE

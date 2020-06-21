@@ -119,10 +119,6 @@ start_entry_point:
     ; Set baudrate
     call set_uart_baudrate
 
-    ; Init
-    call drain_rx_buffer
-
-
     ; Init text printing
     call text.init
 

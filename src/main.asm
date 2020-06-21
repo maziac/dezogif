@@ -147,6 +147,13 @@ main:
     ld de,(hl)
 	call text.ula.print_string
 
+    ; Set UART
+    ld a,(uart_joyport_selection)
+    call set_uart_joystick
+
+    ; Drain
+    call drain_rx_buffer
+
     ; Border color timer
     ld c,1     
     ld de,0
