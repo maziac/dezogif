@@ -128,6 +128,12 @@ main:
     ; Setup stack
     ld sp,stack_top
 
+    ; Init layer 2
+    ld bc,LAYER_2_PORT
+    xor a
+    out (c),a
+    ld (backup.layer_2_port),a
+
     ; Set UART
     ld a,(uart_joyport_selection)
     ld e,a
