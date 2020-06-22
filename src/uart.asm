@@ -139,7 +139,8 @@ wait_for_uart_rx:
     jr z,.no_byte   ; Jump if no byte available
 
     ; Disable layer 2 read/write
-    xor a
+    ld a,(backup.layer_2_port)
+	and 11111010b	; Disable read/write only
     ld bc,LAYER_2_PORT
     out (c),a 
     ret       ; RET if byte available
