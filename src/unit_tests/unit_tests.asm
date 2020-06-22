@@ -19,6 +19,7 @@ USED_BANK: EQU 94  ; Last 8k bank on unexpanded ZXNext.
 USED_SLOT:      EQU 0   ; 0x0000
 USED_ROM0_BANK: EQU 93  
 LOOPBACK_BANK:  EQU 92
+main_show_ui:   equ 0x0000
 
 
 ; Program title shown on screen.

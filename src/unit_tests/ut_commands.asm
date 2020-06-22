@@ -121,7 +121,7 @@ UT_1_cmd_init:
 	; Test
 	ld iy,.cmd_data
 	ld ix,test_memory_output
-	call cmd_init
+	call cmd_init.inner
 
 	; Test length
 	TEST_MEMORY_WORD test_memory_output, 5+PROGRAM_NAME.end-PROGRAM_NAME

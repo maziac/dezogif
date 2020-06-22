@@ -127,7 +127,16 @@ read_key_joyport:
 main:
     ; Setup stack
     ld sp,stack_top
-    
+
+    ; Set UART
+    ld a,(uart_joyport_selection)
+    ld e,a
+    call set_uart_joystick
+
+    ; Drain
+    call drain_rx_buffer
+
+main_show_ui:    
     ; TODO Switch to ULA
 
     ; Clear the screen
@@ -146,13 +155,6 @@ main:
     add hl,a
     ld de,(hl)
 	call text.ula.print_string
-
-    ; Set UART
-    ld a,(uart_joyport_selection)
-    call set_uart_joystick
-
-    ; Drain
-    call drain_rx_buffer
 
     ; Border color timer
     ld c,1     
