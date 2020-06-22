@@ -100,6 +100,12 @@ cmd_call:	; Get pointer to subroutine
 ;===========================================================================
 cmd_init:
 	; LOGPOINT [CMD] cmd_init
+	call .inner
+	; Afterwards start all over again / show the "UI"
+    ld sp,stack_top		; Setup stack
+	jp main_show_ui
+
+.inner:
 	; Read version number
 	ld hl,receive_buffer.payload
 	ld de,3
@@ -131,8 +137,7 @@ cmd_init:
 	call write_uart_byte
 	or a
 	jr nz,.write_prg_name_loop
-	; Afterwards start all over again / show the "UI"
-	jp main
+	ret
 
 
 ;===========================================================================
@@ -640,7 +645,7 @@ cmd_get_tbblue_reg:
 ;===========================================================================
 cmd_set_border:
 	; LOGPOINT [CMD] cmd_set_border
-	; Read register number
+	; Read border color
 	call read_uart_byte
 	out (BORDER),a
 	; Send response
