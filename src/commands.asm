@@ -102,8 +102,7 @@ cmd_init:
 	; LOGPOINT [CMD] cmd_init
 	call .inner
 	; Afterwards start all over again / show the "UI"
-    ld sp,stack_top		; Setup stack
-	jp main_show_ui
+    jp show_ui
 
 .inner:
 	; Read version number

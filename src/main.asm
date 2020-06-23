@@ -142,25 +142,8 @@ main:
     ; Drain
     call drain_rx_buffer
 
-main_show_ui:    
-    ; TODO Switch to ULA
-
-    ; Clear the screen
-    MEMCLEAR SCREEN, SCREEN_SIZE
-    ; Black on white
-    MEMFILL COLOR_SCREEN, WHITE+(BLACK<<3), COLOR_SCREEN_SIZE
-
-    ; Print text 
-    ld de,INTRO_TEXT
-	call text.ula.print_string
-
-    ; Show right selected option
-    ld hl,SELECTED_TEXT_TABLE
-    ld a,(uart_joyport_selection)
-    add a   ; *2
-    add hl,a
-    ld de,(hl)
-	call text.ula.print_string
+    ; Show the text
+    call show_ui
 
     ; Border color timer
     ld c,1     
@@ -200,6 +183,31 @@ main_loop:
     call change_border_color
     ld c,4
     jr main_loop
+
+
+;===========================================================================
+; Switches to ULA mode and shows the intro text.
+; Displaying which keys can be used to change the joy port.
+;===========================================================================
+show_ui:    
+    ; TODO Switch to ULA
+
+    ; Clear the screen
+    MEMCLEAR SCREEN, SCREEN_SIZE
+    ; Black on white
+    MEMFILL COLOR_SCREEN, WHITE+(BLACK<<3), COLOR_SCREEN_SIZE
+
+    ; Print text 
+    ld de,INTRO_TEXT
+	call text.ula.print_string
+
+    ; Show right selected option
+    ld hl,SELECTED_TEXT_TABLE
+    ld a,(uart_joyport_selection)
+    add a   ; *2
+    add hl,a
+    ld de,(hl)
+	jp text.ula.print_string
 
 
 ;===========================================================================
