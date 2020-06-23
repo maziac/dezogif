@@ -190,8 +190,13 @@ main_loop:
 ; Displaying which keys can be used to change the joy port.
 ;===========================================================================
 show_ui:    
-    ; TODO Switch to ULA
-
+    ; Switch to ULA
+    nextreg REG_ULA_X_OFFSET,0
+    nextreg REG_ULA_Y_OFFSET,0
+    nextreg REG_ULA_CONTROL,0
+    nextreg REG_DISPLAY_CONTROL,0
+    nextreg REG_SPRITE_LAYER_SYSTEM,00010000b   ; USL
+    
     ; Clear the screen
     MEMCLEAR SCREEN, SCREEN_SIZE
     ; Black on white
