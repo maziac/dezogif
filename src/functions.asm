@@ -98,7 +98,7 @@ execute_init_slot0_bank:
 	; Correct SP
 	inc sp : inc sp
 
-	jp exit_code
+	jp exit_code_enable_nmi
 
 
 ;===========================================================================

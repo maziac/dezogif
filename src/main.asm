@@ -41,6 +41,7 @@ LOOPBACK_BANK:  EQU LOADED_BANK ; Used for the loopback test. Could be any bank 
     include "zx/zxnext_regs.inc"
     include "breakpoints.asm"
     include "functions.asm"
+    include "nmi.asm"
     include "utilities.asm"
     include "uart.asm"
     include "message.asm"
@@ -127,6 +128,9 @@ read_key_joyport:
 main:
     ; Setup stack
     ld sp,stack_top
+
+    ; Disable the M1 (MF NMI) button
+    call mf_nmi_disable
 
     ; Init layer 2
     ld bc,LAYER_2_PORT

@@ -185,7 +185,7 @@ restore_registers:
 	call restore_layer2_rw
 	pop af	; Restore bank
 	pop bc
-	jp exit_code
+	jp exit_code_enable_nmi
 
 
 

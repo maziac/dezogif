@@ -35,6 +35,7 @@ PRG_START:
     include "zx/zxnext_regs.inc"
     include "breakpoints.asm"
     include "functions.asm"
+    include "nmi.asm"
     include "utilities.asm"
     include "uart.asm"
     include "message.asm"

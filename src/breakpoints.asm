@@ -132,6 +132,10 @@ enter_debugger:
 	; Save layer 2 read/write
 	push bc 
 	call save_layer2_rw
+
+    ; Disable the M1 (MF NMI) button
+    call mf_nmi_disable
+
 	pop bc 
 
 	; Save slot 0 bank
