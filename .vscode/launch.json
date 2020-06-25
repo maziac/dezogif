@@ -106,7 +106,7 @@
                 //"-logpoint enable",
                 "-assert enable",
                 //"-logpoint enable DEFAULT"
-                "-md 0x000 0x0100 0xC000 0x0100"
+                "-md 0 100 0xc000 100 0x2000 100 0xe000 100"
             ],
             "disassemblerArgs": {
                 "esxdosRst": true

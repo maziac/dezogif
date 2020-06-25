@@ -1,7 +1,11 @@
 # Changelog
 
+## 0.11.0
+- Moved main functionality to slot 7 to allow correct read of slot 0 if set to ROM (ROM is only visible correctly in slot 0/1).
+
 ## 0.10.0
 - Interoperable with Layer 2 read/write.
+- M1/NMI disabled/re-eanbled.
 
 ## 0.9.1
 - Key "0" to reset.

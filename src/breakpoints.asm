@@ -44,6 +44,8 @@ bp_address			defw	; The location of the temporary breakpoint
 ;===========================================================================
 ; This instructions needs to be copied to address 0x0000.
 ;===========================================================================
+	ORG USED_SLOT*0x2000
+	DISP 0x0000	; Compile for address 0x0000
 copy_rom_start_0000h_code:	; Located at 0x0000
 
 ; Will be executed whenever a RST 0 (SW breakpoint) happens.
@@ -56,7 +58,7 @@ entry_code:
 ; - Another RET will return to the breaked instruction.
 ; - A contains the bank to restore for slot 0
 exit_code:	; Restore slot 0 bank
-	nextreg REG_MMU+USED_SLOT,a
+	nextreg REG_MMU,a
 	; Restore
 	pop af	
 	; Enable interrupts (or not)
@@ -65,9 +67,10 @@ exit_code:	; Restore slot 0 bank
 	; Jump to the address on the stack, i.e. the PC
     ret 
 copy_rom_start_0000h_code_end
+	ENT 
 
-
-	ORG copy_rom_start_0000h_code+0x0066
+	ORG USED_SLOT*0x2000+0x0066
+	DISP 0x0066
 copy_rom_start_0066h_code:
 	nop	; For trap/NMI
 
@@ -81,19 +84,25 @@ dbg_enter:
     ; Flags and pushed AF (P/V): the interrupt state.
 	di
 	; Get current bank for slot 0
-.bank:	EQU $+1 ; TODO
+.bank:	EQU $+1
 	ld a,USED_BANK	; Self-modified code. Here the bank is inserted.
 
 	; Page in debugger code
-	nextreg REG_MMU+USED_SLOT,USED_BANK
+	nextreg REG_MMU,USED_BANK ; I cannot directly switch to USED_SLOT and jump there as this would require to many opcodes.
 	; This code is executed in another bank (the USED_BANK)
 	; ...
 copy_rom_start_0066h_code_end
 
-	; Executed in USED_BANK
+	; Executed in USED_BANK in slot 0.
+	; Now switch to USED_SLOT:
+	nextreg REG_MMU+USED_SLOT,USED_BANK
+	; And jump there
 	jp enter_debugger
+copy_rom_start_0066h_code_second_end
 
+	ENT	; End of DISPlaced code
 
+	ORG USED_SLOT*0x2000+copy_rom_start_0066h_code_second_end
 
 ;===========================================================================
 ; Called by RST 0 or JP 0.

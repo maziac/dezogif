@@ -21,9 +21,9 @@ TMP_BANKB:       EQU TMP_BANK+1
 ; Debugged programs cannot use this bank.
 USED_BANK:      EQU 94  ; Last 8k bank on unexpanded ZXNext.
 
-USED_SLOT:      EQU 0   ; 0x0000
+USED_SLOT:      EQU 7   ; 0xE000
 SWAP_SLOT:      EQU 6   ; 0xC000, used only temporary
-SWAP_SLOTB:     EQU SWAP_SLOT+1   ; 0xE000, used only temporary
+;SWAP_SLOTB:     EQU SWAP_SLOT+1   ; 0xC000, used only temporary
 
 LOOPBACK_BANK:  EQU LOADED_BANK ; Used for the loopback test. Could be any bank as the loopback test is not done with a running debugged program.
 
@@ -76,10 +76,6 @@ check_key_reset:
     bit 0,a ; "0"
     ret nz 
     ; Reset
-    nextreg REG_MMU+SWAP_SLOT,USED_BANK
-    ; Do the reset from a different slot, because this slot need to be exchanged with ROM
-    jp .jump_reset+(SWAP_SLOT)*0x2000
-.jump_reset:
     nextreg REG_ALTROM,0
     nextreg REG_MMU,ROM_BANK
     nextreg REG_MMU+1,ROM_BANK
@@ -225,7 +221,7 @@ show_ui:
 ;===========================================================================
    
     ; Note: Page and slot doesn't matter as this is bss area and will be located in divmmc.
-    ; However for testing (wihtout divmmc) it is better that a bank is mapped
+    ; However for testing (without divmmc) it is better that a bank is mapped
     ;MMU USED_DATA_SLOT e, USED_DATA_BANK
     ;ORG 0x2000
 
@@ -240,7 +236,8 @@ show_ui:
 ;===========================================================================
 ; After loading the program starts here. 
 ;===========================================================================
-    MMU 5 e, 5, 0xA000 ; Slot 5 = Bank 5 (standard)
+    ; Default slots: 254, 255, 10, 11, 4, 5, 0, 1
+    MMU 4 e, 4, 0x8000 ; Slot 4 = Bank 4 (standard)
 
     include "prequel.asm"
 

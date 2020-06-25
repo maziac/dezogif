@@ -78,7 +78,7 @@ start_entry_point:
     ; The main program has been loaded into LOADED_BANK and needs to be copied to USED_MAIN_BANK
     ; Switch in the bank at 0x0000
     nextreg REG_MMU+USED_SLOT,USED_BANK
-    ; Switch in loaded bank at 0xE000
+    ; Switch in loaded bank at 0xC000
     nextreg REG_MMU+SWAP_SLOT,LOADED_BANK
     ; Copy the code
     MEMCOPY USED_SLOT*0x2000, SWAP_SLOT*0x2000, 0x2000   
@@ -189,14 +189,17 @@ copy_modify_altrom:
 
     ; Disable ALTROM
     nextreg REG_ALTROM,0
-    ; Copy ROM0
+    ; Copy ROM
     nextreg REG_MMU+SWAP_SLOT,TMP_BANK
-    nextreg REG_MMU+SWAP_SLOTB,TMP_BANKB
     nextreg REG_MMU,ROM_BANK
-    MEMCOPY SWAP_SLOT*0x2000, 0x0000, 0x4000
+    MEMCOPY SWAP_SLOT*0x2000, 0x0000, 0x2000
+    nextreg REG_MMU+SWAP_SLOT,TMP_BANKB
+    nextreg REG_MMU+1,ROM_BANK
+    MEMCOPY SWAP_SLOT*0x2000, 0x2000, 0x4000
     ; Restore USED_BANK
     nextreg REG_MMU,USED_BANK
     ; Modify
+    nextreg REG_MMU+USED_SLOT,USED_BANK
     nextreg REG_MMU+SWAP_SLOT,TMP_BANK
     ld a,ROM_BANK
     call modify_bank
@@ -204,7 +207,10 @@ copy_modify_altrom:
     nextreg REG_MMU,ROM_BANK
     nextreg REG_MMU+1,ROM_BANK
     nextreg REG_ALTROM,11000000b
-    MEMCOPY 0x0000, SWAP_SLOT*0x2000, 0x4000
+    nextreg REG_MMU+SWAP_SLOT,TMP_BANK
+    MEMCOPY 0x0000, SWAP_SLOT*0x2000, 0x2000
+    nextreg REG_MMU+SWAP_SLOT,TMP_BANKB
+    MEMCOPY 0x2000, SWAP_SLOT*0x2000, 0x2000
     nextreg REG_ALTROM,10000000b
 
  IF 0
