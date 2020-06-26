@@ -13,6 +13,7 @@
 	; Used in backup/restore of the slots.
 	STRUCT SLOT_BACKUP
 slot0:		defb
+slot7:		defb
 tmp_slot:	defb	; Normally SWAP_SLOT but could be also other.
 	ENDS
 
@@ -279,7 +280,7 @@ cmd_write_bank:
 	; Choose the right slot: don't use a slot where this program is located.
 ;.slot:	equ ((cmd_write_bank+2*0x2000)>>13)&0x07
 	; Remember current bank for slot
-	call save_swap_slot0
+	call save_swap_slot
 
 	; Change bank for slot 
 	; Read bank number of message
@@ -292,7 +293,7 @@ cmd_write_bank:
 	call receive_bytes
 
 	; Restore slot/bank (D)
-	jp restore_swap_slot0
+	jp restore_swap_slot
 
 
 ;===========================================================================
@@ -368,7 +369,7 @@ cmd_pause:
 ;===========================================================================
 ; CMD_READ_MEM
 ; Reads a memory area.
-; Special is that if slot 0 area is read, 
+; Special is that if slot 7 area is read, 
 ; then the memory bank of slot_backup.slot0 is temporarily paged into 
 ; SWAP_SLOT and read.
 ; Changes:
@@ -392,97 +393,10 @@ cmd_read_mem:
 	call send_4bytes_length_and_seqno
 
 .inner:		; For unit testing
-	call save_swap_slot0
 	ld de,(payload_read_mem.mem_size)
 	ld hl,(payload_read_mem.mem_start)
 	ld bc,cmd_read_mem.read
-
-	; Loop over memory in 2 phases:
-	; 1. memory in range 0x0000-0x1FFF
-	; 2. memory in range 0x2000-0xFFFF
-	; 3. loop to 1
-	; Each of the phase is optionally.
-	; BC contains a function piinter to the inner call
-loop_memory:
-	; Phase 1: memory in range 0x0000-0x1FFF
-	ld (.inner_call+1),bc	; function pointer
-	ld a,h
-	;cp 0x40
-	cp 0x20
-	jr nc,.phase2
-
-	; Modify HL
-	;and 0x3F
-	and 0x1F
-	add 0xC0
-	ld h,a
-
-.phase1:
-	; Save current slots
-	push hl, de
-	;call save_slots
-	
-	; Page in ROM area to swap slots
-	ld a,(slot_backup.slot0)
-	nextreg REG_MMU+SWAP_SLOT,a
-	;ld a,(slot_backup.slot1)
-	;nextreg REG_MMU+SWAP_SLOT1,a
-
-	pop de, hl
-
-	call .inner_loop	; HL = 0
-
-	; End if de was 0
-	;jp z,restore_slots
-	jp z,restore_swap_slot0
-
-	; Page in original banks
-	;push de
-	;call restore_slots
-	;pop de
-	call restore_swap_slot0
-
-	; Correct the address
-	;ld hl,0x4000
-	ld hl,0x2000
-
-.phase2:
-	; Phase 2: memory in range 0x2000-0xFFFF
-	call .inner_loop	; HL = 0
-	ret z	; Return if DE was 0
-
-	; Phase 1 again: memory in range 0x0000-0x1FFF
-	ld h,0xC0
-	jr .phase1
-
-
-	; On a return DE contains the rest of the bytes to copy, HL is 0.
-	; If the counter reaches 0 this function does not return but leaves
-	; the whole cmd_read_mem.
-	; Returns with Z if DE is zero, otherwise NZ.
-.inner_loop:
-	; Check counter
-	ld a,e
-	or d
-	ret z
-
-.inner_call:
-	call 0x0000	; Self-modifying code
-
-	; Decrement counter
-	dec de
-	; Increment pointer
-	inc l
-	jr nz,.inner_loop
-	inc h
-	jr nz,.inner_loop
-	
-	; End of bank(s) reached	
-	; Check DE once again
-	ld a,e
-	or d
-	ret 
-	
+	jp memory_loop
 
 ; The inner call
 cmd_read_mem.read:
@@ -509,7 +423,7 @@ cmd_write_mem:
 	call receive_bytes
 
 .inner:
-	call save_swap_slot0
+	call save_swap_slot
 	; Read length and subtract 5
 	ld hl,(receive_buffer.length)
 	ld de,-5
@@ -518,7 +432,7 @@ cmd_write_mem:
 	; Read bytes from UART and put into memory
 	ld hl,(payload_write_mem.mem_start)
 	ld bc,.write
-	call loop_memory
+	call memory_loop
 	
 	; Send response
 	ld de,1
@@ -588,16 +502,16 @@ cmd_set_slot:
 
 	; Get slot
 	inc l
-	dec l	; check for 0
-	jr nz,.not_slot0
+	bit 3,l	; check for 0
+	jr nz,.not_slot7
 
 	; LOGPOINT cmd_set_slot slot0: ${A}
 
-	; Slot 0 is handled especially: don't change the slot but only the backed up value
-	ld (slot_backup.slot0),a
+	; Slot 7 is handled especially: don't change the slot but only the backed up value
+	ld (slot_backup.slot7),a
 	jr .end
 
-.not_slot0:
+.not_slot7:
 	ld h,a	; H = bank
 	ld a,l	; slot
 	add a,REG_MMU
@@ -661,7 +575,7 @@ cmd_set_border:
 cmd_set_breakpoints:
 	; LOGPOINT [CMD] cmd_set_breakpoints
 	;call save_rom_slots
-	call save_swap_slot0
+	call save_swap_slot
 	; Calculate the count
 	ld de,(receive_buffer.length)	; Read only the lower bytes
 	add de,-2
@@ -708,7 +622,7 @@ cmd_set_breakpoints:
 	ld e,a
 	;ld a,(slot_backup+SWAP_SLOT0)
 	;nextreg REG_MMU+SWAP_SLOT0,a
-	call restore_swap_slot0
+	call restore_swap_slot
 
 	; Restore a
 	ld a,e
@@ -737,7 +651,7 @@ cmd_set_breakpoints:
 cmd_restore_mem:
 	; LOGPOINT [CMD] cmd_restore_mem
 	;call save_rom_slots
-	call save_swap_slot0
+	call save_swap_slot
 	; Send response
 	ld de,1
 	call send_length_and_seqno
@@ -751,7 +665,7 @@ cmd_restore_mem:
 	ld a,e
 	or d
 	;jp z,restore_rom_slots	; Returns
-	jp z,restore_swap_slot0	; Returns
+	jp z,restore_swap_slot	; Returns
 	; Loop
 	push de
 	; Get memory address
@@ -778,7 +692,7 @@ cmd_restore_mem:
 	ld e,a
 	;ld a,(slot_backup+SWAP_SLOT0)
 	;nextreg REG_MMU+SWAP_SLOT0,a
-	call restore_swap_slot0
+	call restore_swap_slot
 
 	; Restore a
 	ld a,e
@@ -807,7 +721,7 @@ cmd_restore_mem:
 cmd_loopback:
 	; LOGPOINT [CMD] cmd_loopback
 	; Save swap slot
-	call save_swap_slot0
+	call save_swap_slot
 
 	; Page in bank for storage
 	nextreg REG_MMU+SWAP_SLOT,LOOPBACK_BANK
@@ -861,7 +775,7 @@ cmd_loopback:
 	jr nz,.send_loop
 	
 	; Restore slot
-	jp restore_swap_slot0
+	jp restore_swap_slot
 
 
 ;===========================================================================

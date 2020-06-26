@@ -13,13 +13,16 @@
 BAUDRATE:   EQU 999999
 //exit_code:    EQU 0
 SWAP_SLOT:      EQU 6   ; 0xC000, used only temporary
-SWAP_SLOT1:      EQU SWAP_SLOT+1   ; 0xE000, used only temporary
+;SWAP_SLOT1:      EQU SWAP_SLOT+1   ; 0xE000, used only temporary
 
 USED_BANK: EQU 94  ; Last 8k bank on unexpanded ZXNext.
-USED_SLOT:      EQU 0   ; 0x0000
+USED_SLOT:      EQU 7   ; 0xE000
 USED_ROM0_BANK: EQU 93  
-LOOPBACK_BANK:  EQU 92
+LOOPBACK_BANK:  EQU 91
+LOADED_BANK:    EQU 92
 show_ui:   ret  ; Just return
+
+MAIN_ADDR:      EQU USED_SLOT*0x2000
 
 
 ; Program title shown on screen.
@@ -27,9 +30,8 @@ show_ui:   ret  ; Just return
     defb "ZX Next UART DeZog Interface"
     ENDM
 
-
-    ORG 0x7000
-PRG_START:
+    MMU USED_SLOT e, LOADED_BANK ; e -> Everything should fit into one page, error if not.
+    ORG USED_SLOT*0x2000    ; 0xE000
     include "macros.asm"
     include "zx/zx.inc"
     include "zx/zxnext_regs.inc"
@@ -45,6 +47,8 @@ PRG_START:
     include "data.asm"
 
      
+    ORG 0x7000
+PRG_START:
     include "unit_tests/unit_tests.inc"  
     include "unit_tests/ut_utilities.asm"
     include "unit_tests/ut_uart.asm"
@@ -54,13 +58,15 @@ PRG_START:
  
     ; Initialization routine.
     UNITTEST_INITIALIZE
+    ; Page in main bank
+    nextreg REG_MMU+USED_SLOT,LOADED_BANK
     ret
 PRG_END:
 
 
-; Check to avoid that program is put i a memory area that is used 
+; Check to avoid that program is put in a memory area that is used 
 ; in unit testing.
-    ASSERT PRG_START >= 0x7000
+    ;ASSERT PRG_START >= 0x7000
     ASSERT PRG_END <= 0xBFFF
 
     ; Save NEX file

@@ -106,7 +106,7 @@ save_registers:
 ;===========================================================================
 ; Restore all registers and jump to the stored PC.
 ; Parameters:
-;  SP = points to debug_stack_top-2 (i.e. the return address)
+;   -
 ; ===========================================================================
 restore_registers:
 	; Skip IM
@@ -164,29 +164,30 @@ restore_registers:
 
 	push af	; Is popped at exit_code
 	
-	; Load slot0 into swap slot to modify it
-	push bc
-	call save_swap_slot0
+	; Restore layer 2 reading/writing
+	call restore_layer2_rw
+	ld bc,(backup.bc)	; Restore BC value
+	; Restore bank for slot 0
 	ld a,(slot_backup.slot0)
-	nextreg REG_MMU+SWAP_SLOT,a
+	nextreg REG_MMU,a
+	; Set bank to restore for slot 7
+	ld a,(slot_backup.slot7)
+	ld (exit_code.slot7),a
+	jp exit_code
+
+
+	; Check interrupt state
 	ld a,(backup.interrupt_state)
 	bit 2,a
 	; NZ if interrupts enabled
-	ld a,0	; NOP
-	jr z,.no_interrupts
-	ld a,0xFB	; EI
-.no_interrupts:
-	; Self-modify code: EI or NOP
-	ld (exit_code.ei-copy_rom_start_0000h_code+SWAP_SLOT*0x2000),a
-	call restore_swap_slot0
-	ld a,(slot_backup.slot0)
-	push af	; Put on stack which should be in a safe readable area
-	; Restore layer 2 reading/writing
-	call restore_layer2_rw
-	pop af	; Restore bank
-	pop bc
-	jp exit_code_enable_nmi
-
+	ld a,(slot_backup.slot7)
+	; Restore SP for debugged program
+	ld sp,(backup.sp)
+	; Turn on NMI
+.enable_nmi:	equ $+3
+	nextreg REG_PERIPHERAL_2,0	; self-modifying code
+	jp nz,exit_code_ei
+	jp exit_code_di
 
 
 ;===========================================================================
@@ -225,9 +226,9 @@ restore_layer2_rw:
 ;===========================================================================
 ; Saves the swap slot bank.
 ; Changes:
-;   A
+;   AF, BC
 ; ===========================================================================
-save_swap_slot0:
+save_swap_slot:
 	ld a,REG_MMU+SWAP_SLOT
 save_slot:	; Save the slot in A
 	call read_tbblue_reg
@@ -240,8 +241,124 @@ save_slot:	; Save the slot in A
 ; Changes:
 ;   A
 ; ===========================================================================
-restore_swap_slot0:
+restore_swap_slot:
 	ld a,(slot_backup.tmp_slot)
 restore_slot:	; Restore the slot in A
 	nextreg REG_MMU+SWAP_SLOT,a
 	ret
+
+
+
+
+
+;===========================================================================
+; Read data from the stack of the debugged program.
+; As the SP could be pointing to MAIN_SLOT the value is read from a different 
+; slot.
+; Parameters:
+;	HL = the data to get
+;   DE = the count
+;   BC = the destination (in slot 7)
+; Returns:
+;   The data copied to BC...
+; Changes:
+;   
+; ===========================================================================
+get_debugged_prgm_mem:
+	push bc
+	ld bc,.read_write
+	ld (memory_loop.inner_call+1),bc	; function pointer
+	call save_swap_slot
+	pop bc
+	jp memory_loop.inner
+
+; Inner call for 'loop_memory'
+.read_write:
+	; Get byte
+	ld a,(hl)
+	; Write byte
+	ldi (bc),a
+	ret 
+
+
+; ===========================================================================
+; Helper class for cmd_read/write_mem and get_debugged_prgm_mem.
+; Loop over (debugged program) memory in 2 phases:
+; 1. memory in range 0xE000-0xFFFF
+; 2. memory in range 0x0000-0xDFFF
+; 3. loop to 1
+; Each of the phase is optionally.
+; Parameters:
+;   HL = memory to read
+;   DE = size
+;   BC = contains a function pointer to the inner call. When called (HL) 
+;        contains the memory at the location. DE and HL should not be changed.
+; ===========================================================================
+memory_loop:
+	; Phase 1: memory in range 0xE000-0xFFFF
+	ld (.inner_call+1),bc	; function pointer
+	call save_swap_slot
+.inner:	; Beginnign from here BC is not touched anymore
+	ld a,h
+	;cp 0x20
+	cp 0xE0
+	jr c,.phase2
+
+	; Modify HL
+	and 0x1F
+	add SWAP_SLOT*0x20	; 0xC0
+	ld h,a
+
+.phase1:	
+	; Page in slot 7 area to swap slot
+	ld a,(slot_backup.slot7)
+	nextreg REG_MMU+SWAP_SLOT,a
+
+	call .inner_loop
+
+	; End if de was 0
+	jp z,restore_swap_slot
+
+	; Page in original banks
+	call restore_swap_slot
+
+	; Correct the address
+	ld hl,0x0000
+
+.phase2:
+	; Phase 2: memory in range 0x0000-0xDFFF
+	call .inner_loop
+	ret z	; Return if DE was 0
+
+	; Phase 1 again: memory in range 0xE000-0xFFFF
+	ld hl,SWAP_SLOT*0x2000	; Correct HL to 0xC000
+	jr .phase1
+
+
+	; On a return DE contains the rest of the bytes to copy.
+	; Returns with Z if DE is zero, otherwise NZ.
+.inner_loop:
+	; Check counter
+	ld a,e
+	or d
+	ret z
+
+.inner_call:
+	call 0x0000	; Self-modifying code
+
+	; Decrement counter
+	dec de
+	; Increment pointer
+	inc l
+	jr nz,.inner_loop
+	inc h
+	ld a,h
+	cp 0x20*(SWAP_SLOT+1)	; Compare with end of slot memory area
+	jr nz,.inner_loop
+	
+	; End of bank(s) reached	
+	; Check DE once again
+	ld a,e
+	or d
+	ret 
+	

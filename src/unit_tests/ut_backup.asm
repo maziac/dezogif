@@ -215,5 +215,118 @@ UT_save_registers:
  TC_END
 
 
+
+; Test that memory is read correctly. Area outside ROM and slot 7.
+UT_get_debugged_prgm_mem.UT_simple:
+    ; Init
+    MEMCLEAR .mem_write, .mem_length 
+
+    ld hl,.mem_read
+    ld de,.mem_length 
+    ld bc,.mem_write
+    call get_debugged_prgm_mem
+
+    TEST_MEM_CMP .mem_read, .mem_write, .mem_length 
+ TC_END
+.mem_read:  defb 0xA1, 0xA2, 0xA3
+.mem_length:    equ $-.mem_read
+.mem_write: defs .mem_length
+
+
+; Test that memory is read correctly. Area inside slot 7.
+UT_get_debugged_prgm_mem.UT_slot7:
+    ; Init
+    ; Use bank 40 for testing
+    ld a,40
+    ld (slot_backup.slot7),a
+    nextreg REG_MMU+USED_SLOT,a
+    ld a,0xB0
+    ld hl,0xE000
+    ld b,5 
+.loop:
+    ldi (hl),a
+    inc a
+    djnz .loop
+
+
+    ld hl,0xE000
+    ld de,5
+    ld bc,.mem_write
+    nextreg REG_MMU+USED_SLOT,LOADED_BANK
+    call get_debugged_prgm_mem
+
+    TEST_MEMORY_BYTE .mem_write, 0xB0
+    TEST_MEMORY_BYTE .mem_write+1, 0xB1
+    TEST_MEMORY_BYTE .mem_write+2, 0xB2
+    TEST_MEMORY_BYTE .mem_write+3, 0xB3
+    TEST_MEMORY_BYTE .mem_write+4, 0xB4
+ TC_END
+.mem_write: defs 5
+
+
+; Test that memory is read correctly. Area at border 0xDFFF-0xE000.
+UT_get_debugged_prgm_mem.UT_border_0xE000:
+    ; Init
+    ; Use bank 40 for testing in slot 7, slot 6 is anyway swap slot, i.e. don't care
+    ld a,40
+    ld (slot_backup.slot7),a
+    nextreg REG_MMU+USED_SLOT,a
+    ld a,0xB0
+    ld hl,0xDFFD
+    ld b,5 
+.loop:
+    ldi (hl),a
+    inc a
+    djnz .loop
+
+
+    ld hl,0xDFFD
+    ld de,5
+    ld bc,.mem_write
+    nextreg REG_MMU+USED_SLOT,LOADED_BANK
+    call get_debugged_prgm_mem
+
+    TEST_MEMORY_BYTE .mem_write, 0xB0
+    TEST_MEMORY_BYTE .mem_write+1, 0xB1
+    TEST_MEMORY_BYTE .mem_write+2, 0xB2
+    TEST_MEMORY_BYTE .mem_write+3, 0xB3
+    TEST_MEMORY_BYTE .mem_write+4, 0xB4
+ TC_END
+.mem_write: defs 5
+
+; Test that memory is read correctly. Area at border 0xFFFF-0x0000.
+UT_get_debugged_prgm_mem.UT_border_0x0000:
+    ; Init
+    ; Use bank 40 for testing in slot 7
+    ; and bank 39 for slot 0
+    ld a,40
+    ld (slot_backup.slot7),a
+    nextreg REG_MMU+USED_SLOT,a
+    dec a
+    nextreg REG_MMU,a
+    ld a,0xC0
+    ld hl,0xFFFD
+    ld b,5 
+.loop:
+    ldi (hl),a
+    inc a
+    djnz .loop
+
+
+    ld hl,0xFFFD
+    ld de,5
+    ld bc,.mem_write
+    nextreg REG_MMU+USED_SLOT,LOADED_BANK
+    call get_debugged_prgm_mem
+
+    TEST_MEMORY_BYTE .mem_write, 0xC0
+    TEST_MEMORY_BYTE .mem_write+1, 0xC1
+    TEST_MEMORY_BYTE .mem_write+2, 0xC2
+    TEST_MEMORY_BYTE .mem_write+3, 0xC3
+    TEST_MEMORY_BYTE .mem_write+4, 0xC4
+ TC_END
+.mem_write: defs 5
+
+
     ENDMODULE
     
