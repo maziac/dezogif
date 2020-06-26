@@ -64,11 +64,11 @@ exec_user_function:
 execute_init_slot0_bank:
 	; Save registers
 	ld (backup.sp),sp
-	ld sp,debug_stack_top
+	ld sp,debug_stack.top
 	push hl, de, ix
 
     ; Save slot
-    call save_swap_slot0
+    call save_swap_slot
 
 	; Get bank/change stack
 	ld ix,(backup.sp)
@@ -81,7 +81,7 @@ execute_init_slot0_bank:
  	call modify_bank
 
     ; Restore slot
-    call restore_swap_slot0
+    call restore_swap_slot
 
 	; Restore registers
 	pop ix, de, hl
@@ -98,7 +98,7 @@ execute_init_slot0_bank:
 	; Correct SP
 	inc sp : inc sp
 
-	jp exit_code_enable_nmi
+	jp exit_code_di	; TODO: Change and check if working
 
 
 ;===========================================================================

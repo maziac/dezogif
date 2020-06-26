@@ -20,8 +20,7 @@ start_entry_point:
     ;jp divmmc_init
 
 	; Maximize clock speed
-	ld a,RTM_28MHZ
-	nextreg REG_TURBO_MODE,a
+	nextreg REG_TURBO_MODE,RTM_28MHZ
 
     ; Reset layer 2 writing/reading
     ld bc,LAYER_2_PORT
@@ -88,7 +87,7 @@ start_entry_point:
 
     ; Initialization.
     ; Setup stack
-    ld sp,stack_top
+    ld sp,debug_stack.top
  IF 0   ; DIVMMC
     ; Without DivMMC we need RAM at 0x2000
     nextreg REG_MMU+USED_DATA_SLOT, USED_DATA_BANK

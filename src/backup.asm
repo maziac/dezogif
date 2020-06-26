@@ -30,7 +30,7 @@
 ; I.e. before calling this function no self-modifying code is 
 ; allowed.
 ; ===========================================================================
-save_registers:
+save_registers:	; TODO: Maybe not required anymore
 	; Save hl
 	ld (backup.hl),hl
 	pop hl  ; Save return address to HL
@@ -147,42 +147,41 @@ restore_registers:
 	nextreg REG_TURBO_MODE,a
 
 	; Restore AF
-	pop af
+	pop hl	; AF
+	ld (debugged_prgm_stack_copy.af),hl 
 
 	; Correct PC on stack (might have been changed by DeZog)
 	ld hl,(backup.pc)
-	ld sp,(backup.sp)
-	push hl
-	
-	; Load correct value of HL
-	ld hl,(backup.hl)
+	ld (debugged_prgm_stack_copy.other),hl
 
-	; Get interrupt state.
-	; Do as much as possible here to save memory in the
-	; 'exit_code' routine.
-	; Therefore the code is modified in slot0 (EI or NOP to enable or kep interrupts disabled).
-
-	push af	; Is popped at exit_code
+	; Correct the debugged program stack, i.e. put AF and return address on the stack
+	ld hl,(backup.sp)
+	add hl,-4	; "PUSH" 2 values
+	ld de,4
+	ld bc,debugged_prgm_stack_copy.af
+	call write_debugged_prgm_mem
 	
 	; Restore layer 2 reading/writing
 	call restore_layer2_rw
-	ld bc,(backup.bc)	; Restore BC value
+	; It's still possible to read/write in slot 7
+
 	; Restore bank for slot 0
 	ld a,(slot_backup.slot0)
 	nextreg REG_MMU,a
-	; Set bank to restore for slot 7
-	ld a,(slot_backup.slot7)
-	ld (exit_code.slot7),a
-	jp exit_code
 
+	; Restore BC value
+	ld bc,(backup.bc)	
+	; Load correct value of HL
+	ld hl,(backup.hl)
+	; Get debugged program stack
+	ld sp,(backup.sp)
 
 	; Check interrupt state
 	ld a,(backup.interrupt_state)
 	bit 2,a
 	; NZ if interrupts enabled
+	; Set bank to restore for slot 7
 	ld a,(slot_backup.slot7)
-	; Restore SP for debugged program
-	ld sp,(backup.sp)
 	; Turn on NMI
 .enable_nmi:	equ $+3
 	nextreg REG_PERIPHERAL_2,0	; self-modifying code
@@ -195,7 +194,7 @@ restore_registers:
 ; Changes:
 ;   A, BC
 ; ===========================================================================
-save_layer2_rw:
+save_layer2_rw:	; TODO: still required?
 	; Save layer 2 reading/writing
     ld bc,LAYER_2_PORT
     in a,(c)
@@ -252,9 +251,7 @@ restore_slot:	; Restore the slot in A
 
 
 ;===========================================================================
-; Read data from the stack of the debugged program.
-; As the SP could be pointing to MAIN_SLOT the value is read from a different 
-; slot.
+; Read data from the memory (e.g. stack) of the debugged program.
 ; Parameters:
 ;	HL = the data to get
 ;   DE = the count
@@ -264,7 +261,7 @@ restore_slot:	; Restore the slot in A
 ; Changes:
 ;   
 ; ===========================================================================
-get_debugged_prgm_mem:
+read_debugged_prgm_mem:
 	push bc
 	ld bc,.read_write
 	ld (memory_loop.inner_call+1),bc	; function pointer
@@ -281,8 +278,36 @@ get_debugged_prgm_mem:
 	ret 
 
 
+;===========================================================================
+; Write data to the memory (e.g. the stack) of the debugged program.
+; Parameters:
+;	HL = the pointer to write to
+;   DE = the count
+;   BC = the source (in slot 7)
+; Returns:
+;   The data copied to HL...
+; Changes:
+;   
 ; ===========================================================================
-; Helper class for cmd_read/write_mem and get_debugged_prgm_mem.
+write_debugged_prgm_mem:
+	push bc
+	ld bc,.read_write
+	ld (memory_loop.inner_call+1),bc	; function pointer
+	call save_swap_slot
+	pop bc
+	jp memory_loop.inner
+
+; Inner call for 'loop_memory'
+.read_write:
+	; Get byte
+	ldi a,(bc)
+	; Write byte
+	ld (hl),a
+	ret 
+
+
+; ===========================================================================
+; Helper class for cmd_read/write_mem and read/write_debugged_prgm_mem.
 ; Loop over (debugged program) memory in 2 phases:
 ; 1. memory in range 0xE000-0xFFFF
 ; 2. memory in range 0x0000-0xDFFF
@@ -298,7 +323,7 @@ memory_loop:
 	; Phase 1: memory in range 0xE000-0xFFFF
 	ld (.inner_call+1),bc	; function pointer
 	call save_swap_slot
-.inner:	; Beginnign from here BC is not touched anymore
+.inner:	; Beginning from here BC is not touched anymore
 	ld a,h
 	;cp 0x20
 	cp 0xE0

@@ -13,6 +13,8 @@
 
 ;===========================================================================
 ; Enables the Multiface NMI.
+; Changes:
+; A, BC, F
 ; ===========================================================================
 mf_nmi_enable:
 	ld a,REG_PERIPHERAL_2
@@ -24,7 +26,8 @@ mf_nmi_enable:
 
 ;===========================================================================
 ; Disables the Multiface NMI.
-; Returns:
+; Changes:
+; A, BC, F
 ; ===========================================================================
 mf_nmi_disable:
 	ld a,REG_PERIPHERAL_2
@@ -33,14 +36,6 @@ mf_nmi_disable:
 	nextreg REG_PERIPHERAL_2,a
 	; And save value for exiting
 	or 00001000b	; Enable M1 button bit
-	ld (exit_code_enable_nmi.value),a
+	ld (restore_registers.enable_nmi),a
 	ret 
 
-
-;===========================================================================
-; Before exiting the NMI is enabled.
-; ===========================================================================
-exit_code_enable_nmi:
-.value:		equ $+3
-	nextreg REG_PERIPHERAL_2,0	; self-modifying code
-	jp exit_code

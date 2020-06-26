@@ -53,22 +53,6 @@ SELECTED_TEXT_TABLE:
 ; BSS data
 ;===========================================================================
  
-;===========================================================================
-; Stack. 
-;===========================================================================
-
-; Stack: this area is reserved for the stack
-STACK_SIZE: equ 100    ; in words
-
-
-; Reserve stack space
-    defw 0  ; WPMEM, 2
-stack_bottom:
-    defs    STACK_SIZE*2, 0
-stack_top:  
-    defw 0  ; WPMEM, 2
-
-
 
 ;===========================================================================
 ; Data. 
@@ -81,13 +65,44 @@ stack_top:
 tmp_breakpoint_1:	TMP_BREAKPOINT
 tmp_breakpoint_2:	TMP_BREAKPOINT
 
+; Temporary storage for register. Used as long as it is not save to use the (user) stack.
+;tmp_backup:
+;.af:    defw 0
+;.bc:    defw 0
+
+
+; Used to stroe the stack contents of the debugged program.
+; This contains the info passed onthe stack to the debugger.
+; - [SP+12]:	The return address
+; - [SP+10]:	Optional: Parameter
+; - [SP+8]:	    Optional: Function number
+; - [SP+6]:     Optional: 0x0000, to distinguish from SW breakpoint
+; - [SP+4]:	    AF was put on the stack
+; - [SP+2]:	    AF (Interrupt flags) was put on the stack
+; - [SP]:	    BC
+DEBUGGED_PRGM_USED_STACK_SIZE:  equ 14
+debugged_prgm_stack_copy:
+.bc:            defw 0
+.af_interrupt:  defw 0
+.af:            defw 0
+.other:         defs DEBUGGED_PRGM_USED_STACK_SIZE-3*2
+
+
 
 ;===========================================================================
 ; Main use: backup.asm
 
-; The debug stack begins here. SP flows from backup in here.
-debug_stack:	defs 50
-debug_stack_top:
+
+; Stack: this area is reserved for the stack
+STACK_SIZE: equ 100    ; in words
+
+
+; The debug stack begins here. 
+    defw 0  ; WPMEM, 2
+debug_stack:	defs STACK_SIZE*2, 0xAA
+.top:
+    defw 0  ; WPMEM, 2
+
 
 ; The registers of the debugged program are stored here.
 backup:
@@ -113,7 +128,6 @@ backup:
 .layer_2_port:		defb 0
 .border_color:		defb 0
 backup_top:
-
 
 
 ;===========================================================================

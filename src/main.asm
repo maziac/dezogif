@@ -25,11 +25,14 @@ USED_SLOT:      EQU 7   ; 0xE000
 SWAP_SLOT:      EQU 6   ; 0xC000, used only temporary
 ;SWAP_SLOTB:     EQU SWAP_SLOT+1   ; 0xC000, used only temporary
 
-LOOPBACK_BANK:  EQU LOADED_BANK ; Used for the loopback test. Could be any bank as the loopback test is not done with a running debugged program.
+LOOPBACK_BANK:  EQU 91 ; Used for the loopback test. Could be any bank as the loopback test is not done with a running debugged program.
 
     MMU USED_SLOT e, LOADED_BANK ; e -> Everything should fit into one page, error if not.
     ORG USED_SLOT*0x2000
 
+
+; The address that correspondends to the main bank.
+MAIN_ADDR:      EQU USED_SLOT*0x2000
 
 
 ;===========================================================================
@@ -123,7 +126,7 @@ read_key_joyport:
 ;===========================================================================
 main:
     ; Setup stack
-    ld sp,stack_top
+    ld sp,debug_stack.top
 
     ; Disable the M1 (MF NMI) button
     call mf_nmi_disable

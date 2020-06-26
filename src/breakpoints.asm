@@ -57,13 +57,14 @@ entry_code:
 ; - AF is on the stack and need to be popped.
 ; - Another RET will return to the breaked instruction.
 ; - A contains the bank to restore for slot 0
-exit_code:	; Restore slot 0 bank
-	nextreg REG_MMU,a
+exit_code_ei:
+	ei 		; Formerly this was done with dynamically changing self-modifying code. As the memory could also be ROM this was changed into different jump addresses.
+	; Note: According Zilog spec it is not possible that an interrupt occurs before the next instruction is executed. Thus a possible interrupt happens when the memory banks are OK.
+exit_code_di:
+	; Restore slot 7
+	nextreg REG_MMU+USED_SLOT,a
 	; Restore
 	pop af	
-	; Enable interrupts (or not)
-.ei:
-	ei 	; Self-modified code
 	; Jump to the address on the stack, i.e. the PC
     ret 
 copy_rom_start_0000h_code_end
@@ -72,8 +73,6 @@ copy_rom_start_0000h_code_end
 	ORG USED_SLOT*0x2000+0x0066
 	DISP 0x0066
 copy_rom_start_0066h_code:
-	nop	; For trap/NMI
-
 dbg_enter:
     ; Store current AF
     push af  ; LOGPOINT [BP] RST 0, called from ${w@(SP):hex}h (${w@(SP)})
@@ -83,9 +82,10 @@ dbg_enter:
 	ld a,i
     ; Flags and pushed AF (P/V): the interrupt state.
 	di
+	push bc	; Save BC on user stack
 	; Get current bank for slot 0
 .bank:	EQU $+1
-	ld a,USED_BANK	; Self-modified code. Here the bank is inserted.
+	ld c,USED_BANK	; Self-modified code. Here the bank is inserted.
 
 	; Page in debugger code
 	nextreg REG_MMU,USED_BANK ; I cannot directly switch to USED_SLOT and jump there as this would require to many opcodes.
@@ -94,72 +94,161 @@ dbg_enter:
 copy_rom_start_0066h_code_end
 
 	; Executed in USED_BANK in slot 0.
-	; Now switch to USED_SLOT:
+	; Save layer 2 reading/writing
+	ld a,HIGH LAYER_2_PORT
+    in a,(LOW LAYER_2_PORT)
+	ld b,a	; Save layer 2 read/write
+	; Disable read/write: This is extremely dirty: In order not to use BC (as
+	; it contains a required value) A is used for OUT. By luck the LAYER_2_PORT
+	; high byte contains zeroes at the required bits to disable read/write.
+	ld a,HIGH LAYER_2_PORT ; = 0x12 = 00010010, i.e. read and write disabled
+    out (LOW LAYER_2_PORT),a
+	; Now data can be loaded/saved
+
+	; Save bank for slot 0
+	ld a,c
+	ld (slot_backup.slot0-MAIN_ADDR),a
+
+	; Save layer 2 register
+	ld a,b
+	ld (backup.layer_2_port-MAIN_ADDR),a
+
+	; Now take care to only reset read/write layer 2 bits and leave the rest alone
+	res 0,a		; Rest layer 2 writes without affecting flags
+	res 2,a		; Rest layer 2 reads without affecting flags
+	ld bc,LAYER_2_PORT
+	out (c),a
+
+	; Now backup used/main slot.
+	ld bc,IO_NEXTREG_REG
+	ld a,REG_MMU+USED_SLOT
+	out (c),a
+	; Read register
+	ld b,HIGH IO_NEXTREG_DAT
+	in a,(c)	; A contains the previous bank number for USED_SLOT
+	ld (slot_backup.slot7-MAIN_ADDR),a
+
+	; Page in slot7
 	nextreg REG_MMU+USED_SLOT,USED_BANK
-	; And jump there
+	; Now the labels can be used directly (for data access)
+
+	ld (backup.sp),sp
+
+	; Use new stack
+	ld sp,backup.af+2
+
+	; Save registers
+	push af, bc, de, hl, ix, iy		; Note: AF and BC need to be corrected later. A and BC is wrong, flags contain the interrupt state
+
+	; Switch registers
+	exx
+	ex af,af'
+
+	push af, bc, de, hl
+
+	; I and R register
+	; TODO: muss ich anders machen: ld a,i/r: beide verändern das P/E flag.
+	ld a,r
+	ld l,a
+	ld a,i		; TODO: This always indicate interrupts are off, should store the real value
+	ld h,a
+	push hl
+	
+	; Save IM, TODO: doesn't make sense
+	ld hl,0
+	push hl
+
+	; Switch back registers
+	ex af,af'
+	exx
+	; End of register saving through pushing
+
+	; Load SP for debugger
+	ld sp,debug_stack.top
 	jp enter_debugger
-copy_rom_start_0066h_code_second_end
+
+copy_rom_start_code_end
 
 	ENT	; End of DISPlaced code
 
-	ORG USED_SLOT*0x2000+copy_rom_start_0066h_code_second_end
+	ORG USED_SLOT*0x2000+copy_rom_start_code_end
 
 ;===========================================================================
 ; Called by RST 0 or JP 0.
 ; This point is reached when the program e.g. runs into a RST 0.
 ; This indicates that either a breakpoint was hit (RST 0)
 ; or the coop code has called it because the debugged program wants to
-; check for data on teh UART (JP 0).
+; check for data on the UART (JP 0).
 ; The cases are distinguished by the stack contents:
 ; - Breakpoint: The stack contains the return address to the debugged program
 ;   which is != 0.
 ; - Coop code: A 0 has been put on the stack. The next value on the stack is
 ;   the return address to the debugged program.
 ; When entered:
-; - F/PUSHED AF contains the interrupt enabled state in P/V (PE=interrrupts enabled)
+; - PUSHED AF: F contains the interrupt enabled state in P/V (PE=interrrupts enabled),
+;              A contains the used memory bank for slot 0
 ; - A contains the last used memory bank for USED_SLOT
 ; - interrupts are turned off (DI)
 ;
 ; Stack for a SW breakpoint (RST 0):
-; - [SP+2]:	The return address (!=0)
-; - [SP]:	AF was put on the stack
+; - [SP+6]:	The return address (!=0)
+; - [SP+4]:	AF was put on the stack
+; - [SP+2]:	AF (Interrupt flags) was put on the stack
+; - [SP]:	BC
 ; Stack for a function call from the debugged program
-; - [SP+6]:	The return address
-; - [SP+4]:	Function number
-; - [SP+2]: 0x0000, to distinguish from SW breakpoint
-; - [SP]:	AF was put on the stack
+; - [SP+10]:	The return address
+; - [SP+8]:	Function number
+; - [SP+6]: 0x0000, to distinguish from SW breakpoint
+; - [SP+4]:	AF was put on the stack
+; - [SP+2]:	AF (Interrupt flags) was put on the stack
+; - [SP]:	BC
 ; Stack for a function call from the debugged program if a parameter is used
-; - [SP+8]:	The return address
-; - [SP+6]:	Parameter
-; - [SP+4]:	Function number
-; - [SP+2]: 0x0000, to distinguish from SW breakpoint
-; - [SP]:	AF was put on the stack
+; - [SP+12]:	The return address
+; - [SP+10]:	Parameter
+; - [SP+8]:	Function number
+; - [SP+6]: 0x0000, to distinguish from SW breakpoint
+; - [SP+4]:	AF was put on the stack
+; - [SP+2]:	AF (Interrupt flags) was put on the stack
+; - [SP]:	BC
 ;===========================================================================
 enter_debugger:
-	; Save slot 0 bank
-	push af 
-	; Save layer 2 read/write
-	push bc 
-	call save_layer2_rw
-
     ; Disable the M1 (MF NMI) button
     call mf_nmi_disable
 
-	pop bc 
+	; Save clock speed
+	ld a,REG_TURBO_MODE
+	call read_tbblue_reg
+	ld (backup.speed),a
 
-	; Save slot 0 bank
-	pop af
+	; Change clock speed
+	nextreg REG_TURBO_MODE,RTM_28MHZ
+
+	; Save border
+	in a,(BORDER)
+	ld (backup.border_color),a
+
+	; Read user stack
+	ld hl,(backup.sp)
+	ld de,DEBUGGED_PRGM_USED_STACK_SIZE
+	ld bc,debugged_prgm_stack_copy
+	call read_debugged_prgm_mem
+
+	; Restore slot 0 bank
+	ld hl,backup.af+1
+	ld a,(hl)
+	nextreg REG_MMU,a
 	ld (slot_backup.slot0),a
 
 	; Check interrupt state: Flags and pushed AF (P/V): the interrupt state. If either one is PE then the interrupts are enabled.
 	ld a,0100b
-	inc sp : inc sp		; Correct SP
-    jp pe,.int_found   	; IFF was 1 (interrupts enabled)
+	inc hl
+	bit 2,(hl)			; Check flags
+ 	jp pe,.int_found   	; IFF was 1 (interrupts enabled)
 
 	; 2nd try
-	dec sp : dec sp
-	pop af
-    jp pe,.int_found   	; IFF was 1 (interrupts enabled)
+	ld hl,debugged_prgm_stack_copy.af_interrupt
+	bit 2,(hl)			; Check other flags
+    jp nz,.int_found   	; IFF was 1 (interrupts enabled)
 
 	; Interrupts were disabled
 	xor a
@@ -169,14 +258,17 @@ enter_debugger:
 	ld (backup.interrupt_state),a
 	; LOGPOINT [INT] Saving interrupt state: ${A:hex}h
 
+	; Correct the saved values
+	ld hl,(debugged_prgm_stack_copy.bc)
+	ld (backup.bc),hl
+	ld hl,(debugged_prgm_stack_copy.af)
+	ld (backup.af),hl
+	
 	; Determine if breakpoint or coop code
-	inc sp : inc sp
-	ex (sp),hl	; Get value from stack
+	ld hl,(debugged_prgm_stack_copy.other)	; Get value from "stack"
 	; Check for 0
 	ld a,l
 	or h 
-	ex (sp),hl	; Restore stack
-	dec sp : dec sp
 	jp nz,enter_breakpoint
 	jp exec_user_function
 
@@ -189,23 +281,31 @@ enter_debugger:
 ; I.e. it was pushed on stack because of the RST.
 ; When entered:
 ; Stack for a SW breakpoint (RST 0):
-; - [SP+2]:	The return address (!=0)
-; - [SP]:	AF was put on the stack
+; - [SP+6]:	The return address (!=0)
+; - [SP+4]:	AF was put on the stack
+; - [SP+2]:	    AF (Interrupt flags) was put on the stack
+; - [SP]:	    BC
+; Note: The SP will be corrected to point to SP+4.
 ;===========================================================================
 enter_breakpoint:
 	; LOGPOINT [DEFAULT] enter_breakpoint
 
-   	; Backup all registers 
-	call save_registers
-	; SP is now at debug_stack_top
-	; Maximize clock speed
-	ld a,RTM_28MHZ
-	nextreg REG_TURBO_MODE,a
+   	; Maximize clock speed
+	nextreg REG_TURBO_MODE,RTM_28MHZ
 
-	; Correct the return address to the breakpoint address
-	ld de,(backup.pc)	
-	dec de
-	ld (backup.pc),de	
+	; Put and correct the return address to the breakpoint address
+	ld hl,(debugged_prgm_stack_copy.other)	
+	dec hl
+	ld (backup.pc),hl
+
+	; Backup AF
+	ld hl,(debugged_prgm_stack_copy.af)	
+	ld (backup.af),hl
+
+	; Adjust debugged program SP
+	ld hl,(backup.sp)	
+	add hl,4*2	; Skip complete stack
+	ld (backup.sp),hl	
 
 	; Check if temporary breakpoint hit (de = breakpoint address)
 	call check_tmp_breakpoints ; Z = found

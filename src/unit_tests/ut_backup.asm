@@ -81,7 +81,7 @@ UT_save_registers.UT_save:
     ; Test stack pointer
     ld hl,(sp_backup)       ; Remember
     ld (sp_backup),sp       ; Store to check
-    TEST_MEMORY_WORD sp_backup, debug_stack_top
+    TEST_MEMORY_WORD sp_backup, debug_stack.top
 
     ; Deinit
     ld sp,hl
@@ -208,7 +208,7 @@ UT_save_registers:
     ; Test stack pointer
     ld hl,(sp_backup)       ; Remember
     ld (sp_backup),sp       ; Store to check
-    TEST_MEMORY_WORD sp_backup, debug_stack_top
+    TEST_MEMORY_WORD sp_backup, debug_stack.top
 
     ; Deinit
     ld sp,hl
@@ -217,14 +217,14 @@ UT_save_registers:
 
 
 ; Test that memory is read correctly. Area outside ROM and slot 7.
-UT_get_debugged_prgm_mem.UT_simple:
+UT_read_debugged_prgm_mem.UT_simple:
     ; Init
     MEMCLEAR .mem_write, .mem_length 
 
     ld hl,.mem_read
     ld de,.mem_length 
     ld bc,.mem_write
-    call get_debugged_prgm_mem
+    call read_debugged_prgm_mem
 
     TEST_MEM_CMP .mem_read, .mem_write, .mem_length 
  TC_END
@@ -234,7 +234,7 @@ UT_get_debugged_prgm_mem.UT_simple:
 
 
 ; Test that memory is read correctly. Area inside slot 7.
-UT_get_debugged_prgm_mem.UT_slot7:
+UT_read_debugged_prgm_mem.UT_slot7:
     ; Init
     ; Use bank 40 for testing
     ld a,40
@@ -253,7 +253,7 @@ UT_get_debugged_prgm_mem.UT_slot7:
     ld de,5
     ld bc,.mem_write
     nextreg REG_MMU+USED_SLOT,LOADED_BANK
-    call get_debugged_prgm_mem
+    call read_debugged_prgm_mem
 
     TEST_MEMORY_BYTE .mem_write, 0xB0
     TEST_MEMORY_BYTE .mem_write+1, 0xB1
@@ -265,7 +265,7 @@ UT_get_debugged_prgm_mem.UT_slot7:
 
 
 ; Test that memory is read correctly. Area at border 0xDFFF-0xE000.
-UT_get_debugged_prgm_mem.UT_border_0xE000:
+UT_read_debugged_prgm_mem.UT_border_0xE000:
     ; Init
     ; Use bank 40 for testing in slot 7, slot 6 is anyway swap slot, i.e. don't care
     ld a,40
@@ -279,12 +279,11 @@ UT_get_debugged_prgm_mem.UT_border_0xE000:
     inc a
     djnz .loop
 
-
     ld hl,0xDFFD
     ld de,5
     ld bc,.mem_write
     nextreg REG_MMU+USED_SLOT,LOADED_BANK
-    call get_debugged_prgm_mem
+    call read_debugged_prgm_mem
 
     TEST_MEMORY_BYTE .mem_write, 0xB0
     TEST_MEMORY_BYTE .mem_write+1, 0xB1
@@ -295,7 +294,7 @@ UT_get_debugged_prgm_mem.UT_border_0xE000:
 .mem_write: defs 5
 
 ; Test that memory is read correctly. Area at border 0xFFFF-0x0000.
-UT_get_debugged_prgm_mem.UT_border_0x0000:
+UT_read_debugged_prgm_mem.UT_border_0x0000:
     ; Init
     ; Use bank 40 for testing in slot 7
     ; and bank 39 for slot 0
@@ -312,12 +311,11 @@ UT_get_debugged_prgm_mem.UT_border_0x0000:
     inc a
     djnz .loop
 
-
     ld hl,0xFFFD
     ld de,5
     ld bc,.mem_write
     nextreg REG_MMU+USED_SLOT,LOADED_BANK
-    call get_debugged_prgm_mem
+    call read_debugged_prgm_mem
 
     TEST_MEMORY_BYTE .mem_write, 0xC0
     TEST_MEMORY_BYTE .mem_write+1, 0xC1
@@ -326,6 +324,23 @@ UT_get_debugged_prgm_mem.UT_border_0x0000:
     TEST_MEMORY_BYTE .mem_write+4, 0xC4
  TC_END
 .mem_write: defs 5
+
+
+; Test that memory is read correctly. Area outside ROM and slot 7.
+UT_write_debugged_prgm_mem.UT_simple:
+    ; Init
+    MEMCLEAR .mem_write, .mem_length 
+
+    ld hl,.mem_write
+    ld de,.mem_length 
+    ld bc,.mem_read
+    call write_debugged_prgm_mem
+
+    TEST_MEM_CMP .mem_write, .mem_read, .mem_length 
+ TC_END
+.mem_read:  defb 0xA1, 0xA2, 0xA3
+.mem_length:    equ $-.mem_read
+.mem_write: defs .mem_length
 
 
     ENDMODULE

@@ -109,9 +109,7 @@ execute_cmd:
 	call save_registers
 	; SP is now at debug_stack_top
 	; Maximize clock speed
-	ld a,RTM_28MHZ
-	nextreg REG_TURBO_MODE,a
-
+	nextreg REG_TURBO_MODE,RTM_28MHZ
 .loop:
 	; Receive length sequence number and command
 	ld hl,receive_buffer
@@ -143,7 +141,7 @@ execute_cmd:
 ; and then the cmd_loop is entered again.
 rx_timeout:
 enter_cmd_loop:	; Used by 'pause'.
-	ld sp,debug_stack_top
+	ld sp,debug_stack.top
 	jp cmd_loop
 ; The receive timeout handler
 RX_TIMEOUT_HANDLER = rx_timeout
