@@ -143,7 +143,7 @@ restore_registers:
 	out (BORDER),a
 
 	; Restore clock speed
-	ld a,(backup.speed)
+	ld a,(backup.speed) 
 	nextreg REG_TURBO_MODE,a
 
 	; Restore AF
@@ -155,10 +155,10 @@ restore_registers:
 	ld (debugged_prgm_stack_copy.other),hl
 
 	; Correct the debugged program stack, i.e. put AF and return address on the stack
-	ld hl,(backup.sp)
+	ld hl,debugged_prgm_stack_copy.af
 	add hl,-4	; "PUSH" 2 values
 	ld de,4
-	ld bc,debugged_prgm_stack_copy.af
+	ld bc,(backup.sp)
 	call write_debugged_prgm_mem
 	
 	; Restore layer 2 reading/writing
@@ -166,8 +166,8 @@ restore_registers:
 	; It's still possible to read/write in slot 7
 
 	; Restore bank for slot 0
-	ld a,(slot_backup.slot0)
-	nextreg REG_MMU,a
+	;ld a,(slot_backup.slot0)
+	;nextreg REG_MMU,a  ; Is already
 
 	; Restore BC value
 	ld bc,(backup.bc)	

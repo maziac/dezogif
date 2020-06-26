@@ -12,7 +12,7 @@
 
 	; Used in backup/restore of the slots.
 	STRUCT SLOT_BACKUP
-slot0:		defb
+slot0:		defb	; TODO: Remove not required
 slot7:		defb
 tmp_slot:	defb	; Normally SWAP_SLOT but could be also other.
 	ENDS
@@ -370,7 +370,7 @@ cmd_pause:
 ; CMD_READ_MEM
 ; Reads a memory area.
 ; Special is that if slot 7 area is read, 
-; then the memory bank of slot_backup.slot0 is temporarily paged into 
+; then the memory bank of slot_backup.slot7 is temporarily paged into 
 ; SWAP_SLOT and read.
 ; Changes:
 ;  NA
@@ -409,8 +409,8 @@ cmd_read_mem.read:
 ;===========================================================================
 ; CMD_WRITE_MEM
 ; Writes a memory area.
-; Special is that if slot 0 area is read, 
-; then the memory bank of slot_backup.slot0 is temporarily paged into 
+; Special is that if slot 7 area is read, 
+; then the memory bank of slot_backup.slot7 is temporarily paged into 
 ; SWAP_SLOT and written.
 ; Changes:
 ;  NA
@@ -462,12 +462,8 @@ cmd_get_slots:
 	ld de,9
 	call send_length_and_seqno
 
-	; Get and send slot 0
-	ld a,(slot_backup.slot0)
-	; LOGPOINT cmd_get_slots slot0: ${A}
-	call write_uart_byte
-	; Send the other 7 slots
-	ld de,256*(REG_MMU+1)+7	; Load D and E at the same time
+	; Send the first 7 slots
+	ld de,256*REG_MMU+7	; Load D and E at the same time
 .loop:
 	; Get bank for slot
 	ld a,d
@@ -477,7 +473,11 @@ cmd_get_slots:
 	inc d
 	dec e
 	jr nz,.loop
-	ret
+
+	; Get and send slot 7
+	ld a,(slot_backup.slot7)
+	; LOGPOINT cmd_get_slots slot0: ${A}
+	jp write_uart_byte
 
 
 ;===========================================================================
@@ -503,7 +503,7 @@ cmd_set_slot:
 	; Get slot
 	inc l
 	bit 3,l	; check for 0
-	jr nz,.not_slot7
+	jr z,.not_slot7
 
 	; LOGPOINT cmd_set_slot slot0: ${A}
 
@@ -513,6 +513,7 @@ cmd_set_slot:
 
 .not_slot7:
 	ld h,a	; H = bank
+	dec l
 	ld a,l	; slot
 	add a,REG_MMU
 	ld (.nextreg_register+2),a	; Modify opcode

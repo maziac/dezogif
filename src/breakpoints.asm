@@ -237,7 +237,7 @@ enter_debugger:
 	ld hl,backup.af+1
 	ld a,(hl)
 	nextreg REG_MMU,a
-	ld (slot_backup.slot0),a
+	;ld (slot_backup.slot0),a ; No need to store it
 
 	; Check interrupt state: Flags and pushed AF (P/V): the interrupt state. If either one is PE then the interrupts are enabled.
 	ld a,0100b

@@ -137,6 +137,10 @@ main:
     out (c),a
     ld (backup.layer_2_port),a
 
+    ; Init clock speed
+    ld a,RTM_3MHZ
+    ld (backup.speed),a
+
     ; Set UART
     ld a,(uart_joyport_selection)
     ld e,a
