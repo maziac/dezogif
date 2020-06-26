@@ -875,7 +875,7 @@ UT_11_set_slot:
 
 	; Test
 	ld iy,.cmd_data
-	ld (iy),USED_SLOT
+	ld (iy),MAIN_SLOT
 	ld (iy+1),70
 	ld ix,test_memory_output
 	call cmd_set_slot
@@ -884,7 +884,7 @@ UT_11_set_slot:
 
 	; Test ROM in slot 0
 	ld iy,.cmd_data
-	ld (iy),USED_SLOT
+	ld (iy),MAIN_SLOT
 	ld (iy+1),0xFE
 	ld ix,test_memory_output
 	call cmd_set_slot
@@ -893,7 +893,7 @@ UT_11_set_slot:
 
 	; Test ROM in slot 0
 	ld iy,.cmd_data
-	ld (iy),USED_SLOT
+	ld (iy),MAIN_SLOT
 	ld (iy+1),ROM_BANK
 	ld ix,test_memory_output
 	call cmd_set_slot

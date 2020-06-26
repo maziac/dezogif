@@ -76,11 +76,11 @@ start_entry_point:
 
     ; The main program has been loaded into LOADED_BANK and needs to be copied to USED_MAIN_BANK
     ; Switch in the bank at 0x0000
-    nextreg REG_MMU+USED_SLOT,USED_BANK
+    nextreg REG_MMU+MAIN_SLOT,MAIN_BANK
     ; Switch in loaded bank at 0xC000
     nextreg REG_MMU+SWAP_SLOT,LOADED_BANK
     ; Copy the code
-    MEMCOPY USED_SLOT*0x2000, SWAP_SLOT*0x2000, 0x2000   
+    MEMCOPY MAIN_SLOT*0x2000, SWAP_SLOT*0x2000, 0x2000   
 
  ENDIF
 
@@ -101,7 +101,7 @@ start_entry_point:
     call read_tbblue_reg    ; returns the bank in A
 
     ; Switch in the bank at 0x0000
-    nextreg REG_MMU+USED_SLOT,USED_BANK
+    nextreg REG_MMU+MAIN_SLOT,MAIN_BANK
 
     ; Initialize the bank for slot 0 with the required code.
     ;ld a,USED_ROM0_BANK
@@ -110,7 +110,7 @@ start_entry_point:
 
     ; Copy the ZX character font from address ROM_FONT (0x3D00)
     ; to the debugger area at the end of the bank (0x2000-ROM_FONT_SIZE).
-    MEMCOPY (USED_SLOT+1)*0x2000-ROM_FONT_SIZE, ROM_FONT, ROM_FONT_SIZE
+    MEMCOPY (MAIN_SLOT+1)*0x2000-ROM_FONT_SIZE, ROM_FONT, ROM_FONT_SIZE
 
     ; Restore SWAP_SLOT bank
     nextreg REG_MMU+SWAP_SLOT,a
@@ -195,10 +195,10 @@ copy_modify_altrom:
     nextreg REG_MMU+SWAP_SLOT,TMP_BANKB
     nextreg REG_MMU+1,ROM_BANK
     MEMCOPY SWAP_SLOT*0x2000, 0x2000, 0x4000
-    ; Restore USED_BANK
-    nextreg REG_MMU,USED_BANK
+    ; Restore MAIN_BANK
+    nextreg REG_MMU,MAIN_BANK
     ; Modify
-    nextreg REG_MMU+USED_SLOT,USED_BANK
+    nextreg REG_MMU+MAIN_SLOT,MAIN_BANK
     nextreg REG_MMU+SWAP_SLOT,TMP_BANK
     ld a,ROM_BANK
     call modify_bank
@@ -223,7 +223,7 @@ copy_modify_altrom:
  ENDIF
         
     ; Switch back debugger code in used bank
-    nextreg REG_MMU,USED_BANK
+    nextreg REG_MMU,MAIN_BANK
     ret
 
 

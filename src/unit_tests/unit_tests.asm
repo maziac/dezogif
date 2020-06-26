@@ -15,14 +15,14 @@ BAUDRATE:   EQU 999999
 SWAP_SLOT:      EQU 6   ; 0xC000, used only temporary
 ;SWAP_SLOT1:      EQU SWAP_SLOT+1   ; 0xE000, used only temporary
 
-USED_BANK: EQU 94  ; Last 8k bank on unexpanded ZXNext.
-USED_SLOT:      EQU 7   ; 0xE000
+MAIN_BANK: EQU 94  ; Last 8k bank on unexpanded ZXNext.
+MAIN_SLOT:      EQU 7   ; 0xE000
 USED_ROM0_BANK: EQU 93  
 LOOPBACK_BANK:  EQU 91
 LOADED_BANK:    EQU 92
 show_ui:   ret  ; Just return
 
-MAIN_ADDR:      EQU USED_SLOT*0x2000
+MAIN_ADDR:      EQU MAIN_SLOT*0x2000
 
 
 ; Program title shown on screen.
@@ -30,8 +30,8 @@ MAIN_ADDR:      EQU USED_SLOT*0x2000
     defb "ZX Next UART DeZog Interface"
     ENDM
 
-    MMU USED_SLOT e, LOADED_BANK ; e -> Everything should fit into one page, error if not.
-    ORG USED_SLOT*0x2000    ; 0xE000
+    MMU MAIN_SLOT e, LOADED_BANK ; e -> Everything should fit into one page, error if not.
+    ORG MAIN_SLOT*0x2000    ; 0xE000
     include "macros.asm"
     include "zx/zx.inc"
     include "zx/zxnext_regs.inc"
@@ -59,7 +59,7 @@ PRG_START:
     ; Initialization routine.
     UNITTEST_INITIALIZE
     ; Page in main bank
-    nextreg REG_MMU+USED_SLOT,LOADED_BANK
+    nextreg REG_MMU+MAIN_SLOT,LOADED_BANK
     ret
 PRG_END:
 

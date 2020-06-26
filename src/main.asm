@@ -19,20 +19,20 @@ TMP_BANKB:       EQU TMP_BANK+1
 
 ; The 8k memory bank to store the code to.
 ; Debugged programs cannot use this bank.
-USED_BANK:      EQU 94  ; Last 8k bank on unexpanded ZXNext.
+MAIN_BANK:      EQU 94  ; Last 8k bank on unexpanded ZXNext.
 
-USED_SLOT:      EQU 7   ; 0xE000
+MAIN_SLOT:      EQU 7   ; 0xE000
 SWAP_SLOT:      EQU 6   ; 0xC000, used only temporary
 ;SWAP_SLOTB:     EQU SWAP_SLOT+1   ; 0xC000, used only temporary
 
 LOOPBACK_BANK:  EQU 91 ; Used for the loopback test. Could be any bank as the loopback test is not done with a running debugged program.
 
-    MMU USED_SLOT e, LOADED_BANK ; e -> Everything should fit into one page, error if not.
-    ORG USED_SLOT*0x2000
+    MMU MAIN_SLOT e, LOADED_BANK ; e -> Everything should fit into one page, error if not.
+    ORG MAIN_SLOT*0x2000
 
 
 ; The address that correspondends to the main bank.
-MAIN_ADDR:      EQU USED_SLOT*0x2000
+MAIN_ADDR:      EQU MAIN_SLOT*0x2000
 
 
 ;===========================================================================
@@ -231,8 +231,8 @@ show_ui:
     ; Note: The area does not need to be copied. i.e. is initialized on the fly.
     include "data.asm"
 
-    ASSERT $ <= (USED_SLOT+1)*0x2000
-    ASSERT $ <= USED_SLOT*0x2000+0x1F00
+    ASSERT $ <= (MAIN_SLOT+1)*0x2000
+    ASSERT $ <= MAIN_SLOT*0x2000+0x1F00
 
 
 

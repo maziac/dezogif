@@ -44,7 +44,7 @@ bp_address			defw	; The location of the temporary breakpoint
 ;===========================================================================
 ; This instructions needs to be copied to address 0x0000.
 ;===========================================================================
-	ORG USED_SLOT*0x2000
+	ORG MAIN_SLOT*0x2000
 	DISP 0x0000	; Compile for address 0x0000
 copy_rom_start_0000h_code:	; Located at 0x0000
 
@@ -62,7 +62,7 @@ exit_code_ei:
 	; Note: According Zilog spec it is not possible that an interrupt occurs before the next instruction is executed. Thus a possible interrupt happens when the memory banks are OK.
 exit_code_di:
 	; Restore slot 7
-	nextreg REG_MMU+USED_SLOT,a
+	nextreg REG_MMU+MAIN_SLOT,a
 	; Restore
 	pop af	
 	; Jump to the address on the stack, i.e. the PC
@@ -70,7 +70,7 @@ exit_code_di:
 copy_rom_start_0000h_code_end
 	ENT 
 
-	ORG USED_SLOT*0x2000+0x0066
+	ORG MAIN_SLOT*0x2000+0x0066
 	DISP 0x0066
 copy_rom_start_0066h_code:
 dbg_enter:
@@ -85,15 +85,15 @@ dbg_enter:
 	push bc	; Save BC on user stack
 	; Get current bank for slot 0
 .bank:	EQU $+1
-	ld c,USED_BANK	; Self-modified code. Here the bank is inserted.
+	ld c,MAIN_BANK	; Self-modified code. Here the bank is inserted.
 
 	; Page in debugger code
-	nextreg REG_MMU,USED_BANK ; I cannot directly switch to USED_SLOT and jump there as this would require to many opcodes.
-	; This code is executed in another bank (the USED_BANK)
+	nextreg REG_MMU,MAIN_BANK ; I cannot directly switch to MAIN_SLOT and jump there as this would require to many opcodes.
+	; This code is executed in another bank (the MAIN_BANK)
 	; ...
 copy_rom_start_0066h_code_end
 
-	; Executed in USED_BANK in slot 0.
+	; Executed in MAIN_BANK in slot 0.
 	; Save layer 2 reading/writing
 	ld a,HIGH LAYER_2_PORT
     in a,(LOW LAYER_2_PORT)
@@ -121,15 +121,15 @@ copy_rom_start_0066h_code_end
 
 	; Now backup used/main slot.
 	ld bc,IO_NEXTREG_REG
-	ld a,REG_MMU+USED_SLOT
+	ld a,REG_MMU+MAIN_SLOT
 	out (c),a
 	; Read register
 	ld b,HIGH IO_NEXTREG_DAT
-	in a,(c)	; A contains the previous bank number for USED_SLOT
+	in a,(c)	; A contains the previous bank number for MAIN_SLOT
 	ld (slot_backup.slot7-MAIN_ADDR),a
 
 	; Page in slot7
-	nextreg REG_MMU+USED_SLOT,USED_BANK
+	nextreg REG_MMU+MAIN_SLOT,MAIN_BANK
 	; Now the labels can be used directly (for data access)
 
 	ld (backup.sp),sp
@@ -171,7 +171,7 @@ copy_rom_start_code_end
 
 	ENT	; End of DISPlaced code
 
-	ORG USED_SLOT*0x2000+copy_rom_start_code_end
+	ORG MAIN_SLOT*0x2000+copy_rom_start_code_end
 
 ;===========================================================================
 ; Called by RST 0 or JP 0.
@@ -187,7 +187,7 @@ copy_rom_start_code_end
 ; When entered:
 ; - PUSHED AF: F contains the interrupt enabled state in P/V (PE=interrrupts enabled),
 ;              A contains the used memory bank for slot 0
-; - A contains the last used memory bank for USED_SLOT
+; - A contains the last used memory bank for MAIN_SLOT
 ; - interrupts are turned off (DI)
 ;
 ; Stack for a SW breakpoint (RST 0):

@@ -239,7 +239,7 @@ UT_read_debugged_prgm_mem.UT_slot7:
     ; Use bank 40 for testing
     ld a,40
     ld (slot_backup.slot7),a
-    nextreg REG_MMU+USED_SLOT,a
+    nextreg REG_MMU+MAIN_SLOT,a
     ld a,0xB0
     ld hl,0xE000
     ld b,5 
@@ -252,7 +252,7 @@ UT_read_debugged_prgm_mem.UT_slot7:
     ld hl,0xE000
     ld de,5
     ld bc,.mem_write
-    nextreg REG_MMU+USED_SLOT,LOADED_BANK
+    nextreg REG_MMU+MAIN_SLOT,LOADED_BANK
     call read_debugged_prgm_mem
 
     TEST_MEMORY_BYTE .mem_write, 0xB0
@@ -270,7 +270,7 @@ UT_read_debugged_prgm_mem.UT_border_0xE000:
     ; Use bank 40 for testing in slot 7, slot 6 is anyway swap slot, i.e. don't care
     ld a,40
     ld (slot_backup.slot7),a
-    nextreg REG_MMU+USED_SLOT,a
+    nextreg REG_MMU+MAIN_SLOT,a
     ld a,0xB0
     ld hl,0xDFFD
     ld b,5 
@@ -282,7 +282,7 @@ UT_read_debugged_prgm_mem.UT_border_0xE000:
     ld hl,0xDFFD
     ld de,5
     ld bc,.mem_write
-    nextreg REG_MMU+USED_SLOT,LOADED_BANK
+    nextreg REG_MMU+MAIN_SLOT,LOADED_BANK
     call read_debugged_prgm_mem
 
     TEST_MEMORY_BYTE .mem_write, 0xB0
@@ -300,7 +300,7 @@ UT_read_debugged_prgm_mem.UT_border_0x0000:
     ; and bank 39 for slot 0
     ld a,40
     ld (slot_backup.slot7),a
-    nextreg REG_MMU+USED_SLOT,a
+    nextreg REG_MMU+MAIN_SLOT,a
     dec a
     nextreg REG_MMU,a
     ld a,0xC0
@@ -314,7 +314,7 @@ UT_read_debugged_prgm_mem.UT_border_0x0000:
     ld hl,0xFFFD
     ld de,5
     ld bc,.mem_write
-    nextreg REG_MMU+USED_SLOT,LOADED_BANK
+    nextreg REG_MMU+MAIN_SLOT,LOADED_BANK
     call read_debugged_prgm_mem
 
     TEST_MEMORY_BYTE .mem_write, 0xC0
