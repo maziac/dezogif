@@ -14,61 +14,21 @@
 
 ;===========================================================================
 ; Save all registers.
-; Also changes stack pointer.
-; Note: The interrupt state is already saved before this function is called.
-; Parameters:
-;  - Stack:
-;    -2 = return address (return to caller)
-;    -4 = AF
-;    -6 = caller of breakpoint (RST) +1
-; Returns:
-;  SP = debug_stack_top after ret_jump
-; Important Note:
-; This function also turns off layer 2 reading/writing.
-; I.e. up to this point it is not save to read from/write to
-; slot 0.
-; I.e. before calling this function no self-modifying code is 
-; allowed.
 ; ===========================================================================
-save_registers:	; TODO: Maybe not required anymore
-	; Save hl
-	ld (backup.hl),hl
-	pop hl  ; Save return address to HL
-	ld (.ret_jump+1),hl	; self.modifying code, used instead of a return
-
-	; Restore AF
-	pop af 
-
-	; Get caller address (+1 for RST) of enter_breakpoint
-	pop hl	
-	ld (backup.pc),hl
-
-	; Save stack pointer (is already corrected because of 'pop hl')
+save_registers:
 	ld (backup.sp),sp
-	
+
 	; Use new stack
 	ld sp,backup.af+2
 
 	; Save registers
-	push af
-	push bc
-	push de
-	
-	;push hl
-	dec sp		; Instead of PUSH HL (hl is already saved)
-	dec sp
-
-	push ix
-	push iy
+	push af, bc, de, hl, ix, iy		; Note: AF and BC need to be corrected later. A and BC is wrong, flags contain the interrupt state
 
 	; Switch registers
 	exx
 	ex af,af'
 
-	push af
-	push bc
-	push de
-	push hl
+	push af, bc, de, hl
 
 	; I and R register
 	ld a,r
@@ -77,29 +37,17 @@ save_registers:	; TODO: Maybe not required anymore
 	ld h,a
 	push hl
 	
-	; Save IM, TODO: doesn't make sense
+	; Save IM, note: IM cannot be saved
 	ld hl,0
 	push hl
-
-	; Restore hl2
-	;ld hl,(backup.hl2)
 
 	; Switch back registers
 	ex af,af'
 	exx
 	; End of register saving through pushing
 
-	; Save clock speed
-	ld a,REG_TURBO_MODE
-	call read_tbblue_reg
-	ld (backup.speed),a
-
-	; Save border
-	in a,(BORDER)
-	ld (backup.border_color),a
-
 .ret_jump:
-	jp 0x0000	; Self-modifying code
+	jp save_registers_continue	; Modified by unit tests
 	
 
 
@@ -191,7 +139,9 @@ restore_registers:
 	; Turn on NMI
 .enable_nmi:	equ $+3
 	nextreg REG_PERIPHERAL_2,0	; self-modifying code
+.ret_jump1:	; Label for unit tests
 	jp nz,exit_code_ei
+.ret_jump2:	; Label for unit tests
 	jp exit_code_di
 
 

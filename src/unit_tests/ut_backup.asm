@@ -14,11 +14,12 @@ sp_backup:  defw    0
 ; Test that subroutine returns correctly.
 UT_save_registers.UT_returns:
     ; Init
-    ld (sp_backup),sp
-    ld sp,backup.af
-
+    ld hl,.return
+    ld (save_registers.ret_jump+1),hl
+    
     ; Test
-    call save_registers
+    jp save_registers
+.return:
 
     ; Deinit
     ld sp,(sp_backup)
@@ -27,7 +28,9 @@ UT_save_registers.UT_returns:
 
 ; Test that all registers are saved correctly.
 UT_save_registers.UT_save:
-    ; Remember SP
+    ; Init
+    ld hl,.return
+    ld (save_registers.ret_jump+1),hl
     ld (sp_backup),sp
 
     ; Prepare registers
@@ -40,10 +43,12 @@ UT_save_registers.UT_save:
     ex af,af'
     exx
 
-    push 0x9765    ; Push a test value used as PC
-
+    ; I, R
+    ld a,0x81
+    ld i,a
+    ld a,0x82
+    ld r,a
     ld a,0x1A
-    push af
 
     ld bc,0x1B1C
     ld de,0x1D1E
@@ -51,15 +56,11 @@ UT_save_registers.UT_save:
     
     ld ix,0x1314
     ld iy,0x1516
-
-    ; I, R
-    ld a,0x81
-    ld i,a
-    ld a,0x82
-    ld r,a
-
+   
     ; Test
-    call save_registers
+    jp save_registers
+.return:
+    ld sp,(sp_backup)
 
     TEST_MEMORY_BYTE backup.af+1, 0x1A
     TEST_MEMORY_WORD backup.bc, 0x1B1C
@@ -76,23 +77,23 @@ UT_save_registers.UT_save:
     TEST_MEMORY_BYTE backup.i, 0x81
     ;TEST_MEMORY_BYTE backup.r, 0x82   Useless to test
 
-    TEST_MEMORY_WORD backup.pc, 0x9765
- 
     ; Test stack pointer
-    ld hl,(sp_backup)       ; Remember
-    ld (sp_backup),sp       ; Store to check
-    TEST_MEMORY_WORD sp_backup, debug_stack.top
+    TEST_MEM_CMP sp_backup, backup.sp, 2
 
-    ; Deinit
-    ld sp,hl
  TC_END
 
 
 ; Test that all registers are restored correctly.
 UT_save_registers.UT_restore:
     ; Init
+    ld (sp_backup),sp
+
     ld hl,.continue     ; The jump address
-    ld (backup.pc),hl   ; Continue at return address
+    ld (restore_registers.ret_jump1+1),hl
+    ld (restore_registers.ret_jump2+1),hl
+
+    ld hl,0x1234    ; PC
+    ld (backup.pc),hl
     ld (backup.sp),sp
 
     ; Prepare data
@@ -122,7 +123,8 @@ UT_save_registers.UT_restore:
     ld a,0x81
     ld (backup.i),a
 
-    ld a,0x1A
+    ; A
+    ld a,0xA1
     ld (backup.af+1),a
 
     ; Test
@@ -150,7 +152,65 @@ UT_save_registers.UT_restore:
 
     TEST_REG i, 0x81
     ;TEST_MEMORY_BYTE backup.r, 0x82   Useless to test
+
+    TEST_MEMORY_WORD debugged_prgm_stack_copy.return1, 0x1234   ; PC
+    TEST_MEMORY_BYTE debugged_prgm_stack_copy.af+1, 0xA1   ; A
+
+    ; Test SP
+    ld hl,(sp_backup)
+    add hl,-4
+    ld (sp_backup),sp
+    ld de,(sp_backup)
+    TEST_DREG hl, de
+
+    ld sp,(sp_backup)
  TC_END
+
+
+; Test that all registers are correctly enabled/disabled.
+UT_save_registers.UT_restore_interrupts:
+    ; The jump address for enable interrupts
+    ld hl,.continue_ei 
+    ld (restore_registers.ret_jump1+1),hl
+    ; The jump address for enable interrupts
+    ld hl,.continue_di 
+    ld (restore_registers.ret_jump2+1),hl
+
+    ; Enable interrupts
+    ld a,00000100b
+    ld (backup.interrupt_state),a
+
+    ; Test
+    call .test_intrpt
+
+    TEST_REG a, 1   ; Interrupts enabled
+
+    ; Disable interrupts
+    ld a,00000000b
+    ld (backup.interrupt_state),a
+
+    ; Test
+    call .test_intrpt
+
+    TEST_REG a, 0   ; Interrupts enabled
+ TC_END
+
+.test_intrpt:
+    ; Test
+    ld (sp_backup),sp
+    jp restore_registers
+    ; The call should never return
+    TEST_FAIL
+    ; But here
+.continue_ei:
+    ld sp,(sp_backup)
+    ld a,1
+    ret
+    ; Or here
+.continue_di:
+    ld sp,(sp_backup)
+    ld a,0
+    ret
 
 
 ; Test that save register function for coop works.

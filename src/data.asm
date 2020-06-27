@@ -107,7 +107,7 @@ debug_stack:	defs STACK_SIZE*2, 0xAA
 
 ; The registers of the debugged program are stored here.
 backup:
-.im:				defb 0	; TODO: cannot be saved
+.im:				defb 0	; Note: IM cannot be saved
 .reserved:			defb 0
 .r:					defb 0
 .i:					defb 0

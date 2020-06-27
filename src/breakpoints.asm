@@ -72,7 +72,6 @@ copy_rom_start_0000h_code_end
 
 	ORG MAIN_SLOT*0x2000+0x0066
 	DISP 0x0066
-	jp intrpt_found
 
 copy_rom_start_0066h_code:
 dbg_enter:
@@ -134,36 +133,9 @@ copy_rom_start_0066h_code_end
 	nextreg REG_MMU+MAIN_SLOT,MAIN_BANK
 	; Now the labels can be used directly (for data access)
 
-	ld (backup.sp),sp
-
-	; Use new stack
-	ld sp,backup.af+2
-
 	; Save registers
-	push af, bc, de, hl, ix, iy		; Note: AF and BC need to be corrected later. A and BC is wrong, flags contain the interrupt state
-
-	; Switch registers
-	exx
-	ex af,af'
-
-	push af, bc, de, hl
-
-	; I and R register
-	; TODO: muss ich anders machen: ld a,i/r: beide verändern das P/E flag.
-	ld a,r
-	ld l,a
-	ld a,i		; TODO: This always indicate interrupts are off, should store the real value
-	ld h,a
-	push hl
-	
-	; Save IM, TODO: doesn't make sense
-	ld hl,0
-	push hl
-
-	; Switch back registers
-	ex af,af'
-	exx
-	; End of register saving through pushing
+	jp save_registers  ; Note: a CALL cannot be used here
+save_registers_continue:
 
 	; Load SP for debugger
 	ld sp,debug_stack.top
