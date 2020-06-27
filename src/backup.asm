@@ -150,6 +150,9 @@ restore_registers:
 	pop hl	; AF
 	ld (debugged_prgm_stack_copy.af),hl 
 
+	; Load SP, so that it is possible to call subroutines.
+	ld sp,debug_stack.top
+
 	; Correct PC on stack (might have been changed by DeZog)
 	ld hl,(backup.pc)
 	ld (debugged_prgm_stack_copy.other),hl
@@ -170,6 +173,8 @@ restore_registers:
 	;ld a,(slot_backup.slot0)
 	;nextreg REG_MMU,a  ; Is already
 
+	; Restore DE value
+	ld de,(backup.de)	
 	; Restore BC value
 	ld bc,(backup.bc)	
 	; Load correct value of HL
