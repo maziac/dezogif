@@ -125,6 +125,7 @@ read_key_joyport:
 ; main routine - The main loop of the program.
 ;===========================================================================
 main:
+    di
     ; Setup stack
     ld sp,debug_stack.top
 
@@ -140,6 +141,10 @@ main:
     ; Init clock speed
     ld a,RTM_3MHZ
     ld (backup.speed),a
+
+    ; Init interrupt state
+    xor a
+	ld a,(backup.interrupt_state)
 
     ; Set UART
     ld a,(uart_joyport_selection)

@@ -78,8 +78,16 @@ dbg_enter:
     push af  ; LOGPOINT [BP] RST 0, called from ${w@(SP):hex}h (${w@(SP)})
 	; Get interrupt state 2 times, analyze it later
 	ld a,i
+
+ IF 01
+  set 2,l
+  push hl
+  pop af 
+ ENDIF
+
 	push af
 	ld a,i
+
     ; Flags and pushed AF (P/V): the interrupt state.
 	di
 	push bc	; Save BC on user stack
@@ -123,9 +131,9 @@ copy_rom_start_0066h_code_end
 	ld bc,IO_NEXTREG_REG
 	ld a,REG_MMU+MAIN_SLOT
 	out (c),a
-	; Read register
-	ld b,HIGH IO_NEXTREG_DAT
-	in a,(c)	; A contains the previous bank number for MAIN_SLOT
+	; Read register (cannot use IN A,(C) as this affect P/V)
+	ld a,HIGH IO_NEXTREG_DAT
+	in a,(LOW IO_NEXTREG_DAT)	; A contains the previous bank number for MAIN_SLOT
 	ld (slot_backup.slot7-MAIN_ADDR),a
 
 	; Page in slot7
@@ -212,7 +220,10 @@ copy_rom_start_code_end
 ; - [SP]:	BC
 ;===========================================================================
 enter_debugger:
-    ; Disable the M1 (MF NMI) button
+	; Save interrupt state
+	;push af
+    
+	; Disable the M1 (MF NMI) button
     call mf_nmi_disable
 
 	; Save clock speed
@@ -241,7 +252,7 @@ enter_debugger:
 	ld a,0100b
 	ld hl,backup.af	; Point to flags
 	bit 2,(hl)			; Check flags
- 	jp pe,.int_found   	; IFF was 1 (interrupts enabled)
+ 	jp nz,.int_found   	; IFF was 1 (interrupts enabled)
 
 	; 2nd try
 	ld hl,debugged_prgm_stack_copy.af_interrupt
