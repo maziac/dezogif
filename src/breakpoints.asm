@@ -274,7 +274,7 @@ enter_debugger:
 	ld (backup.af),hl
 	
 	; Determine if breakpoint or coop code
-	ld hl,(debugged_prgm_stack_copy.other)	; Get value from "stack"
+	ld hl,(debugged_prgm_stack_copy.return1)	; Get value from "stack"
 	; Check for 0
 	ld a,l
 	or h 
@@ -303,18 +303,7 @@ enter_breakpoint:
 	nextreg REG_TURBO_MODE,RTM_28MHZ
 
 	; Put and correct the return address to the breakpoint address
-	ld de,(debugged_prgm_stack_copy.other)	
-	dec de
-	ld (backup.pc),de
-
-	; Backup AF
-	ld hl,(debugged_prgm_stack_copy.af)	
-	ld (backup.af),hl
-
-	; Adjust debugged program SP
-	ld hl,(backup.sp)	
-	add hl,4*2	; Skip complete stack
-	ld (backup.sp),hl	
+	call adjust_debugged_program_stack_for_bp
 
 	; Check if temporary breakpoint hit (de = breakpoint address)
 	call check_tmp_breakpoints ; Z = found

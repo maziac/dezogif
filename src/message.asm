@@ -105,9 +105,8 @@ cmd_loop:
 ;  At the end the registers are restored.
 ;===========================================================================
 execute_cmd:
-	; Backup all registers 
-	call save_registers
-	; SP is now at debug_stack_top
+	; Adjust the stack
+	call adjust_debugged_program_stack_for_function
 	; Maximize clock speed
 	nextreg REG_TURBO_MODE,RTM_28MHZ
 .loop:

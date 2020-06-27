@@ -73,21 +73,22 @@ tmp_breakpoint_2:	TMP_BREAKPOINT
 
 ; Used to stroe the stack contents of the debugged program.
 ; This contains the info passed onthe stack to the debugger.
-; - [SP+12]:	The return address
-; - [SP+10]:	Optional: Parameter
-; - [SP+8]:	    Optional: Function number
+; - [SP+10]:	The return address
+; - [SP+8]:	    Optional: Bit 0-3: Function number, Bit 4-7: Optional parameter
 ; - [SP+6]:     Optional: 0x0000, to distinguish from SW breakpoint
 ; - [SP+4]:	    AF was put on the stack
 ; - [SP+2]:	    AF (Interrupt flags) was put on the stack
 ; - [SP]:	    BC
-DEBUGGED_PRGM_USED_STACK_SIZE:  equ 14
 debugged_prgm_stack_copy:
-.bc:            defw 0
-.af_interrupt:  defw 0
-.af:            defw 0
-.other:         defs DEBUGGED_PRGM_USED_STACK_SIZE-3*2
-
-
+.bc:                defw 0
+.af_interrupt:      defw 0
+.af:                defw 0
+.return1:           defw 0
+.function_number:   defb 0
+.parameter:         defb 0
+.return2:           defw 0
+.end
+DEBUGGED_PRGM_USED_STACK_SIZE:  equ debugged_prgm_stack_copy.end-debugged_prgm_stack_copy
 
 ;===========================================================================
 ; Main use: backup.asm

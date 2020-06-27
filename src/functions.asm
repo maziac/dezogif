@@ -13,37 +13,16 @@
 ;===========================================================================
 ; Called by enter_debugger to execute a user function. 
 ; I.e. a function that was called by the debugged program.
-; When entered:
+; When entered (debugged_prgm_stack_copy):
 ; Stack for a function call from the debugged program
 ; - [SP+6]:	The return address
-; - [SP+4]:	Function number
-; - [SP+2]: 0x0000, to distinguish from SW breakpoint
-; - [SP]:	AF was put on the stack
-; Stack for a function call from the debugged program if a parameter is used
-; - [SP+8]:	The return address
-; - [SP+6]:	Parameter
-; - [SP+4]:	Function number
+; - [SP+4]:	Bit 0-3: Function number, Bit 4-7: Optional parameter
 ; - [SP+2]: 0x0000, to distinguish from SW breakpoint
 ; - [SP]:	AF was put on the stack
 ;===========================================================================
 exec_user_function:
 	; Get the function number from the stack 
-	inc sp : inc sp : inc sp : inc sp	; Now points to function number
-
-	ex (sp),hl	; HL is saved in (SP), H contains the function number
-	dec sp : dec sp
-	dec sp : dec sp
-
-	; Move AF up by 2 positions
-	ld a,h	; a = Function number
-	pop hl 	; Get AF
-	; Skip 0x0000
-	inc sp : inc sp 
-	ex (sp),hl		; (SP) = AF, HL = saved HL value
-	; The stack is now:
-	; - return address
-	; - optionally parameter
-	; - AF
+	ld a,(debugged_prgm_stack_copy.function_number)
 	dec a
 	jp z,execute_cmd	; A = 1
 	dec a
@@ -62,20 +41,14 @@ exec_user_function:
 ; - [SP]:	AF
 ;===========================================================================
 execute_init_slot0_bank:
-	; Save registers
-	ld (backup.sp),sp
-	ld sp,debug_stack.top
-	push hl, de, ix
+	; Adjust the stack
+	call adjust_debugged_program_stack_for_function
 
     ; Save slot
     call save_swap_slot
-
-	; Get bank/change stack
-	ld ix,(backup.sp)
-	ld a,(ix+3)		; Get bank in high byte
-	ld hl,(ix)		; Get AF
-	ld (ix+2),hl	; Move up
 	
+	; Get bank from high byte
+	ld a,(debugged_prgm_stack_copy.parameter)
     ; Switch in the bank at 0xC000
     nextreg REG_MMU+SWAP_SLOT,a
  	call modify_bank
@@ -83,22 +56,7 @@ execute_init_slot0_bank:
     ; Restore slot
     call restore_swap_slot
 
-	; Restore registers
-	pop ix, de, hl
-	ld sp,(backup.sp)
-
-	; Load bank
-	ld a,(slot_backup.slot0)
-	push af
-
-	; Restore layer 2 read/write
-	call restore_layer2_rw
-	pop af	; A contains right bank
-
-	; Correct SP
-	inc sp : inc sp
-
-	jp exit_code_di	; TODO: Change and check if working
+	jp restore_registers
 
 
 ;===========================================================================
