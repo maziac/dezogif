@@ -12,7 +12,7 @@
 
 	; Used in backup/restore of the slots.
 	STRUCT SLOT_BACKUP
-slot0:		defb	; TODO: Remove not required
+slot0:		defb
 slot7:		defb
 tmp_slot:	defb	; Normally SWAP_SLOT but could be also other.
 	ENDS

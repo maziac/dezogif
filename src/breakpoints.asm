@@ -234,14 +234,12 @@ enter_debugger:
 	call read_debugged_prgm_mem
 
 	; Restore slot 0 bank
-	ld hl,backup.af+1
-	ld a,(hl)
+	ld a,(slot_backup.slot0)
 	nextreg REG_MMU,a
-	;ld (slot_backup.slot0),a ; No need to store it
 
 	; Check interrupt state: Flags and pushed AF (P/V): the interrupt state. If either one is PE then the interrupts are enabled.
 	ld a,0100b
-	inc hl
+	ld hl,backup.af	; Point to flags
 	bit 2,(hl)			; Check flags
  	jp pe,.int_found   	; IFF was 1 (interrupts enabled)
 
@@ -294,9 +292,9 @@ enter_breakpoint:
 	nextreg REG_TURBO_MODE,RTM_28MHZ
 
 	; Put and correct the return address to the breakpoint address
-	ld hl,(debugged_prgm_stack_copy.other)	
-	dec hl
-	ld (backup.pc),hl
+	ld de,(debugged_prgm_stack_copy.other)	
+	dec de
+	ld (backup.pc),de
 
 	; Backup AF
 	ld hl,(debugged_prgm_stack_copy.af)	

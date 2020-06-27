@@ -155,10 +155,11 @@ restore_registers:
 	ld (debugged_prgm_stack_copy.other),hl
 
 	; Correct the debugged program stack, i.e. put AF and return address on the stack
-	ld hl,debugged_prgm_stack_copy.af
+	ld hl,(backup.sp)	; Destination
 	add hl,-4	; "PUSH" 2 values
+	ld (backup.sp),hl
 	ld de,4
-	ld bc,(backup.sp)
+	ld bc,debugged_prgm_stack_copy.af
 	call write_debugged_prgm_mem
 	
 	; Restore layer 2 reading/writing
