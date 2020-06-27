@@ -201,12 +201,13 @@ adjust_debugged_program_stack_for_function:
 	jr adjust_debugged_program_stack_for_bp.af
 
 
+/*
 ;===========================================================================
 ; Saves layer 2 reading/writing.
 ; Changes:
 ;   A, BC
 ; ===========================================================================
-save_layer2_rw:	; TODO: still required?
+save_layer2_rw:	
 	; Save layer 2 reading/writing
     ld bc,LAYER_2_PORT
     in a,(c)
@@ -219,7 +220,7 @@ save_layer2_rw:	; TODO: still required?
 	pop af
 	ld (backup.layer_2_port),a
 	ret
-
+*/
 
 ;===========================================================================
 ; Restores layer 2 reading/writing.

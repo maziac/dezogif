@@ -211,7 +211,7 @@ receive_message:
 	jr .loop
 */
 
-
+/*
 ;===========================================================================
 ; Once the first byte has been detected this function should be called.
 ; The subroutine does not return before all bytes of the message have been
@@ -224,7 +224,7 @@ receive_message:
 ; Changes:
 ;  A, HL, BC
 ;===========================================================================
-send_message:  ; TODO: maybe not required.
+send_message:  
 	; Get length
 	; First length byte
 	ldi a,(hl)
@@ -250,7 +250,7 @@ send_message:  ; TODO: maybe not required.
 	; Next
 	dec de
 	jr .loop
-
+*/
   
 
 ;===========================================================================
