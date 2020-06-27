@@ -338,27 +338,49 @@ enter_breakpoint:
 ;===========================================================================
 ; Clears the temporary breakpoints.
 ; I.e. restore the original opcodes.
-; Temporary breakpoints are not enable if they point to location 0x0000.
+; Temporary breakpoints are not restored if they point to location 0x0000.
 ;===========================================================================
 clear_tmp_breakpoints:
-	ld hl,(tmp_breakpoint_1.bp_address)
-	ld a,l
-	or h
-	jr z,.second_bp
+	ld hl,tmp_breakpoint_1.bp_address
+	call clear_tmp_breakpoint
+	ld hl,tmp_breakpoint_2.bp_address
+	; Flow through
+
+; Clears (and restores) a singel breakpoint.
+clear_tmp_breakpoint:
+	ld de,(hl)	; tmp_breakpoint_X.bp_address
+	ld a,e
+	or d
+	ret z
+
+	; Check for bp in main slot area
+	ld a,d
+	cp 0x20*MAIN_SLOT	; 0xE000
+	jr c,.normal
+
+	; Temporary switch to swap slot
+	call save_swap_slot
+	ld a,(slot_backup.slot7)
+	nextreg REG_MMU+SWAP_SLOT,a
+
+	; Adjust to swap slot area
+	ld a,d
+	and 0x1F
+	add SWAP_SLOT*0x20	; 0xC0
+	ld d,a
+
+	call .normal
+	; Restore swap slot
+	jp restore_swap_slot
+
+.normal:
 	; Restore opcode
-	ld a,(tmp_breakpoint_1.opcode)
-	ld (hl),a
-.second_bp:
-	ld hl,(tmp_breakpoint_2.bp_address)
-	ld a,l
-	or h
-	jr z,.clear
-	; Restore opcode
-	ld a,(tmp_breakpoint_2.opcode)
-	ld (hl),a
-.clear:
-	; Clear both temporary breakpoints
-	MEMCLEAR tmp_breakpoint_1, 2*TMP_BREAKPOINT
+	dec hl
+	ld a,(hl)
+	ld (de),a
+	; Clear breakpoint
+	xor a
+	ldi (hl),a : ldi (hl),a : ld (hl),a
 	ret
 
 
@@ -374,6 +396,44 @@ clear_tmp_breakpoints:
 ;   HL, DE, A
 ;===========================================================================
 set_tmp_breakpoint:
+	; Check for bp in main slot area
+	ld a,h
+	cp 0x20*MAIN_SLOT	; 0xE000
+	jr c,.normal
+
+	; Temporary switch to swap slot
+	call save_swap_slot
+	ld a,(slot_backup.slot7)
+	nextreg REG_MMU+SWAP_SLOT,a
+
+	; Adjust to swap slot area
+	push hl		; Save real address
+	ld a,h
+	and 0x1F
+	add SWAP_SLOT*0x20	; 0xC0
+	ld h,a
+
+	; Get opcode
+	ld a,(hl)
+	cp BP_INSTRUCTION
+	jr nz,.setbp
+
+	; Do nothing if already a breakpoint set
+	pop hl
+	; Restore swap slot
+	jp restore_swap_slot
+
+.setbp:
+	; Set BP
+	ld (hl),BP_INSTRUCTION ; LOGPOINT [BP] set_tmp_breakpoint @${HL:hex} (${HL})
+	; Restore real address
+	pop hl
+	; Store to 'opcode'
+	call .store
+	; Restore swap slot
+	jp restore_swap_slot
+
+.normal:
 	; Get opcode
 	ld a,(hl)
 	cp BP_INSTRUCTION
@@ -381,6 +441,8 @@ set_tmp_breakpoint:
 
 	; Set BP
 	ld (hl),BP_INSTRUCTION ; LOGPOINT [BP] set_tmp_breakpoint @${HL:hex} (${HL})
+
+.store:
 	; Store to 'opcode'
 	ex de,hl
 	ldi (hl),a	

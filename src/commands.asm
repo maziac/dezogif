@@ -575,7 +575,6 @@ cmd_set_border:
 ;===========================================================================
 cmd_set_breakpoints:
 	; LOGPOINT [CMD] cmd_set_breakpoints
-	;call save_rom_slots
 	call save_swap_slot
 	; Calculate the count
 	ld de,(receive_buffer.length)	; Read only the lower bytes
@@ -604,15 +603,15 @@ cmd_set_breakpoints:
 	call read_uart_byte
 	ld h,a
 	; Check memory area
-	cp 0x20
-	jr nc,.normal
+	cp 0x20*MAIN_SLOT	; 0xE000
+	jr c,.normal
 
 	; Page in bank
-	ld a,(slot_backup.slot0)
+	ld a,(slot_backup.slot7)
 	nextreg REG_MMU+SWAP_SLOT,a
 	ld a,h
-	and 0x1f
-	add 0xC0		; SWAP_SLOT0*0x20
+	and 0x1F
+	add SWAP_SLOT*0x20	; 0xC0
 	ld h,a
 	; Get memory
 	ld a,(hl)	; LOGPOINT [CMD] BP=${HL:hex}h, ${HL} (SWAP)
@@ -675,14 +674,14 @@ cmd_restore_mem:
 	call read_uart_byte
 	ld h,a
 	; Check memory area
-	cp 0x20
-	jr nc,.normal
+	cp 0x20*MAIN_SLOT	; 0xE000
+	jr c,.normal
 
-	ld a,(slot_backup.slot0)
+	ld a,(slot_backup.slot7)
 	nextreg REG_MMU+SWAP_SLOT,a
 	ld a,h
-	and 0x1f
-	add 0xC0		; SWAP_SLOT0*0x20
+	and 0x1F
+	add SWAP_SLOT*0x20	; 0xC0
 	ld h,a
 	; Get value
 	call read_uart_byte
