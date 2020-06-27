@@ -72,22 +72,16 @@ copy_rom_start_0000h_code_end
 
 	ORG MAIN_SLOT*0x2000+0x0066
 	DISP 0x0066
+	jp intrpt_found
+
 copy_rom_start_0066h_code:
 dbg_enter:
     ; Store current AF
     push af  ; LOGPOINT [BP] RST 0, called from ${w@(SP):hex}h (${w@(SP)})
 	; Get interrupt state 2 times, analyze it later
 	ld a,i
-
- IF 01
-  set 2,l
-  push hl
-  pop af 
- ENDIF
-
 	push af
 	ld a,i
-
     ; Flags and pushed AF (P/V): the interrupt state.
 	di
 	push bc	; Save BC on user stack
@@ -205,24 +199,13 @@ copy_rom_start_code_end
 ; - [SP]:	BC
 ; Stack for a function call from the debugged program
 ; - [SP+10]:	The return address
-; - [SP+8]:	Function number
-; - [SP+6]: 0x0000, to distinguish from SW breakpoint
-; - [SP+4]:	AF was put on the stack
-; - [SP+2]:	AF (Interrupt flags) was put on the stack
-; - [SP]:	BC
-; Stack for a function call from the debugged program if a parameter is used
-; - [SP+12]:	The return address
-; - [SP+10]:	Parameter
-; - [SP+8]:	Function number
+; - [SP+8]:	Function number + Parameter
 ; - [SP+6]: 0x0000, to distinguish from SW breakpoint
 ; - [SP+4]:	AF was put on the stack
 ; - [SP+2]:	AF (Interrupt flags) was put on the stack
 ; - [SP]:	BC
 ;===========================================================================
 enter_debugger:
-	; Save interrupt state
-	;push af
-    
 	; Disable the M1 (MF NMI) button
     call mf_nmi_disable
 
@@ -321,7 +304,6 @@ enter_breakpoint:
 	call clear_tmp_breakpoints
 
 	jp cmd_loop		; continues later at .continue
-
 
 
 ;===========================================================================

@@ -23,6 +23,7 @@
 exec_user_function:
 	; Get the function number from the stack 
 	ld a,(debugged_prgm_stack_copy.function_number)
+	; LOGPOINT function number = ${A}
 	dec a
 	jp z,execute_cmd	; A = 1
 	dec a
