@@ -292,9 +292,48 @@ cmd_write_bank:
 	ld de,0x2000	; Bank size
 	call receive_bytes
 
+	ld a,(.tdata)
+	inc a
+	ld (.tdata),a
+	cp 5
+	jr nz,.end
+ IFDEF UNIT_TEST
+ jp UNITTEST_TEST_READY_SUCCESS
+ ENDIF
+.end 
+
 	; Restore slot/bank (D)
 	jp restore_swap_slot
 
+.tdata:	defb 0
+
+
+cmd_write_bank2:
+	; LOGPOINT [CMD] cmd_write_bank
+	; Execute command
+	call cmd_write_bank2.inner
+	; Send response
+	ld de,1
+	jp send_length_and_seqno
+
+.inner:
+	; Choose the right slot: don't use a slot where this program is located.
+;.slot:	equ ((cmd_write_bank+2*0x2000)>>13)&0x07
+	; Remember current bank for slot
+	call save_swap_slot
+
+	; Change bank for slot 
+	; Read bank number of message
+	call read_uart_byte
+	nextreg REG_MMU+SWAP_SLOT,a
+
+	; Read bytes from UART and put into bank
+	ld hl,SWAP_SLOT*0x2000		;.slot<<13	; Start address
+	ld de,0x2000	; Bank size
+	call receive_bytes
+
+	; Restore slot/bank (D)
+	jp restore_swap_slot
 
 ;===========================================================================
 ; CMD_CONTINUE

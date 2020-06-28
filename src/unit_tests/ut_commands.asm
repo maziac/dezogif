@@ -20,12 +20,6 @@ test_memory_dst:	defb 0, 0, 0, 0, 0, 0, 0, 0
 test_memory_dst_end:
 	defb 0	; WPMEM
 
-test_memory_write_bank:
-.bank:	
-	defb 0	; Bank
-.end:
-	defb 0	; WPMEM
-
 test_memory_write_mem:
 	defb 0	; Reserved
 .address:	
@@ -449,7 +443,6 @@ UT_5_cmd_write_bank:
 	ld (redirected_read_uart_byte_bank.fill_data),a
 
 	; Test A
-	ld iy,test_memory_write_bank
 	ld ix,test_memory_output
 	call cmd_write_bank
 
@@ -458,10 +451,9 @@ UT_5_cmd_write_bank:
 	call read_tbblue_reg	; Result in A
 	pop de		; Get original bank in D 
 	push de
-	TEST_A D
+	TEST_A d
 
 	; Page in the memory bank
-;.slot:	equ ((cmd_write_bank+2*0x2000)>>13)&0x07
 	nextreg REG_MMU+SWAP_SLOT,28
 	
 	ld hl,SWAP_SLOT*0x2000	; .slot<<13	; Start address
@@ -472,7 +464,7 @@ UT_5_cmd_write_bank:
 	TEST_A 0x55
 	
 
-	; Redirect again
+	; Redirect
 	call redirect_uart_write_bank
 
 	; Set fill byte
@@ -480,7 +472,6 @@ UT_5_cmd_write_bank:
 	ld (redirected_read_uart_byte_bank.fill_data),a
 
 	; Test A
-	ld iy,test_memory_write_bank
 	ld ix,test_memory_output
 	call cmd_write_bank
 
@@ -676,10 +667,6 @@ UT_8_cmd_read_mem.UT_banks:
 	ld a,REG_MMU+1
 	call read_tbblue_reg
 	TEST_A 82
-
-	; Cleanup
-	;nextreg REG_MMU+0,ROM_BANK
-	;nextreg REG_MMU+1,ROM_BANK
  TC_END
 
 
@@ -779,31 +766,34 @@ UT_9_cmd_write_mem.UT_banks:
 	call cmd_write_mem
 	TEST_MEMORY_BYTE 0x5123,0xB5
 
-	; Location 0xFFFF
+	; Location 0xC000
 	ld hl,test_memory_write_mem.address
-	ld de,0xFFFF
+	ld de,0xC000
 	ldi (hl),de
 	ld hl,test_memory_write_mem.values
 	ld (hl),0xB6
 	ld iy,test_memory_write_mem
 	ld ix,test_memory_output
 	call cmd_write_mem
-	TEST_MEMORY_BYTE 0xFFFF,0xB6
+	TEST_MEMORY_BYTE 0xC000,0xB6
 
-	; Test that slots are restored
-	ld a,REG_MMU
-	call read_tbblue_reg
-	TEST_A 80
-	ld a,REG_MMU+1
-	call read_tbblue_reg
-	TEST_A 81
-	ld a,REG_MMU+SWAP_SLOT
-	call read_tbblue_reg
-	TEST_A 82
+	; Location 0xFFFF
+	ld hl,test_memory_write_mem.address
+	ld de,0xFFFF
+	ldi (hl),de
+	ld hl,test_memory_write_mem.values
+	ld (hl),0xB7
+	ld iy,test_memory_write_mem
+	ld ix,test_memory_output
+	ld a,80
+	ld (slot_backup.slot7),a
+	call cmd_write_mem
 
-	; Cleanup
-	;nextreg REG_MMU+0,ROM_BANK
-	;nextreg REG_MMU+1,ROM_BANK
+	nextreg REG_MMU+MAIN_SLOT,80
+	TEST_MEMORY_BYTE 0xFFFF,0xB7
+
+	; Restore
+	nextreg REG_MMU+MAIN_SLOT,LOADED_BANK
  TC_END
 
 
@@ -822,9 +812,8 @@ UT_10_cmd_get_slots:
 	nextreg REG_MMU+4, 4
 	nextreg REG_MMU+5, 5
 	nextreg REG_MMU+6, 0
-	nextreg REG_MMU+7, 1
 	ld a,70
-	ld (slot_backup.slot0),a
+	ld (slot_backup.slot7),a
 	; Redirect
 	call redirect_uart
 
@@ -836,14 +825,14 @@ UT_10_cmd_get_slots:
 	TEST_MEMORY_WORD test_memory_output, 	9
 	TEST_MEMORY_WORD test_memory_output+2,	0	
 	; Compare with standard slots
-	TEST_MEMORY_BYTE test_memory_output+5, 	70
+	TEST_MEMORY_BYTE test_memory_output+5, 0xFF	; ROM
 	TEST_MEMORY_BYTE test_memory_output+6, 0xFF	; ROM
 	TEST_MEMORY_BYTE test_memory_output+7, 10
 	TEST_MEMORY_BYTE test_memory_output+8, 11
 	TEST_MEMORY_BYTE test_memory_output+9, 4
 	TEST_MEMORY_BYTE test_memory_output+10, 5
 	TEST_MEMORY_BYTE test_memory_output+11, 0
-	TEST_MEMORY_BYTE test_memory_output+12, 1
+	TEST_MEMORY_BYTE test_memory_output+12, 70
  TC_END
 
 
@@ -886,25 +875,29 @@ UT_11_set_slot:
 	ld ix,test_memory_output
 	call cmd_set_slot
 	; Check bank
-	TEST_MEMORY_BYTE slot_backup.slot0, 70
+	TEST_MEMORY_BYTE slot_backup.slot7, 70
 
 	; Test ROM in slot 0
 	ld iy,.cmd_data
-	ld (iy),MAIN_SLOT
+	ld (iy),0
 	ld (iy+1),0xFE
 	ld ix,test_memory_output
 	call cmd_set_slot
 	; Check bank
-	TEST_MEMORY_BYTE slot_backup.slot0, ROM_BANK
-
+	ld a,REG_MMU+0
+	call read_tbblue_reg
+	TEST_A	ROM_BANK	
+	
 	; Test ROM in slot 0
 	ld iy,.cmd_data
-	ld (iy),MAIN_SLOT
-	ld (iy+1),ROM_BANK
+	ld (iy),0
+	ld (iy+1),0xFF
 	ld ix,test_memory_output
 	call cmd_set_slot
 	; Check bank
-	TEST_MEMORY_BYTE slot_backup.slot0, ROM_BANK
+	ld a,REG_MMU+0
+	call read_tbblue_reg
+	TEST_A	ROM_BANK
  TC_END
 
 .cmd_data:	defb 0
@@ -947,7 +940,7 @@ UT_12_cmd_get_tbblue_reg:
 .cmd_data:	defb REG_MMU+SWAP_SLOT
 
 
-; Test cmd_set_border
+; Test cmd_set_border. Test works only on zsim.
 UT_13_cmd_set_border:
 	; Redirect
 	call redirect_uart
@@ -965,9 +958,10 @@ UT_13_cmd_set_border:
 	TEST_MEMORY_WORD test_memory_output, 1
 	TEST_MEMORY_WORD test_memory_output+2, 0
 
-	; Check result
+	; Check result - Only works for zsim
 	ld a,CYAN ; Required for zsim as it decodes the full 16 bit IO address
 	in a,(BORDER)
+	and 0x07
 	TEST_A CYAN
 
 	; Test

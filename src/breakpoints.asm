@@ -294,8 +294,14 @@ clear_tmp_breakpoint:
 	ld de,(hl)	; tmp_breakpoint_X.bp_address
 	ld a,e
 	or d
-	ret z
+	jr nz,.continue
 
+	; Make sure that opcode is cleared
+	dec hl
+	ld (hl),0
+	ret
+
+.continue:
 	; Check for bp in main slot area
 	ld a,d
 	cp 0x20*MAIN_SLOT	; 0xE000
