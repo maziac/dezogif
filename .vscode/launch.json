@@ -132,6 +132,7 @@
             "resetOnLaunch": true,
             "startAutomatically": true,
             "skipInterrupt": true,
+            "unitTestTimeout": 2,
             "commandsAfterLaunch": [
                 "-wpmem enable",
                 "-assert enable",
