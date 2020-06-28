@@ -334,8 +334,7 @@ memory_loop:
 	call save_swap_slot
 .inner:	; Beginning from here BC is not touched anymore
 	ld a,h
-	;cp 0x20
-	cp 0xE0
+	cp MAIN_SLOT*0x20	; 0xE0
 	jr c,.phase2
 
 	; Modify HL

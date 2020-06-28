@@ -592,15 +592,11 @@ UT_8_cmd_read_mem.UT_normal:
 
 
 ; Test reading memory in each relevant bank.
-; Note: The locations should not contain any code/data of
-; the tested program which is around 0x7000 for unit testing.
-UT_7_cmd_read_mem.UT_banks:
-	; Page in different bank in ROM area 
-	ld a,80
-	nextreg REG_MMU+0,a
-	ld (slot_backup.slot0),a
-	nextreg REG_MMU+1,81
-	nextreg REG_MMU+SWAP_SLOT,82
+; Note: The locations should not contain any code/data.
+UT_8_cmd_read_mem.UT_banks:
+	; Page in different memory to ROM
+	nextreg REG_MMU,81
+	nextreg REG_MMU+1,82
 
 	; Redirect
 	call redirect_uart
@@ -649,22 +645,35 @@ UT_7_cmd_read_mem.UT_banks:
 	call cmd_read_mem.inner
 	TEST_MEMORY_BYTE test_memory_dst,0xA5
 
-	; Location 0xFFFF
+	; Location 0xC000
 	ld ix,test_memory_dst	; Pointer to write to
-	ld hl,0xFFFF
+	ld hl,0xC000
 	ld (hl),0xA6
 	ld (payload_read_mem.mem_start),hl
 	call cmd_read_mem.inner
 	TEST_MEMORY_BYTE test_memory_dst,0xA6
 
+	; Location 0xFFFF
+	ld ix,test_memory_dst	; Pointer to write to
+	ld hl,0xFFFF
+	; Page in different bank in slot 7 area 
+	ld a,80
+	ld (slot_backup.slot7),a
+	nextreg REG_MMU+MAIN_SLOT,a
+	; Write
+	ld (hl),0xA7
+	; Restore bank
+	nextreg REG_MMU+MAIN_SLOT,LOADED_BANK
+
+	ld (payload_read_mem.mem_start),hl
+	call cmd_read_mem.inner
+	TEST_MEMORY_BYTE test_memory_dst,0xA7
+
 	; Test that slots are restored
 	ld a,REG_MMU
 	call read_tbblue_reg
-	TEST_A 80
-	ld a,REG_MMU+1
-	call read_tbblue_reg
 	TEST_A 81
-	ld a,REG_MMU+SWAP_SLOT
+	ld a,REG_MMU+1
 	call read_tbblue_reg
 	TEST_A 82
 
@@ -704,12 +713,9 @@ UT_9_cmd_write_mem.UT_normal:
 ; Note: The locations should not contain any code/data of
 ; the tested program which is around 0x7000 for unit testing.
 UT_9_cmd_write_mem.UT_banks:
-	; Page in different bank in ROM area 
-	ld a,80
-	nextreg REG_MMU+0,a
-	ld (slot_backup.slot0),a
-	nextreg REG_MMU+1,81
-	nextreg REG_MMU+SWAP_SLOT,82
+	; Page in different memory to ROM
+	nextreg REG_MMU,81
+	nextreg REG_MMU+1,82
 
 	; Redirect
 	call redirect_uart
