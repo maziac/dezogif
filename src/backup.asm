@@ -117,10 +117,6 @@ restore_registers:
 	call restore_layer2_rw
 	; It's still possible to read/write in slot 7
 
-	; Restore bank for slot 0
-	;ld a,(slot_backup.slot0)
-	;nextreg REG_MMU,a  ; Is already
-
 	; Restore DE value
 	ld de,(backup.de)	
 	; Restore BC value

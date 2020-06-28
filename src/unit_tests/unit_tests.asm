@@ -20,7 +20,7 @@ MAIN_SLOT:      EQU 7   ; 0xE000
 USED_ROM0_BANK: EQU 93  
 LOOPBACK_BANK:  EQU 91
 LOADED_BANK:    EQU 92
-show_ui:   ret  ; Just return
+
 
 MAIN_ADDR:      EQU MAIN_SLOT*0x2000
 
@@ -45,6 +45,7 @@ MAIN_ADDR:      EQU MAIN_SLOT*0x2000
     include "backup.asm"
     include "text.asm"
     include "data.asm"
+    include "ui.asm"
 
      
     ORG 0x7000
