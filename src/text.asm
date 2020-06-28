@@ -127,7 +127,7 @@ ula.print_char:
 ; OUT:
 ;   -
 ; Changed registers:
-;   L, DE, C
+;   HL, DE, C
 ula.print_string:
 .loop:
     ld a,(de)

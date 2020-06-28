@@ -134,16 +134,9 @@ execute_cmd:
 	; Return to debugged program
 	jp restore_registers
 
-
-; Called if a UART timeout occurs.
-; As this could happen from everywhere the call stack is reset
-; and then the cmd_loop is entered again.
-rx_timeout:
 enter_cmd_loop:	; Used by 'pause'.
 	ld sp,debug_stack.top
 	jp cmd_loop
-; The receive timeout handler
-RX_TIMEOUT_HANDLER = rx_timeout
 
 
 ;===========================================================================

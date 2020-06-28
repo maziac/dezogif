@@ -124,6 +124,9 @@ start_entry_point:
     ; The main program has been copied into USED_MAIN_BANK
     ld a,2  ; Joy 2 selected
     ld (uart_joyport_selection),a
+    xor a
+    ld (last_error),a
+    
     jp main
     
 

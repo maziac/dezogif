@@ -6,6 +6,16 @@
 ;===========================================================================
 
 
+
+;===========================================================================
+; Const data
+;===========================================================================
+
+; Error definitions
+ERROR_RX_TIMEOUT:			equ 1
+ERROR_WRONG_FUNC_NUMBER:	equ 2
+
+
 ;===========================================================================
 ; Checks key "0".
 ; If pressed a reset (jp 0) is done.
@@ -86,5 +96,26 @@ show_ui:
     add a   ; *2
     add hl,a
     ld de,(hl)
+	call text.ula.print_string
+
+	; Show possibly error
+	ld a,(last_error)
+	or a
+	ret z	; 0 = no error
+
+	; Print "Last error:"
+    ld de,TEXT_LAST_ERROR
+	call text.ula.print_string
+	push hl	; Save pointer to screen
+
+	; Print error message
+	ld a,(last_error)
+	dec a
+	add a	; 2*A
+	ld hl,ERROR_TEXT_TABLE
+	add hl,a
+    ld de,(hl)
+	pop hl	; Restore pointer to screen
 	jp text.ula.print_string
+
 

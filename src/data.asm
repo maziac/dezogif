@@ -49,6 +49,19 @@ SELECTED_TEXT_TABLE:
     defw JOY1_SELECTED_TEXT
     defw JOY2_SELECTED_TEXT
 
+
+; Error texts
+TEXT_LAST_ERROR:    
+    defb AT, 0, 12*8, "Last Error:", AT, 0, 13*8, 0
+
+TEXT_ERROR_TIMEOUT: defb "Rx Timeout", 0
+TEXT_ERROR_WRONG_FUNC_NUMBER: defb "Wrong function number", 0
+
+ERROR_TEXT_TABLE:  
+    defw TEXT_ERROR_TIMEOUT
+    defw TEXT_ERROR_WRONG_FUNC_NUMBER
+
+
 ;===========================================================================
 ; BSS data
 ;===========================================================================
@@ -57,6 +70,11 @@ SELECTED_TEXT_TABLE:
 ;===========================================================================
 ; Data. 
 ;===========================================================================
+
+
+; If an error occures it is stored here for display.
+last_error: defb 0
+
 
 ;===========================================================================
 ; Main use: breakpoint.asm

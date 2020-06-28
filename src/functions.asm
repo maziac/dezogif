@@ -28,9 +28,11 @@ exec_user_function:
 	jp z,execute_cmd	; A = 1
 	dec a
 	jp z,execute_init_slot0_bank	; A = 2 
-	; ERROR ; TODO: Do error handling, e.g. print error on screen
+	; ERROR
+	ld a,ERROR_WRONG_FUNC_NUMBER
+	ld (last_error),a
 	; ASSERT 
-	jr $
+	jp main
 
 
 ;===========================================================================

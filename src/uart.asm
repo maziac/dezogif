@@ -200,7 +200,7 @@ read_uart_byte:
     ;pop de
     ; Waited for 256*43 T-states=393us
     nop ; LOGPOINT read_uart_byte: ERROR=TIMEOUT
-    jp RX_TIMEOUT_HANDLER   ; ASSERT
+    jp rx_timeout   ; ASSERT
 
 .byte_received:
     ;pop de
@@ -226,6 +226,15 @@ read_uart_byte:
     out (BORDER),a
     ld a,e
 	ret 
+
+
+; Called if a UART timeout occurs.
+; As this could happen from everywhere the call stack is reset
+; and then the cmd_loop is entered again.
+rx_timeout: ; The receive timeout handler
+    ld a,ERROR_RX_TIMEOUT
+    ld (last_error),a
+    jp main
 
 
 ;===========================================================================
