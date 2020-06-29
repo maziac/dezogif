@@ -127,6 +127,13 @@ start_entry_point:
     xor a
     ld (last_error),a
     
+
+    ; TODO :Remove
+	ld a,REG_PERIPHERAL_2
+	call read_tbblue_reg
+	or 00001000b	; Enable MF NMI
+	nextreg REG_PERIPHERAL_2,a
+
     jp main
     
 
