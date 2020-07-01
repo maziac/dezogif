@@ -56,6 +56,26 @@ nmi66h:
 
 	; Page in slot 7
 	nextreg REG_MMU+MAIN_SLOT,MAIN_BANK
+
+	; Check if bank is already initialized
+	push af ; save previous bank
+
+	; Compare with magic number
+	ld a,(@magic_number.a)
+	cp MAGIC_NUMBER.A
+	jr nz,init_main_bank
+	ld a,(magic_number.b)
+	cp MAGIC_NUMBER.B
+	jr nz,init_main_bank
+	ld a,(magic_number.c)
+	cp MAGIC_NUMBER.C
+	jr nz,init_main_bank
+	ld a,(magic_number.d)
+	cp MAGIC_NUMBER.D
+	jr nz,init_main_bank
+
+	; Right bank already intitialized
+
 	; Now the labels can be used directly (for data access)
 	ld (slot_backup.slot7),a
 
@@ -63,6 +83,10 @@ nmi66h:
     pop bc, af 
 
     jp mf_nmi_button_pressed
+
+init_main_bank:
+	; TODO: Implementation required
+	ret 
 
 
     defs 0x2000-$

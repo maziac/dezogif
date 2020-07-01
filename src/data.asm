@@ -7,15 +7,13 @@
 ;===========================================================================
 
 
-
-
 ;===========================================================================
 ; Const data
 ;===========================================================================
 
 INTRO_TEXT: 
     defb AT, 0, 0
-    PROGRAM_TITLE   ; E.g. "ZX Next UART DeZog Interface"
+    defb "ZX Next UART DeZog Interface" 
     defb AT, 0, 1*8
     PRG_VERSION
     defb AT, 0, 2*8
@@ -60,6 +58,16 @@ TEXT_ERROR_WRONG_FUNC_NUMBER: defb "Wrong function number", 0
 ERROR_TEXT_TABLE:  
     defw TEXT_ERROR_TIMEOUT
     defw TEXT_ERROR_WRONG_FUNC_NUMBER
+
+
+;===========================================================================
+; Magic number to recognize the debugger
+;===========================================================================
+magic_number:   
+.a:     defb MAGIC_NUMBER.A
+.b:     defb MAGIC_NUMBER.B
+.c:     defb MAGIC_NUMBER.C
+.d:     defb MAGIC_NUMBER.D
 
 
 ;===========================================================================

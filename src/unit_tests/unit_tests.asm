@@ -9,29 +9,11 @@
     DEFINE UNIT_TEST
 
  
-; Need to be defined
-BAUDRATE:   EQU 999999
-//exit_code:    EQU 0
-SWAP_SLOT:      EQU 6   ; 0xC000, used only temporary
-;SWAP_SLOT1:      EQU SWAP_SLOT+1   ; 0xE000, used only temporary
-
-MAIN_BANK: EQU 94  ; Last 8k bank on unexpanded ZXNext.
-MAIN_SLOT:      EQU 7   ; 0xE000
-USED_ROM0_BANK: EQU 93  
-LOOPBACK_BANK:  EQU 91
-LOADED_BANK:    EQU 92
-
-
-MAIN_ADDR:      EQU MAIN_SLOT*0x2000
-
-
-; Program title shown on screen.
-    MACRO PROGRAM_TITLE
-    defb "ZX Next UART DeZog Interface"
-    ENDM
+    include "constants.asm"
 
     MMU MAIN_SLOT e, LOADED_BANK ; e -> Everything should fit into one page, error if not.
     ORG MAIN_SLOT*0x2000    ; 0xE000
+    
     include "macros.asm"
     include "zx/zx.inc"
     include "zx/zxnext_regs.inc"

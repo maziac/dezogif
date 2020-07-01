@@ -133,7 +133,7 @@ mf_nmi_button_pressed_immediate_return:
 	retn
 
 
-
+/*
 	; Get sp into MAIN_BANK
 	ld bc,(MF.backup_sp)
 	ld (backup.sp),bc
@@ -146,7 +146,7 @@ mf_nmi_button_pressed_immediate_return:
 	; Page out MF ROM/RAM
 	in a,(0xbf)
 
-/*
+
 	; Copy nmi exit program to slot 0 bank
 	; It is assumed that the correct bank (Copy of ROM or modified user bank)
 	; is paged into slot 0. This should be OK since it was tested that the
