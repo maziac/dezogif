@@ -25,7 +25,7 @@ exec_user_function:
 	ld a,(debugged_prgm_stack_copy.function_number)
 	; LOGPOINT function number = ${A}
 	dec a
-	jp z,execute_cmd	; A = 1
+	jp z,execute_cmds	; A = 1
 	dec a
 	jp z,execute_init_slot0_bank	; A = 2 
 	; ERROR

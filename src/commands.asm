@@ -359,14 +359,14 @@ cmd_pause:
 	ld de,1
 	call send_length_and_seqno
 	
-	; Send fake break notification
+	; Send pause notification
 	ld d,BREAK_REASON.MANUAL_BREAK
 	ld hl,0 ; bp address
 	call send_ntf_pause
 	; Stay in command loop
-.jump:
-	jp enter_cmd_loop
-
+.jump:	; Used by unit test to modify
+	ld sp,debug_stack.top
+	jp cmd_loop
 
 ;===========================================================================
 ; CMD_READ_MEM

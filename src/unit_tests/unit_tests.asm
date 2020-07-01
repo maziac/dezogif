@@ -46,6 +46,7 @@ MAIN_ADDR:      EQU MAIN_SLOT*0x2000
     include "text.asm"
     include "data.asm"
     include "ui.asm"
+    include "mf_rom.asm"
 
      
     ORG 0x7000

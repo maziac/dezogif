@@ -120,22 +120,24 @@ copy_rom_start_0066h_code_end
 	ld bc,LAYER_2_PORT
 	out (c),a
 
-	; Now backup used/main slot.
+	; Now backup main slot.
 	ld bc,IO_NEXTREG_REG
 	ld a,REG_MMU+MAIN_SLOT
 	out (c),a
 	; Read register (cannot use IN A,(C) as this affect P/V)
 	ld a,HIGH IO_NEXTREG_DAT
 	in a,(LOW IO_NEXTREG_DAT)	; A contains the previous bank number for MAIN_SLOT
-	ld (slot_backup.slot7-MAIN_ADDR),a
 
-	; Page in slot7
+	; Page in slot 7
 	nextreg REG_MMU+MAIN_SLOT,MAIN_BANK
 	; Now the labels can be used directly (for data access)
+	ld (slot_backup.slot7),a
 
 	; Save registers
+	ld bc,.save_registers_continue	; BC is anyway restored from the debugged program stack
+	ld (save_registers.ret_jump+1),bc
 	jp save_registers  ; Note: a CALL cannot be used here
-save_registers_continue:
+.save_registers_continue:
 
 	; Load SP for debugger
 	ld sp,debug_stack.top

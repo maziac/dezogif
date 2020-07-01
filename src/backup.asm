@@ -47,8 +47,7 @@ save_registers:
 	; End of register saving through pushing
 
 .ret_jump:
-	jp save_registers_continue	; Modified by unit tests
-	
+	jp 0x0000	; Self-modified	
 
 
 ;===========================================================================

@@ -101,10 +101,11 @@ cmd_loop:
 ; are available anymore.
 ; This is called from the coop routine (from the debugged program) when
 ; a new byte is available at the UART.
+; Or when an NMI happens.
 ; Changes:
 ;  At the end the registers are restored.
 ;===========================================================================
-execute_cmd:
+execute_cmds:
 	; Adjust the stack
 	call adjust_debugged_program_stack_for_function
 	; Maximize clock speed
@@ -133,10 +134,6 @@ execute_cmd:
 	
 	; Return to debugged program
 	jp restore_registers
-
-enter_cmd_loop:	; Used by 'pause'.
-	ld sp,debug_stack.top
-	jp cmd_loop
 
 
 ;===========================================================================
