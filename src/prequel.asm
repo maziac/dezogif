@@ -50,7 +50,7 @@ start_entry_point:
     ; Switch in loaded bank at SWAP_SLOT (0xE000)
     nextreg REG_MMU+SWAP_SLOT,LOADED_BANK
 
-    ; TODO: Read and set only required bits.
+    ; ODO: Read and set only required bits.
     ; Bit 4: Enable DivMMC automap and DivMMC NMI by DRIVE button (0 after Hard-reset)
     ; Bit 3: Enable multiface NMI by M1 button (hard reset = 0)
     nextreg REG_PERIPHERAL_2,%10110001
@@ -129,10 +129,10 @@ start_entry_point:
     
 
     ; TODO :Remove
-	ld a,REG_PERIPHERAL_2
-	call read_tbblue_reg
-	or 00001000b	; Enable MF NMI
-	nextreg REG_PERIPHERAL_2,a
+	;ld a,REG_PERIPHERAL_2
+	;call read_tbblue_reg
+	;or 00001000b	; Enable MF NMI
+	;nextreg REG_PERIPHERAL_2,a
 
     jp main
     

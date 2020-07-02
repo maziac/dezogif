@@ -18,7 +18,6 @@
 ; A, BC, F
 ; ===========================================================================
 mf_nmi_enable:
- ret ; TODO
 	ld a,REG_PERIPHERAL_2
 	call read_tbblue_reg
 	or 00001000b	; Enable MF NMI
@@ -32,7 +31,6 @@ mf_nmi_enable:
 ; A, BC, F
 ; ===========================================================================
 mf_nmi_disable:
- ret ; TODO
 	ld a,REG_PERIPHERAL_2
 	call read_tbblue_reg
 	and 11110111b	; Disable MF NMI
@@ -82,30 +80,65 @@ mf_nmi_button_pressed:
 	ld (save_registers.ret_jump+1),hl
 	pop hl
 	ld sp,(MF.backup_sp)	; Restore SP
-	jp save_registers  ; Note: a CALL cannot be used here
+	jp save_registers  ; Note: a CALL/ cannot be used here
 .save_registers_continue:
 
     ; Change SP to main slot
     ld sp,debug_stack.top
+
+	; Save also the interrupt state.
+	; Note: during NMI no maskable interrupt can happen.
+	; The IFF2 state can simply be read with a 1-time read through LD A,I.
+	ld a,i		; Read IFF2
+	push af 
+	pop hl
+	ld a,l	; Bit 2 contains the interrupt state.
+	ld (backup.interrupt_state),a
 
 	; Send pause notification
 	ld d,BREAK_REASON.MANUAL_BREAK
 	ld hl,0 ; bp address
 	call send_ntf_pause
 
-	; Check if there are more messages waiting
-	call execute_cmds
+	; L2 backup
+	call save_layer2_rw
 
-	; Save
-	push af
+	; Debugged program stack ändern
+	; TODO
 
-	; Either hide or page out. Both work to re-enable the M1 button.
-	call mf_hide
-	;call mf_page_out
+	; Enter debugging loop
+	;ld sp,debug_stack.top
+	jp cmd_loop
 
-    pop af
+/*
+	; Restore registers
+	ld a,0xC3	; JP
+	ld (restore_registers.ret_jump),a
+	ld hl,.restore_registers_continue
+	ld (restore_registers.ret_jump+1),hl
+	jp restore_registers
+.restore_registers_continue:
+	; Allow save_register normal operation
+	ld hl,restore_registers.ret_jump
+	ldi (hl),0 : ldi (hl),0 : ld (hl),0
+	; Restore HL
+	ld hl,(backup.hl)
 
-    retn
+	; Page out MF ROM/RAM
+	in a,(0xbf)
+
+
+Ich muss noch 
+1. Exit routine nach slot 0 kopieren
+2. dorthin springen und dort slot 7 austauschen
+3. Vorher noch l2 saven / restoren
+
+
+
+	; Return from NMI
+	retn
+*/
+
 
 
 

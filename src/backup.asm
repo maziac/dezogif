@@ -125,12 +125,16 @@ restore_registers:
 	; Get debugged program stack
 	ld sp,(backup.sp)
 
+.ret_jump:	; TODO: Brauch ich das wirklich?
+	nop : nop : nop		; Self modifying code. Is temporarily overwritten by NMI
+
 	; Check interrupt state
 	ld a,(backup.interrupt_state)
 	bit 2,a
 	; NZ if interrupts enabled
 	; Set bank to restore for slot 7
 	ld a,(slot_backup.slot7)
+
 	; Turn on NMI
 .enable_nmi:	equ $+3
 	nextreg REG_PERIPHERAL_2,0	; self-modifying code
@@ -196,7 +200,7 @@ adjust_debugged_program_stack_for_function:
 	jr adjust_debugged_program_stack_for_bp.af
 
 
-/*
+
 ;===========================================================================
 ; Saves layer 2 reading/writing.
 ; Changes:
@@ -215,7 +219,7 @@ save_layer2_rw:
 	pop af
 	ld (backup.layer_2_port),a
 	ret
-*/
+
 
 ;===========================================================================
 ; Restores layer 2 reading/writing.
