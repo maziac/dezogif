@@ -342,7 +342,7 @@ memory_loop:
 
 	; Modify HL
 	and 0x1F
-	add SWAP_SLOT*0x20	; 0xC0
+	add HIGH SWAP_ADDR	; 0xC0
 	ld h,a
 
 .phase1:	
@@ -367,7 +367,7 @@ memory_loop:
 	ret z	; Return if DE was 0
 
 	; Phase 1 again: memory in range 0xE000-0xFFFF
-	ld hl,SWAP_SLOT*0x2000	; Correct HL to 0xC000
+	ld hl,SWAP_ADDR	; Correct HL to 0xC000
 	jr .phase1
 
 

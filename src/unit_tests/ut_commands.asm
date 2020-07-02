@@ -456,7 +456,7 @@ UT_5_cmd_write_bank:
 	; Page in the memory bank
 	nextreg REG_MMU+SWAP_SLOT,28
 	
-	ld hl,SWAP_SLOT*0x2000	; .slot<<13	; Start address
+	ld hl,SWAP_ADDR	; .slot<<13	; Start address
 	ld a,(hl)
 	TEST_A 0x55
 	add hl,0x2000-1
@@ -478,7 +478,7 @@ UT_5_cmd_write_bank:
 	; Page in the memory bank
 	nextreg REG_MMU+SWAP_SLOT,28
 	
-	ld hl,SWAP_SLOT*0x2000	;.slot<<13	; Start address
+	ld hl,SWAP_ADDR	;.slot<<13	; Start address
 	ld a,(hl)
 	TEST_A 0xAA
 	add hl,0x2000-1

@@ -73,8 +73,8 @@ execute_init_slot0_bank:
 ;===========================================================================
 modify_bank:
      ; Overwrite the address 0 and 66h with code
-    MEMCOPY SWAP_SLOT*0x2000, copy_rom_start_0000h_code, copy_rom_start_0000h_code_end-copy_rom_start_0000h_code
-    MEMCOPY SWAP_SLOT*0x2000+copy_rom_start_0066h_code-copy_rom_start_0000h_code, copy_rom_start_0066h_code, copy_rom_start_0066h_code_end-copy_rom_start_0066h_code
+    MEMCOPY SWAP_ADDR, copy_rom_start_0000h_code, copy_rom_start_0000h_code_end-copy_rom_start_0000h_code
+    MEMCOPY SWAP_ADDR+copy_rom_start_0066h_code-copy_rom_start_0000h_code, copy_rom_start_0066h_code, copy_rom_start_0066h_code_end-copy_rom_start_0066h_code
     ; Save the bank number inside the bank (self modifying code)
-    ld (SWAP_SLOT*0x2000+dbg_enter.bank-copy_rom_start_0000h_code),a
+    ld (SWAP_ADDR+dbg_enter.bank-copy_rom_start_0000h_code),a
 	ret

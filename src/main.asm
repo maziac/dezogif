@@ -14,7 +14,7 @@
 
 
     MMU MAIN_SLOT e, LOADED_BANK ; e -> Everything should fit into one page, error if not.
-    ORG MAIN_SLOT*0x2000
+    ORG MAIN_ADDR
 
 
 ;===========================================================================
@@ -34,7 +34,83 @@
     include "backup.asm"
     include "text.asm"
     include "ui.asm"
+    include "altrom.asm"
  
+
+;===========================================================================
+; After loading the program starts here. Moves the bank to the destination 
+; slot and jumps there.
+;===========================================================================
+    ;DISP $-MAIN_ADDR   ; Is in MF space.
+
+start_entry_point:
+    ; At startup this program is mapped at 0xA000
+    di
+    ld sp,debug_stack.top
+
+	; Maximize clock speed
+	nextreg REG_TURBO_MODE,RTM_28MHZ
+
+    ; Reset layer 2 writing/reading
+    ld bc,LAYER_2_PORT
+    xor a
+    out (c),a
+
+    ; Switch in ROM bank
+    nextreg REG_MMU+0,ROM_BANK
+    nextreg REG_MMU+1,ROM_BANK
+
+    ; The main program needs to be copied to MAIN_BANK
+    ; Copy the code
+    nextreg REG_MMU+SWAP_SLOT,MAIN_BANK
+    MEMCOPY SWAP_ADDR, MAIN_ADDR, 0x2000   
+
+    ; Page in MAIN_BANK
+    nextreg REG_MMU+MAIN_SLOT,MAIN_BANK
+
+    ; Jump to main bank
+    jp main_bank_entry  ; Is executed from MF ROM
+
+main_bank_entry:
+    ; Init state
+    MEMCLEAR tmp_breakpoint_1, 2*TMP_BREAKPOINT
+
+    ; Disable MF M1 button
+    call mf_nmi_disable
+
+    ; Disable Multiface
+    call mf_page_out
+
+    ; Initialize the bank for slot 0 with the required code.
+    ;ld a,USED_ROM0_BANK
+    call copy_altrom
+
+    ; Copy the ZX character font from address ROM_FONT (0x3D00)
+    ; to the debugger area at the end of the bank (0x2000-ROM_FONT_SIZE).
+    MEMCOPY MAIN_ADDR+0x2000-ROM_FONT_SIZE, ROM_FONT, ROM_FONT_SIZE
+
+    ; Restore SWAP_SLOT bank
+    ;nextreg REG_MMU+SWAP_SLOT,a
+
+    ; Set baudrate
+    call set_uart_baudrate
+
+    ; Init text printing
+    call text.init
+
+    ; The main program has been copied into USED_MAIN_BANK
+    ld a,2  ; Joy 2 selected
+    ld (uart_joyport_selection),a
+    xor a
+    ld (last_error),a
+    
+    ; Return from NMI (Interrupts are disabled)
+    di
+    call nmi_return
+
+    jp main
+    ;ENT
+
 
 ;===========================================================================
 ; main routine - The main loop of the program.
@@ -131,7 +207,7 @@ main_loop:
     include "data.asm"
 
     ASSERT $ <= (MAIN_SLOT+1)*0x2000
-    ASSERT $ <= MAIN_SLOT*0x2000+0x1F00
+    ASSERT $ <= MAIN_ADDR+0x1F00
 
 
 
@@ -139,13 +215,15 @@ main_loop:
 ; After loading the program starts here. 
 ;===========================================================================
     ; Default slots: 254, 255, 10, 11, 4, 5, 0, 1
+    ; TODO: Remove when MF is used
     MMU 4 e, 4, 0x8000 ; Slot 4 = Bank 4 (standard)
-
-    include "prequel.asm"
-
+start_entry_point2:
+    di
+    nextreg REG_MMU+MAIN_SLOT,LOADED_BANK
+    jp start_entry_point
 
     ; Save NEX file
-    SAVENEX OPEN BIN_FILE, start_entry_point, stack_prequel.top //stack_top: The ZX Next has a problem (crashes the program immediately when it is run) if stack points to stack_top 
+    SAVENEX OPEN BIN_FILE, start_entry_point2, debug_stack.top //stack_top: The ZX Next has a problem (crashes the program immediately when it is run) if stack points to stack_top 
     SAVENEX CORE 3, 1, 5  
     ;SAVENEX CFG 0               ; black border
     ;SAVENEX BAR 0, 0            ; no load bar

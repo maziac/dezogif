@@ -41,7 +41,6 @@ mf_nmi_disable:
 	ret 
 
 
-
 ;===========================================================================
 ; Function to return from the NMI and to enable maskable interrupts (if they
 ; were enabled before entering the NMI).

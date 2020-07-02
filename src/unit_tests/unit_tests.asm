@@ -12,7 +12,7 @@
     include "constants.asm"
 
     MMU MAIN_SLOT e, LOADED_BANK ; e -> Everything should fit into one page, error if not.
-    ORG MAIN_SLOT*0x2000    ; 0xE000
+    ORG MAIN_ADDR    ; 0xE000
 
     include "macros.asm"
     include "zx/zx.inc"
@@ -28,8 +28,10 @@
     include "text.asm"
     include "data.asm"
     include "ui.asm"
-    include "mf_rom.asm"
+    include "altrom.asm"
 
+    include "mf_rom.asm"
+    
      
     ORG 0x7000
 PRG_START:

@@ -288,7 +288,7 @@ cmd_write_bank:
 	nextreg REG_MMU+SWAP_SLOT,a
 
 	; Read bytes from UART and put into bank
-	ld hl,SWAP_SLOT*0x2000		;.slot<<13	; Start address
+	ld hl,SWAP_ADDR		;.slot<<13	; Start address
 	ld de,0x2000	; Bank size
 	call receive_bytes
 
@@ -605,7 +605,7 @@ cmd_set_breakpoints:
 	call read_uart_byte
 	ld h,a
 	; Check memory area
-	cp 0x20*MAIN_SLOT	; 0xE000
+	cp HIGH MAIN_ADDR	; 0xE000
 	jr c,.normal
 
 	; Page in bank
@@ -613,7 +613,7 @@ cmd_set_breakpoints:
 	nextreg REG_MMU+SWAP_SLOT,a
 	ld a,h
 	and 0x1F
-	add SWAP_SLOT*0x20	; 0xC0
+	add HIGH SWAP_ADDR	; 0xC0
 	ld h,a
 	; Get memory
 	ld a,(hl)	; LOGPOINT [CMD] BP=${HL:hex}h, ${HL} (SWAP)
@@ -676,14 +676,14 @@ cmd_restore_mem:
 	call read_uart_byte
 	ld h,a
 	; Check memory area
-	cp 0x20*MAIN_SLOT	; 0xE000
+	cp HIGH MAIN_ADDR	; 0xE000
 	jr c,.normal
 
 	ld a,(slot_backup.slot7)
 	nextreg REG_MMU+SWAP_SLOT,a
 	ld a,h
 	and 0x1F
-	add SWAP_SLOT*0x20	; 0xC0
+	add HIGH SWAP_ADDR	; 0xC0
 	ld h,a
 	; Get value
 	call read_uart_byte
@@ -732,7 +732,7 @@ cmd_loopback:
 	dec de : dec de
 	
 	; Read all data in swap slot
-	ld hl,SWAP_SLOT*0x2000
+	ld hl,SWAP_ADDR
 	jr .rcv_check_end
 
 .rcv_loop:
@@ -759,7 +759,7 @@ cmd_loopback:
 	; Send all data
 	ld de,(receive_buffer.length)
 	dec de : dec de
-	ld hl,SWAP_SLOT*0x2000
+	ld hl,SWAP_ADDR
 	jr .send_check_end
 
 .send_loop:

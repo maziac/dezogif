@@ -44,7 +44,7 @@ bp_address			defw	; The location of the temporary breakpoint
 ;===========================================================================
 ; This instructions needs to be copied to address 0x0000.
 ;===========================================================================
-	ORG MAIN_SLOT*0x2000
+	ORG MAIN_ADDR
 	DISP 0x0000	; Compile for address 0x0000
 copy_rom_start_0000h_code:	; Located at 0x0000
 
@@ -70,7 +70,7 @@ exit_code_di:
 copy_rom_start_0000h_code_end
 	ENT 
 
-	ORG MAIN_SLOT*0x2000+0x0066
+	ORG MAIN_ADDR+0x0066
 	DISP 0x0066
 
 copy_rom_start_0066h_code:
@@ -147,7 +147,7 @@ copy_rom_start_code_end
 
 	ENT	; End of DISPlaced code
 
-	ORG MAIN_SLOT*0x2000+copy_rom_start_code_end
+	ORG MAIN_ADDR+copy_rom_start_code_end
 
 ;===========================================================================
 ; Called by RST 0 or JP 0.
@@ -306,7 +306,7 @@ clear_tmp_breakpoint:
 .continue:
 	; Check for bp in main slot area
 	ld a,d
-	cp 0x20*MAIN_SLOT	; 0xE000
+	cp HIGH MAIN_ADDR	; 0xE000
 	jr c,.normal
 
 	; Temporary switch to swap slot
@@ -317,7 +317,7 @@ clear_tmp_breakpoint:
 	; Adjust to swap slot area
 	ld a,d
 	and 0x1F
-	add SWAP_SLOT*0x20	; 0xC0
+	add HIGH SWAP_ADDR	; 0xC0
 	ld d,a
 
 	call .normal
@@ -349,7 +349,7 @@ clear_tmp_breakpoint:
 set_tmp_breakpoint:
 	; Check for bp in main slot area
 	ld a,h
-	cp 0x20*MAIN_SLOT	; 0xE000
+	cp HIGH MAIN_ADDR	; 0xE000
 	jr c,.normal
 
 	; Temporary switch to swap slot
@@ -361,7 +361,7 @@ set_tmp_breakpoint:
 	push hl		; Save real address
 	ld a,h
 	and 0x1F
-	add SWAP_SLOT*0x20	; 0xC0
+	add HIGH SWAP_ADDR	; 0xC0
 	ld h,a
 
 	; Get opcode
