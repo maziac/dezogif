@@ -31,48 +31,6 @@ start_entry_point:
     nextreg REG_MMU+0,ROM_BANK
     nextreg REG_MMU+1,ROM_BANK
 
- IF 0
-    ld sp,stack_prequel.top
-
-    ; Clear screen
-	ld iy,VAR_ERRNR
-    ;call ROM_CLS
-    
-    ; Print text    
-    ld hl,INTRO_TEXT
-	call print
- ENDIF
-
-
- IF 0   ; DIVMMC
-    ; The main program has been loaded into LOADED_BANK and needs to be copied to DivMMC.
-
-    ; Switch in loaded bank at SWAP_SLOT (0xE000)
-    nextreg REG_MMU+SWAP_SLOT,LOADED_BANK
-
-    ; ODO: Read and set only required bits.
-    ; Bit 4: Enable DivMMC automap and DivMMC NMI by DRIVE button (0 after Hard-reset)
-    ; Bit 3: Enable multiface NMI by M1 button (hard reset = 0)
-    nextreg REG_PERIPHERAL_2,%10110001
-
-    ; Enable DivMMC traps at 0x0000 and 0x0066
-    nextreg REG_DIVMMC_TRAP_ENABLE_1, 0b00000001    ; 0x0000
-    nextreg REG_DIVMMC_TRAP_ENABLE_2, 0b00000001    ; 0x0066 
-
-    ; Page in Divmmc memory bank 3
-    ; Bit 7: conmem
-    ; Bit 6: mapram
-    ; Bit 0/1: bank
-    ld a,%10000011
-    out (DIVIDE_CTRL_REG),a
-
-    ; Copy loaded bank to DivMMC bank 3 (0x2000)
-    MEMCOPY 0x2000, SWAP_SLOT*0x2000, 0x2000 
-
-    ; Enable mapram, RAM bank 0 is at 0x2000
-    ld a,%01000000
-    out (DIVIDE_CTRL_REG),a
- ELSE 
 
     ; The main program has been loaded into LOADED_BANK and needs to be copied to USED_MAIN_BANK
     ; Switch in the bank at 0x0000
@@ -82,16 +40,11 @@ start_entry_point:
     ; Copy the code
     MEMCOPY MAIN_SLOT*0x2000, SWAP_SLOT*0x2000, 0x2000   
 
- ENDIF
 
 
     ; Initialization.
     ; Setup stack
     ld sp,debug_stack.top
- IF 0   ; DIVMMC
-    ; Without DivMMC we need RAM at 0x2000
-    nextreg REG_MMU+USED_DATA_SLOT, USED_DATA_BANK
- ENDIF
 
     ; Init state
     MEMCLEAR tmp_breakpoint_1, 2*TMP_BREAKPOINT
@@ -127,13 +80,6 @@ start_entry_point:
     xor a
     ld (last_error),a
     
-
-    ; TODO :Remove
-	;ld a,REG_PERIPHERAL_2
-	;call read_tbblue_reg
-	;or 00001000b	; Enable MF NMI
-	;nextreg REG_PERIPHERAL_2,a
-
     jp main
     
 
