@@ -18,7 +18,7 @@ copy_altrom:
     nextreg REG_MMU+SWAP_SLOT,1
     MEMCOPY SWAP_ADDR, MAIN_ADDR, 0x2000   
     ; First 128K ROM
-    ld a,0
+    ld a,0 
     call copy_modify_altrom
     ; Then 48K ROM
     ld a,00010000b
@@ -42,10 +42,10 @@ copy_modify_altrom:
     ; Copy ROM
     nextreg REG_MMU+SWAP_SLOT,TMP_BANK
     nextreg REG_MMU,ROM_BANK
-    MEMCOPY SWAP_SLOT*0x2000, 0x0000, 0x2000
+    MEMCOPY SWAP_ADDR, 0x0000, 0x2000
     nextreg REG_MMU+SWAP_SLOT,TMP_BANKB
     nextreg REG_MMU+1,ROM_BANK
-    MEMCOPY SWAP_SLOT*0x2000, 0x2000, 0x4000
+    MEMCOPY SWAP_ADDR, 0x2000, 0x2000
     ; Restore MAIN_BANK
     nextreg REG_MMU,MAIN_BANK
     ; Modify
@@ -58,9 +58,9 @@ copy_modify_altrom:
     nextreg REG_MMU+1,ROM_BANK
     nextreg REG_ALTROM,11000000b
     nextreg REG_MMU+SWAP_SLOT,TMP_BANK
-    MEMCOPY 0x0000, SWAP_SLOT*0x2000, 0x2000
+    MEMCOPY 0x0000, SWAP_ADDR, 0x2000
     nextreg REG_MMU+SWAP_SLOT,TMP_BANKB
-    MEMCOPY 0x2000, SWAP_SLOT*0x2000, 0x2000
+    MEMCOPY 0x2000, SWAP_ADDR, 0x2000
     nextreg REG_ALTROM,10000000b
 
     ; Switch back debugger code in used bank

@@ -57,7 +57,7 @@ main_bank_entry:
 
     ; Initialize the bank for slot 0 with the required code.
     ;ld a,USED_ROM0_BANK
-    call copy_altrom
+    call copy_altrom 
 
     ; Copy the ZX character font from address ROM_FONT (0x3D00)
     ; to the debugger area at the end of the bank (0x2000-ROM_FONT_SIZE).
@@ -237,7 +237,7 @@ start_entry_point2:
     SAVENEX AUTO
     ;SAVENEX BANK 20
 
-    SAVEBIN "out/main.bin", 0xE000, 0x2000-MF.main_prg_copy
+    SAVEBIN "out/main.bin", 0xE000, MF_ORIGIN+0x2000-MF.main_prg_copy
 
     SAVENEX CLOSE
 

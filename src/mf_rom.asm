@@ -4,6 +4,9 @@
 ; Contains mainly the NMI routine and the code to copy the debugger to bank 7.
 ;===========================================================================
 
+;MF_ORIGIN:  equ 0x0000
+MF_ORIGIN:  equ 0x6000  ; For testing another origin is defined
+
 
  IFNDEF UNIT_TEST
     OUTPUT "out/mf_nmi.bin"
@@ -14,13 +17,13 @@
 ;===========================================================================
     MODULE MF 
 
-    ORG 0x0000
+    ORG MF_ORIGIN
 
     defs 0x38
     ei
     ret
 
-    defs 0x66-$
+    defs MF_ORIGIN+0x66-$
  
 ;===========================================================================
 ; NMI: 0x0066
@@ -52,16 +55,10 @@ nmi66h:
 	; Read register
     inc b
 	in a,(c)	; A contains the previous bank number for MAIN_SLOT
-
-    ; Check if MAIN_BANK is already paged in
-    cp MAIN_BANK
-    jp z,mf_nmi_button_pressed_immediate_return
+    ld (MF.prev_slot7),a
 
 	; Page in slot 7
 	nextreg REG_MMU+MAIN_SLOT,MAIN_BANK
-
-	; Check if bank is already initialized
-	push af ; save previous bank
 
 	; Compare with magic number
 	ld a,(magic_number.a)
@@ -77,15 +74,20 @@ nmi66h:
 	cp MAGIC_NUMBER.D
 	jr nz,init_main_bank
     ; Also check build time
+	ld a,(magic_number.e)
 	cp MAGIC_NUMBER.E
 	jr nz,init_main_bank
+	ld a,(magic_number.f)
 	cp MAGIC_NUMBER.F
 	jr nz,init_main_bank
 
-	; Right bank already intitialized
+    ; Check if MAIN_BANK is already paged in
+    ld a,(MF.prev_slot7)
+    cp MAIN_BANK
+    jp z,mf_nmi_button_pressed_immediate_return
 
-	; Now the labels can be used directly (for data access)
-	ld (slot_backup.slot7),a
+	; Save previous bank
+	ld (slot_backup.slot7),a    
 
     ; Restore registers from MF stack
     pop bc, af 
@@ -112,13 +114,14 @@ init_main_bank:
     ; Copy the code
     nextreg REG_MMU+SWAP_SLOT,MAIN_BANK
     ;MEMCOPY SWAP_ADDR, MAIN_ADDR, 0x2000   
-    MEMCOPY SWAP_ADDR, main_prg_copy, 0x2000-main_prg_copy 
+    MEMCOPY SWAP_ADDR, main_prg_copy, MF_ORIGIN+0x2000-main_prg_copy 
 
     ; Page in MAIN_BANK
     nextreg REG_MMU+MAIN_SLOT,MAIN_BANK
 
     ; Jump to main bank
     jp main_bank_entry  ; Is executed from MF ROM
+    
 
 ; Align to 16 bytes.
     ALIGN 16, 0
@@ -152,6 +155,9 @@ stack:
     
 ; Used to backup the debugged program's SP.
 backup_sp:      defw 0
+
+; Used to temporarily store the previous slot 7.
+prev_slot7:     defb 0
 
 ; Border color: TODO: Remove 
 border_color:   defb 0
