@@ -174,6 +174,14 @@ receive_buffer:
 ; Just for testing buffer overflow:
 	defb  0xff, 0xff
 
+payload_set_reg:	PAYLOAD_SET_REG = receive_buffer.payload
+payload_add_breakpoint:	PAYLOAD_ADD_BREAKPOINT = receive_buffer.payload
+payload_remove_breakpoint:	PAYLOAD_REMOVE_BREAKPOINT = receive_buffer.payload
+
+payload_continue:	PAYLOAD_CONTINUE = receive_buffer.payload
+payload_read_mem:	PAYLOAD_READ_MEM = receive_buffer.payload
+payload_write_mem:	PAYLOAD_WRITE_MEM = receive_buffer.payload
+
 
 ;===========================================================================
 ; Main use: uart.asm

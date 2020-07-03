@@ -10,7 +10,7 @@
 ;===========================================================================
     MODULE MF 
 
-    OUTPUT out/enNextMf.rom
+    OUTPUT "out/enNextMf.rom"
     ORG 0
 
     defs 0x38
@@ -61,7 +61,7 @@ nmi66h:
 	push af ; save previous bank
 
 	; Compare with magic number
-	ld a,(@magic_number.a)
+	ld a,(magic_number.a)
 	cp MAGIC_NUMBER.A
 	jr nz,init_main_bank
 	ld a,(magic_number.b)
@@ -84,10 +84,35 @@ nmi66h:
 
     jp mf_nmi_button_pressed
 
-init_main_bank:
-	; TODO: Implementation required
-	ret 
+init_main_bank:   
+    di
+    ld sp,debug_stack.top
 
+	; Maximize clock speed
+	nextreg REG_TURBO_MODE,RTM_28MHZ
+
+    ; Reset layer 2 writing/reading
+    ld bc,LAYER_2_PORT
+    xor a
+    out (c),a
+
+    ; Switch in ROM bank
+    nextreg REG_MMU+0,ROM_BANK
+    nextreg REG_MMU+1,ROM_BANK
+
+    ; The main program needs to be copied to MAIN_BANK
+    ; Copy the code
+    nextreg REG_MMU+SWAP_SLOT,MAIN_BANK
+    MEMCOPY SWAP_ADDR, MAIN_ADDR, 0x2000   
+
+    ; Page in MAIN_BANK
+    nextreg REG_MMU+MAIN_SLOT,MAIN_BANK
+
+    ; Jump to main bank
+    jp main_bank_entry  ; Is executed from MF ROM
+
+    ; Now add the MAIN_BANK program
+    ;incbin "out/main.bin" 
 
     defs 0x2000-$
 

@@ -27,19 +27,16 @@
 register_number	defb
 register_value	defw
 	ENDS
-payload_set_reg:	PAYLOAD_SET_REG = receive_buffer.payload
 
 ; CMD_ADD_BREAKPOINT
 	STRUCT PAYLOAD_ADD_BREAKPOINT
 bp_address	defw
 	ENDS
-payload_add_breakpoint:	PAYLOAD_ADD_BREAKPOINT = receive_buffer.payload
 
 ; CMD_REMOVE_BREAKPOINT
 	STRUCT PAYLOAD_REMOVE_BREAKPOINT
 bp_id	defw
 	ENDS
-payload_remove_breakpoint:	PAYLOAD_REMOVE_BREAKPOINT = receive_buffer.payload
 
 ; CMD_CONTINUE
 	STRUCT PAYLOAD_CONTINUE
@@ -48,7 +45,6 @@ bp1_address	defw
 bp2_enable	defb
 bp2_address	defw
 	ENDS
-payload_continue:	PAYLOAD_CONTINUE = receive_buffer.payload
 
 ; CMD_READ_MEM
 	STRUCT PAYLOAD_READ_MEM
@@ -56,22 +52,13 @@ reserved	defb
 mem_start	defw
 mem_size	defw
 	ENDS
-payload_read_mem:	PAYLOAD_READ_MEM = receive_buffer.payload
 
 ; CMD_WRITE_MEM
 	STRUCT PAYLOAD_WRITE_MEM
 reserved	defb
 mem_start	defw
 	ENDS
-payload_write_mem:	PAYLOAD_WRITE_MEM = receive_buffer.payload
 
-/*
-; CMD_WRITE_BANK
-	STRUCT PAYLOAD_WRITE_BANK
-bank_number	defb
-	ENDS
-payload_write_bank:	PAYLOAD_WRITE_BANK = receive_buffer.payload
-*/
 
 
 ;===========================================================================
