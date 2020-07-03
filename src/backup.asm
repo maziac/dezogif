@@ -152,9 +152,6 @@ restore_registers:
 ; - [SP+4]:	AF was put on the stack
 ; - [SP+2]:	    AF (Interrupt flags) was put on the stack
 ; - [SP]:	    BC
-; After:
-; - [SP+6]:	The return address-1
-; - [SP+4]:	AF was put on the stack
 ; ===========================================================================
 adjust_debugged_program_stack_for_bp:
 	ld de,(debugged_prgm_stack_copy.return1)	
@@ -174,7 +171,7 @@ adjust_debugged_program_stack_for_bp:
 
 
 ;===========================================================================
-; Adjusts the stack of the debugged program by 4 bytes.
+; Adjusts the stack of the debugged program by 6 bytes.
 ; Before (debugged_prgm_stack_copy):
 ; Stack for a function call from the debugged program
 ; - [SP+10]:	The return address
@@ -183,9 +180,6 @@ adjust_debugged_program_stack_for_bp:
 ; - [SP+4]:	AF was put on the stack
 ; - [SP+2]:	AF (Interrupt flags) was put on the stack
 ; - [SP]:	BC
-; After:
-; - [SP+10]:	The return address-1
-; - [SP+8]:	AF was put on the stack
 ; ===========================================================================
 adjust_debugged_program_stack_for_function:
 	ld de,(debugged_prgm_stack_copy.return2)	
@@ -199,6 +193,20 @@ adjust_debugged_program_stack_for_function:
 	; Rest
 	jr adjust_debugged_program_stack_for_bp.af
 
+
+
+;===========================================================================
+; Adjusts the stack of the debugged program by 2 bytes.
+; I.e. it adds AF because AF is popped on exit.
+; Before (debugged_prgm_stack_copy):
+; - [SP]:	The return address 
+; ===========================================================================
+adjust_debugged_program_stack_for_nmi: 
+	; Adjust debugged program SP
+	ld hl,(backup.sp)	
+	dec hl : dec hl	; Skip complete stack
+	ld (backup.sp),hl	
+	ret
 
 
 ;===========================================================================

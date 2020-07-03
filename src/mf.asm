@@ -79,7 +79,7 @@ mf_nmi_button_pressed:
 	ld (save_registers.ret_jump+1),hl
 	pop hl
 	ld sp,(MF.backup_sp)	; Restore SP
-	jp save_registers  ; Note: a CALL/ cannot be used here
+	jp save_registers  ; Note: a CALL/RET cannot be used here
 .save_registers_continue:
 
     ; Change SP to main slot
@@ -103,42 +103,11 @@ mf_nmi_button_pressed:
 	call save_layer2_rw
 
 	; Debugged program stack ändern
-	; TODO
+	call adjust_debugged_program_stack_for_nmi
 
 	; Enter debugging loop
 	;ld sp,debug_stack.top
 	jp cmd_loop
-
-/*
-	; Restore registers
-	ld a,0xC3	; JP
-	ld (restore_registers.ret_jump),a
-	ld hl,.restore_registers_continue
-	ld (restore_registers.ret_jump+1),hl
-	jp restore_registers
-.restore_registers_continue:
-	; Allow save_register normal operation
-	ld hl,restore_registers.ret_jump
-	ldi (hl),0 : ldi (hl),0 : ld (hl),0
-	; Restore HL
-	ld hl,(backup.hl)
-
-	; Page out MF ROM/RAM
-	in a,(0xbf)
-
-
-Ich muss noch 
-1. Exit routine nach slot 0 kopieren
-2. dorthin springen und dort slot 7 austauschen
-3. Vorher noch l2 saven / restoren
-
-
-
-	; Return from NMI
-	retn
-*/
-
-
 
 
 ;===========================================================================
