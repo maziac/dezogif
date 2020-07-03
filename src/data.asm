@@ -68,6 +68,8 @@ magic_number:
 .b:     defb MAGIC_NUMBER.B
 .c:     defb MAGIC_NUMBER.C
 .d:     defb MAGIC_NUMBER.D
+.e:     defb MAGIC_NUMBER.E
+.r:     defb MAGIC_NUMBER.F
 
 
 ;===========================================================================

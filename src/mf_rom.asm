@@ -5,7 +5,9 @@
 ;===========================================================================
 
 
+ IFNDEF UNIT_TEST
     OUTPUT "out/mf_nmi.bin"
+ ENDIF
 
 ;===========================================================================
 ; ROM for Multiface.
@@ -74,6 +76,11 @@ nmi66h:
 	ld a,(magic_number.d)
 	cp MAGIC_NUMBER.D
 	jr nz,init_main_bank
+    ; Also check build time
+	cp MAGIC_NUMBER.E
+	jr nz,init_main_bank
+	cp MAGIC_NUMBER.F
+	jr nz,init_main_bank
 
 	; Right bank already intitialized
 
@@ -113,7 +120,13 @@ init_main_bank:
     ; Jump to main bank
     jp main_bank_entry  ; Is executed from MF ROM
 
+; Align to 16 bytes.
+    ALIGN 16, 0
+    
+ IFNDEF UNIT_TEST
     OUTEND
+ ENDIF
+
 
 ;===========================================================================
 ; The are here contains a copy of the main debug program.
