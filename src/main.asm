@@ -206,6 +206,28 @@ main_loop:
     ; Note: The area does not need to be copied. i.e. is initialized on the fly.
     include "data.asm"
 
+; TODO: REMOVE, just for testing
+    defs 0xF000-$
+fake_nmi:
+    push af, bc 
+    ld bc,PORT_KEYB_YUIOP
+    in a,(c)    ; Check "I"
+    pop bc
+    bit 2,a
+    jr z,.pressed 
+    pop af 
+    ret 
+.pressed:
+    pop af
+   	; Save registers
+	push hl
+	ld hl,mf_nmi_button_pressed.save_registers_continue
+	ld (save_registers.ret_jump+1),hl
+	pop hl
+    jp mf_nmi_button_pressed.for_test
+    ;jp mf_nmi_button_pressed
+
+
     ASSERT $ <= (MAIN_SLOT+1)*0x2000
     ASSERT $ <= MAIN_ADDR+0x1F00
 

@@ -195,7 +195,7 @@ enter_debugger:
 	in a,(BORDER)
 	ld (backup.border_color),a
 
-	; Read user stack
+	; Read debugged program stack
 	ld hl,(backup.sp)
 	ld de,DEBUGGED_PRGM_USED_STACK_SIZE
 	ld bc,debugged_prgm_stack_copy
