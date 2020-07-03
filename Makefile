@@ -20,7 +20,7 @@ UT_ASM_FILES = $(wildcard $(SRC)/unit_tests/*.asm) $(wildcard $(SRC)/unit_tests/
 LIST_OUT = $(OUT)/$(PROJ).list
 
 
-all:	default unit_tests
+all:	default unit_tests mf_rom
 
 default:	main
 
@@ -41,6 +41,14 @@ unit_tests:	$(UT_BIN)
 
 $(UT_BIN):	$(UT_ASM_FILES) Makefile $(OUT)/
 	$(ASM) --inc=$(SRC) --lstlab --lst=$(UT).list --fullpath -DBIN_FILE=\"$(UT_BIN)\" $(UT_ASM)
+
+
+# Build the MF rom
+mf_rom:	$(OUT)/enNextMf.rom
+
+$(OUT)/enNextMf.rom:	main
+	# Simply concatenate the mf_nmi code and the main.bin
+	cat $(OUT)/mf_nmi.bin $(OUT)/main.bin > $(OUT)/enNextMf.rom
 
 
 # Create 'out' folder:

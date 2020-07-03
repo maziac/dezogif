@@ -201,9 +201,9 @@ fake_nmi:
     jp mf_nmi_button_pressed.for_test
     ;jp mf_nmi_button_pressed
 
-
-    ASSERT $ <= (MAIN_SLOT+1)*0x2000
-    ASSERT $ <= MAIN_ADDR+0x1F00
+main_end:
+    ASSERT main_end <= (MAIN_SLOT+1)*0x2000
+    ASSERT main_end <= MAIN_ADDR+0x1F00
 
 
 
@@ -221,12 +221,6 @@ start_entry_point2:
     OUTEND
 
 
-;===========================================================================
-; ROM for Multiface.
-;===========================================================================
-
-    include "mf_rom.asm"
-
 
 
 ;===========================================================================
@@ -234,7 +228,7 @@ start_entry_point2:
 ;===========================================================================
      DEVICE ZXSPECTRUMNEXT
 
- IF 0
+ IF 01
     ; Save NEX file
     SAVENEX OPEN BIN_FILE, start_entry_point2, debug_stack.top //stack_top: The ZX Next has a problem (crashes the program immediately when it is run) if stack points to stack_top 
     SAVENEX CORE 3, 1, 5  
@@ -242,6 +236,17 @@ start_entry_point2:
     ;SAVENEX BAR 0, 0            ; no load bar
     SAVENEX AUTO
     ;SAVENEX BANK 20
+
+    SAVEBIN "out/main.bin", 0xE000, 0x2000-MF.main_prg_copy
+
     SAVENEX CLOSE
 
  ENDIF
+
+
+;===========================================================================
+; ROM for Multiface.
+;===========================================================================
+
+    include "mf_rom.asm"
+

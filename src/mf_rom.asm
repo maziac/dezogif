@@ -5,13 +5,14 @@
 ;===========================================================================
 
 
+    OUTPUT "out/mf_nmi.bin"
+
 ;===========================================================================
 ; ROM for Multiface.
 ;===========================================================================
     MODULE MF 
 
-    OUTPUT "out/enNextMf.rom"
-    ORG 0
+    ORG 0x0000
 
     defs 0x38
     ei
@@ -103,7 +104,8 @@ init_main_bank:
     ; The main program needs to be copied to MAIN_BANK
     ; Copy the code
     nextreg REG_MMU+SWAP_SLOT,MAIN_BANK
-    MEMCOPY SWAP_ADDR, MAIN_ADDR, 0x2000   
+    ;MEMCOPY SWAP_ADDR, MAIN_ADDR, 0x2000   
+    MEMCOPY SWAP_ADDR, main_prg_copy, 0x2000-main_prg_copy 
 
     ; Page in MAIN_BANK
     nextreg REG_MMU+MAIN_SLOT,MAIN_BANK
@@ -111,15 +113,24 @@ init_main_bank:
     ; Jump to main bank
     jp main_bank_entry  ; Is executed from MF ROM
 
-    ; Now add the MAIN_BANK program
-    ;incbin "out/main.bin" 
+    OUTEND
 
-    defs 0x2000-$
+;===========================================================================
+; The are here contains a copy of the main debug program.
+; It will be copied from here into the MAIN_BANK/MAIN_SLOT.
+;===========================================================================   
 
+main_prg_copy:
+    ; The actual code is copied in the make file target mf_rom.
+    ; ...
 
+ 
+
+   ;defs 0x2000-$
 ;===========================================================================
 ; The MF RAM area.
 ;===========================================================================   
+    ORG 0x2000
 
 ; The Multiface stack. Used only for a very short timeframe.
 stack:  
@@ -134,4 +145,3 @@ border_color:   defb 0
 
     ENDMODULE
 
-    OUTEND
