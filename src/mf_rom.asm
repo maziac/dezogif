@@ -65,6 +65,46 @@ nmi66h:
 	; Save previous bank
 	ld (slot_backup.slot7),a    
 
+    ; Save clock
+	ld a,REG_TURBO_MODE
+	dec b   ; IO_NEXTREG_REG
+	out (c),a
+	; Read register
+    inc b
+	in a,(c)
+	ld (backup.speed),a
+
+    ; Switch clock
+    nextreg REG_TURBO_MODE,RTM_3MHZ
+
+    ; Check for long or short key press
+    ld de,0xFFFF    ; counter (ca. 1.5 sec)
+.wait_m1_button_loop:   ; ca. 23us per loop
+    ; Decrement counter
+    dec de
+    ld a,d
+    or e
+    jr z,init_main_bank ; Init if long press
+
+    ; Check M1 button state
+	dec b   ; IO_NEXTREG_REG
+	ld a,REG_ANTI_BRICK
+	out (c),a
+	; Read register
+    inc b
+	;in a,(c)	; A contains the M1 button status in bit 0
+    ;bit RAB_BUTTON_MULTIFACE,a
+    ;jr nz,.wait_m1_button_loop ; Wait until key release
+
+    ; TODO: Fake : remove
+    ld bc,PORT_KEYB_YUIOP
+    in a,(c)
+    bit 2,a
+    jr z,.wait_m1_button_loop ; Wait until key release
+
+    ; Speed up
+    nextreg REG_TURBO_MODE,RTM_28MHZ
+
 	; Compare with magic number
     push hl
 	ld a,(main_prg_copy+magic_number_a)

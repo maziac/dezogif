@@ -142,6 +142,9 @@ mf_nmi_button_pressed:
 ;   The debugger's SP is in MF.backup_sp.
 ; ===========================================================================
 mf_nmi_button_pressed_immediate_return:
+	; Restore speed
+	ld a,(backup.speed)
+    nextreg REG_TURBO_MODE,a
 	; Pop from MF stack
 	pop af 
 	; Restore SP
