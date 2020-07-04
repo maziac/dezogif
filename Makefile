@@ -46,7 +46,7 @@ $(UT_BIN):	$(UT_ASM_FILES) Makefile $(OUT)/
 # Build the MF rom
 mf_rom:	$(OUT)/enNextMf.rom
 
-$(OUT)/enNextMf.rom:	main
+$(OUT)/enNextMf.rom:	$(PRG_BIN)
 	# Simply concatenate the mf_nmi code and the main.bin
 	cat $(OUT)/mf_nmi.bin $(OUT)/main.bin > $(OUT)/enNextMf.rom
 

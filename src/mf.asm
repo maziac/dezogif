@@ -117,6 +117,14 @@ mf_nmi_button_pressed:
 	; Debugged program stack ändern
 	call adjust_debugged_program_stack_for_nmi
 
+	; Change main state
+	ld a,PRGM_STOPPED
+	ld (prgm_state),a
+
+    ; Return from NMI (Interrupts are disabled)
+    di
+    call nmi_return
+
 	; Enter debugging loop
 	;ld sp,debug_stack.top
 	jp cmd_loop
@@ -125,73 +133,22 @@ mf_nmi_button_pressed:
 ;===========================================================================
 ; Is called from the Multiface ROM when the NMI button was pressed
 ; and the MAIN_BANK is already paged in.
-; That means the debguger is already running andthe NMI should immediately return.
+; That means the debugger is already running andthe NMI should immediately return.
 ; The stack is used by the debugger already, so it's safe to use it here as well.
 ; When entered:
 ;   SP is pointing to the MF.stack.
-;   BC/AF need to be popped from MF.stack.
+;   AF needs to be popped from MF.stack.
 ;   All other registers are from the current running debugger.
 ;   The debugger's SP is in MF.backup_sp.
 ; ===========================================================================
 mf_nmi_button_pressed_immediate_return:
 	; Pop from MF stack
-	pop bc, af 
+	pop af 
 	; Restore SP
 	ld sp,(MF.backup_sp)	; debugger stack
 	; Page out MF ROM/RAM
-	push af
+	push af		; TODO: SP could still be in MF area
 	in a,(0xbf)
 	pop af
 	; Return from NMI
 	retn
-
-
-/*
-	; Get sp into MAIN_BANK
-	ld bc,(MF.backup_sp)
-	ld (backup.sp),bc
-	; Pop from MF stack
-	pop bc, af 
-	; Use new stack
-	ld sp,debug_stack.top
-	; Save registers
-	push af, hl
-	; Page out MF ROM/RAM
-	in a,(0xbf)
-
-
-	; Copy nmi exit program to slot 0 bank
-	; It is assumed that the correct bank (Copy of ROM or modified user bank)
-	; is paged into slot 0. This should be OK since it was tested that the
-	; MAIN_BANK is paged in slot 7.
-	MEMCOPY mf_nmi_exit, mf_nmi_exit_copy, mf_nmi_exit_copy_end-mf_nmi_exit_copy
-	; Set right bank to change
-
-	ld hl,(backup.sp)
-	dec hl : dec hl 	; Reserve 2 bytes on the stack for another interrupting nmi
-	
-	; Restore
-    pop hl, af
-    ld sp,(backup.sp)
-	retn
-
-
-;===========================================================================
-; Routine for exiting from the debugger into the debugged program.
-; When returning from NMI a special procedure is required which is copied into
-; the ROM area (slot 0) to save space.
-; Occupies 6 bytes.
-;===========================================================================
-mf_nmi_exit_copy:
-	DISP 0x0002	; Compile for address 0x0002
-mf_nmi_exit:
-.bank:	equ	$+3
-	nextreg REG_MMU+MAIN_SLOT,0	; Self-modifying code
-	retn
-.end
-	ENT
-mf_nmi_exit_copy_end
-
-	ASSERT mf_nmi_exit_copy_end-mf_nmi_exit_copy <= 6
-
-*/

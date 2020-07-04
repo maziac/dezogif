@@ -4,8 +4,12 @@
 ; Contains mainly the NMI routine and the code to copy the debugger to bank 7.
 ;===========================================================================
 
-;MF_ORIGIN:  equ 0x0000
-MF_ORIGIN:  equ 0x6000  ; For testing another origin is defined
+;MF_ORIGIN_ROM:   equ 0x0000
+;MF_DIFF_TO_RAM:  equ MF_ORIGIN_ROM+0x2000-MF.main_prg_copy ; At 0x2000
+
+; For testing:
+MF_ORIGIN_ROM:  equ 0x6000  ; For testing another origin is defined
+MF_DIFF_TO_RAM:  equ main_end-MAIN_ADDR    ; Just after the debugger program
 
 
  IFNDEF UNIT_TEST
@@ -17,13 +21,13 @@ MF_ORIGIN:  equ 0x6000  ; For testing another origin is defined
 ;===========================================================================
     MODULE MF 
 
-    ORG MF_ORIGIN
+    ORG MF_ORIGIN_ROM
 
     defs 0x38
     ei
     ret
 
-    defs MF_ORIGIN+0x66-$
+    defs MF_ORIGIN_ROM+0x66-$
  
 ;===========================================================================
 ; NMI: 0x0066
@@ -55,32 +59,33 @@ nmi66h:
 	; Read register
     inc b
 	in a,(c)	; A contains the previous bank number for MAIN_SLOT
-    ld (MF.prev_slot7),a
 
 	; Page in slot 7
 	nextreg REG_MMU+MAIN_SLOT,MAIN_BANK
+	; Save previous bank
+	ld (slot_backup.slot7),a    
 
 	; Compare with magic number
     push hl
-	ld a,(main_prg_copy+magic_number.a)
-	ld hl,MAIN_ADDR+magic_number.a
+	ld a,(main_prg_copy+magic_number_a)
+	ld hl,MAIN_ADDR+magic_number_a
 	cp (hl)
 	jr nz,init_main_bank
-	ld a,(main_prg_copy+magic_number.b)
+	ld a,(main_prg_copy+magic_number_b)
     inc hl
 	cp (hl)
 	jr nz,init_main_bank
-	ld a,(main_prg_copy+magic_number.c)
-	ld hl,MAIN_ADDR+magic_number.c
+	ld a,(main_prg_copy+magic_number_c)
+	ld hl,MAIN_ADDR+magic_number_c
 	cp (hl)
 	jr nz,init_main_bank
-	ld a,(main_prg_copy+magic_number.d)
+	ld a,(main_prg_copy+magic_number_d)
 	inc hl
 	cp (hl)
 	jr nz,init_main_bank
     ; Also check build time
 	ld a,(main_prg_copy+build_time_rel)
-	ld hl,MAIN_ADDR+magic_number.c
+	ld hl,MAIN_ADDR+build_time_rel
 	cp (hl)
 	jr nz,init_main_bank
 	ld a,(main_prg_copy+build_time_rel+1)
@@ -88,16 +93,15 @@ nmi66h:
 	cp (hl)
 	jr nz,init_main_bank
 
-    ; Check if MAIN_BANK is already paged in
-    ld a,(MF.prev_slot7)
-    cp MAIN_BANK
+    pop hl, bc
+
+    ; Check if program was already stopped
+    ld a,(prgm_state)
+    cp PRGM_STOPPED
     jp z,mf_nmi_button_pressed_immediate_return
 
-	; Save previous bank
-	ld (slot_backup.slot7),a    
-
     ; Restore registers from MF stack
-    pop hl, bc, af 
+    pop af 
 
     jp mf_nmi_button_pressed
 
@@ -121,7 +125,7 @@ init_main_bank:
     ; Copy the code
     nextreg REG_MMU+SWAP_SLOT,MAIN_BANK
     ;MEMCOPY SWAP_ADDR, MAIN_ADDR, 0x2000   
-    MEMCOPY SWAP_ADDR, main_prg_copy, MF_ORIGIN+0x2000-main_prg_copy 
+    MEMCOPY SWAP_ADDR, main_prg_copy, MF_ORIGIN_ROM+0x2000-main_prg_copy 
 
     ; Page in MAIN_BANK
     nextreg REG_MMU+MAIN_SLOT,MAIN_BANK
@@ -149,11 +153,11 @@ main_prg_copy:
 
  
 
-   ;defs 0x2000-$
 ;===========================================================================
 ; The MF RAM area.
 ;===========================================================================   
-    ORG 0x2000
+    defs MF_DIFF_TO_RAM
+
 
 ; The Multiface stack. Used only for a very short timeframe.
 stack:  
@@ -162,9 +166,6 @@ stack:
     
 ; Used to backup the debugged program's SP.
 backup_sp:      defw 0
-
-; Used to temporarily store the previous slot 7.
-prev_slot7:     defb 0
 
 ; Border color: TODO: Remove 
 border_color:   defb 0

@@ -143,6 +143,7 @@ slot_backup:	SLOT_BACKUP
 ; 2 = joy 2
 uart_joyport_selection: defb 0
 
+
 ;===========================================================================
 ; Used by: text.asm
 
@@ -150,3 +151,8 @@ uart_joyport_selection: defb 0
 ; and there can be up to 256 of them (although 0 is not used).
 ; I.e. you can safely set this 8 bytes below character at index 1.
 font_address:   defw    ROM_START+ROM_SIZE-ROM_FONT_SIZE-0x20*8
+
+
+;===========================================================================
+; Used by: mf_rom.asm
+prgm_state:	defb PRGM_STOPPED

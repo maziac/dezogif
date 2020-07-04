@@ -44,6 +44,7 @@
 
 ; In MAIN_BANK/MAIN_SLOT.
 main_bank_entry:
+    di
     ; Init state
     MEMCLEAR tmp_breakpoint_1, 2*TMP_BREAKPOINT
 
@@ -80,7 +81,6 @@ main_bank_entry:
     ld (last_error),a
     
     ; Return from NMI (Interrupts are disabled)
-    di
     call nmi_return
 
     jp main
@@ -107,6 +107,10 @@ main:
     ; Init clock speed
     ld a,RTM_3MHZ
     ld (backup.speed),a
+
+    ; Init state
+    ld a,PRGM_STOPPED
+    ld (prgm_state),a 
 
     ; Init interrupt state
     xor a
@@ -186,7 +190,7 @@ main_loop:
 fake_nmi:
     push af, bc 
     ld bc,PORT_KEYB_YUIOP
-    in a,(c)    ; Check "I"
+    in a,(c)    ; Chec key "I"
     pop bc
     bit 2,a
     jr z,.pressed 
@@ -194,6 +198,10 @@ fake_nmi:
     ret 
 .pressed:
     pop af
+    jp MF.nmi66h
+
+    ; TODO: REMOVE:
+ IF 0
    	; Save registers
 	push hl
 	ld hl,mf_nmi_button_pressed.save_registers_continue
@@ -201,6 +209,7 @@ fake_nmi:
 	pop hl
     jp mf_nmi_button_pressed.for_test
     ;jp mf_nmi_button_pressed
+ ENDIF 
 
 main_end:
     ASSERT main_end <= (MAIN_SLOT+1)*0x2000
@@ -238,7 +247,7 @@ start_entry_point2:
     SAVENEX AUTO
     ;SAVENEX BANK 20
 
-    SAVEBIN "out/main.bin", 0xE000, MF_ORIGIN+0x2000-MF.main_prg_copy
+    SAVEBIN "out/main.bin", 0xE000, MF_ORIGIN_ROM+0x2000-MF.main_prg_copy
 
     SAVENEX CLOSE
 

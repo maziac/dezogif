@@ -17,11 +17,10 @@
 ;===========================================================================
 ; Magic number addresses to recognize the debugger
 ;===========================================================================
-magic_number:   
-.a      = 0x0000     ; Address 0x0000 (0xE000)
-.b      = .a+1
-.c      = 0x0066 ; Address 0x0066 (0xE066)
-.d      = .c+1
+magic_number_a:     equ 0x0000     ; Address 0x0000 (0xE000)
+magic_number_b:     equ 0x0001
+magic_number_c:     equ 0x0066      ; Address 0x0066 (0xE066)
+magic_number_d:     equ 0x0067
 
 
 ;===========================================================================

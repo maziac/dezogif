@@ -135,6 +135,10 @@ restore_registers:
 	; Set bank to restore for slot 7
 	ld a,(slot_backup.slot7)
 
+	; Change main state
+	ld a,PRGM_RUNNING
+	ld (prgm_state),a
+
 	; Turn on NMI
 .enable_nmi:	equ $+3
 	nextreg REG_PERIPHERAL_2,0	; self-modifying code
