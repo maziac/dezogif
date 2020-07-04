@@ -4,12 +4,14 @@
 ; Contains mainly the NMI routine and the code to copy the debugger to bank 7.
 ;===========================================================================
 
-;MF_ORIGIN_ROM:   equ 0x0000
-;MF_DIFF_TO_RAM:  equ MF_ORIGIN_ROM+0x2000-MF.main_prg_copy ; At 0x2000
-
+ IFDEF MF_FAKE
 ; For testing:
 MF_ORIGIN_ROM:  equ 0x6000  ; For testing another origin is defined
 MF_DIFF_TO_RAM:  equ main_end-MAIN_ADDR    ; Just after the debugger program
+ ELSE
+MF_ORIGIN_ROM:   equ 0x0000
+MF_DIFF_TO_RAM:  equ MF_ORIGIN_ROM+0x2000-MF.main_prg_copy ; At 0x2000
+ ENDIF
 
 
  IFNDEF UNIT_TEST
