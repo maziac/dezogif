@@ -62,9 +62,6 @@ copy_modify_altrom:
     nextreg REG_MMU+SWAP_SLOT,TMP_BANKB
     MEMCOPY 0x2000, SWAP_ADDR, 0x2000
     nextreg REG_ALTROM,10000000b
-
-    ; Switch back debugger code in used bank
-    nextreg REG_MMU,MAIN_BANK
     ret
 
 

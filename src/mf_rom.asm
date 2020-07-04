@@ -37,7 +37,7 @@ MF_DIFF_TO_RAM:  equ MF_ORIGIN_ROM+0x2000-MF.main_prg_copy ; At 0x2000
 ; The NMI cannot be interrupted by a maskable interrupt and it
 ; will not be interrupted by another NMI as the M1 button is not re-activated
 ; before paging out the MF ROM/RAM at the end of the routine.
-;===========================================================================   
+;===========================================================================
 nmi66h:
     ; Save the SP
     ld (MF.backup_sp),sp
@@ -86,23 +86,25 @@ nmi66h:
     dec de
     ld a,d
     or e
-    jr z,init_main_bank ; Init if long press
+    jr z,init_main_bank_key_release ; Init if long press
 
+ IFDEF MF_FAKE
+     ; Fake M1 button press, uses key "I" instead
+    ld bc,PORT_KEYB_YUIOP 
+    in a,(c)
+    bit 2,a     ; Check key "I"
+    jr z,.wait_m1_button_loop ; Wait until key release
+ ELSE
     ; Check M1 button state
 	dec b   ; IO_NEXTREG_REG
 	ld a,REG_ANTI_BRICK
 	out (c),a
 	; Read register
     inc b
-	;in a,(c)	; A contains the M1 button status in bit 0
-    ;bit RAB_BUTTON_MULTIFACE,a
-    ;jr nz,.wait_m1_button_loop ; Wait until key release
-
-    ; TODO: Fake : remove
-    ld bc,PORT_KEYB_YUIOP
-    in a,(c)
-    bit 2,a
-    jr z,.wait_m1_button_loop ; Wait until key release
+	in a,(c)	; A contains the M1 button status in bit 0
+    bit RAB_BUTTON_MULTIFACE,a
+    jr nz,.wait_m1_button_loop ; Wait until key release
+ ENDIF
 
     ; Speed up
     nextreg REG_TURBO_MODE,RTM_28MHZ
@@ -147,6 +149,41 @@ nmi66h:
 
     jp mf_nmi_button_pressed
 
+
+;===========================================================================
+; Initializes the main bank. But waits on M1 key release before.
+; During waiting the border flashes to indicate that the button was
+; pressed long enough.
+;===========================================================================
+init_main_bank_key_release: 
+.wait_on_release_loop:
+    ; Flash border
+    inc e
+    ld a,e
+    and 0x07
+    out (BORDER),a
+ IFDEF MF_FAKE
+     ; Fake M1 button press, uses key "I" instead
+    ld bc,PORT_KEYB_YUIOP 
+    in a,(c)
+    bit 2,a     ; Check key "I"
+    jr z,.wait_on_release_loop ; Wait until key release
+ ELSE
+    ; Check M1 button state
+	ld bc,IO_NEXTREG_REG
+	ld a,REG_ANTI_BRICK
+	out (c),a
+	; Read register
+    inc b
+	in a,(c)	; A contains the M1 button status in bit 0
+    bit RAB_BUTTON_MULTIFACE,a
+    jr nz,.wait_on_release_loop ; Wait until key release
+ ENDIF
+    ;  Flow through
+ 
+;===========================================================================
+; Initializes the main bank. I.e. copies the code from MF to MAIN_BANK.
+;===========================================================================
 init_main_bank:   
     di
     ld sp,debug_stack.top
@@ -159,21 +196,13 @@ init_main_bank:
     xor a
     out (c),a
 
-    ; Switch in ROM bank
-    nextreg REG_MMU+0,ROM_BANK
-    nextreg REG_MMU+1,ROM_BANK
-
     ; The main program needs to be copied to MAIN_BANK
-    ; Copy the code
-    nextreg REG_MMU+SWAP_SLOT,MAIN_BANK
-    ;MEMCOPY SWAP_ADDR, MAIN_ADDR, 0x2000   
-    MEMCOPY SWAP_ADDR, main_prg_copy, MF_ORIGIN_ROM+0x2000-main_prg_copy 
-
     ; Page in MAIN_BANK
-    nextreg REG_MMU+MAIN_SLOT,MAIN_BANK
+    nextreg REG_MMU+MAIN_SLOT,MAIN_BANK 
+    MEMCOPY MAIN_ADDR, main_prg_copy, MF_ORIGIN_ROM+0x2000-main_prg_copy 
 
     ; Jump to main bank
-    jp main_bank_entry  ; Is executed from MF ROM
+    jp main_bank_entry
     
 
 ; Align to 16 bytes.

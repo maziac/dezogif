@@ -153,9 +153,9 @@
             "rootFolder": "${workspaceFolder}",
             "topOfStack": "debug_stack.top",
             "loadObjs": [
-                { "path": "out/enNextMf.rom", "start": "0x6000" }
+                { "path": "out/enNextMf.rom", "start": "MF_ORIGIN_ROM" }
             ],
-            "execAddress": "0x6066",    // "NMI" address
+            "execAddress": "MF.nmi66h",    // "NMI" address
             "smallValuesMaximum": 513,
             "tmpDir": ".tmp"
         },

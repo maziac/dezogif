@@ -59,11 +59,13 @@ main_bank_entry:
     call nmi_return ; Note: if not called by NMI nothing special will happen.
 
     ; Initialize the bank for slot 0 with the required code.
-    ;ld a,USED_ROM0_BANK
     call copy_altrom 
 
     ; Copy the ZX character font from address ROM_FONT (0x3D00)
     ; to the debugger area at the end of the bank (0x2000-ROM_FONT_SIZE).
+    ; Switch in ROM bank
+    nextreg REG_MMU+0,ROM_BANK
+    nextreg REG_MMU+1,ROM_BANK
     MEMCOPY MAIN_ADDR+0x2000-ROM_FONT_SIZE, ROM_FONT, ROM_FONT_SIZE
 
     ; Restore SWAP_SLOT bank
@@ -115,7 +117,11 @@ main:
 
     ; Init interrupt state
     xor a
-	ld a,(backup.interrupt_state)
+	ld (backup.interrupt_state),a
+
+    ; Init slot 0 bank
+    ld a,MAIN_BANK
+    ld (slot_backup.slot0),a
 
     ; Set UART
     ld a,(uart_joyport_selection)

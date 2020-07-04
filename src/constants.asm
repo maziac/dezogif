@@ -21,7 +21,6 @@ MAIN_BANK:      EQU 94  ; Last 8k bank on unexpanded ZXNext.
 
 MAIN_SLOT:      EQU 7   ; 0xE000
 SWAP_SLOT:      EQU 6   ; 0xC000, used only temporary
-;SWAP_SLOTB:     EQU SWAP_SLOT+1   ; 0xC000, used only temporary
 
 LOOPBACK_BANK:  EQU 91 ; Used for the loopback test. Could be any bank as the loopback test is not done with a running debugged program.
 
