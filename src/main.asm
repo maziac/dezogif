@@ -2,6 +2,7 @@
 ; main.asm
 ;===========================================================================
 
+    DEVICE ZXSPECTRUMNEXT
 
 ;===========================================================================
 ; Constants
@@ -218,40 +219,19 @@ main_end:
 
 
 ;===========================================================================
-; After loading the program starts here. 
-;===========================================================================
-    ; Default slots: 254, 255, 10, 11, 4, 5, 0, 1
-    ; TODO: Remove when MF is used
-    MMU 4 e, 4, 0x8000 ; Slot 4 = Bank 4 (standard)
-start_entry_point2:
-    di
-    nextreg REG_MMU+MAIN_SLOT,LOADED_BANK
-    jp MF.init_main_bank
-
-    OUTEND
-
-
-
-
-;===========================================================================
 ; NEX file is used for testing.
 ;===========================================================================
-     DEVICE ZXSPECTRUMNEXT
 
- IF 01
     ; Save NEX file
-    SAVENEX OPEN BIN_FILE, start_entry_point2, debug_stack.top //stack_top: The ZX Next has a problem (crashes the program immediately when it is run) if stack points to stack_top 
-    SAVENEX CORE 3, 1, 5  
+    ;SAVENEX OPEN BIN_FILE, start_entry_point2, debug_stack.top //stack_top: The ZX Next has a problem (crashes the program immediately when it is run) if stack points to stack_top 
+    ;SAVENEX CORE 3, 1, 5  
     ;SAVENEX CFG 0               ; black border
     ;SAVENEX BAR 0, 0            ; no load bar
-    SAVENEX AUTO
-    ;SAVENEX BANK 20
+    ;SAVENEX AUTO
 
     SAVEBIN "out/main.bin", 0xE000, MF_ORIGIN_ROM+0x2000-MF.main_prg_copy
 
-    SAVENEX CLOSE
-
- ENDIF
+    ;SAVENEX CLOSE
 
 
 ;===========================================================================
