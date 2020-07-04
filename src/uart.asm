@@ -228,13 +228,22 @@ read_uart_byte:
 	ret 
 
 
-; Called if a UART timeout occurs.
+; Called if a UART RX timeout occurs.
 ; As this could happen from everywhere the call stack is reset
 ; and then the cmd_loop is entered again.
 rx_timeout: ; The receive timeout handler
     ld a,ERROR_RX_TIMEOUT
+timeout:
     ld (last_error),a
     jp main
+
+
+; Called if a UART TX timeout occurs.
+; As this could happen from everywhere the call stack is reset
+; and then the cmd_loop is entered again.
+tx_timeout: ; The receive timeout handler
+    ld a,ERROR_TX_TIMEOUT
+    jr timeout
 
 
 ;===========================================================================
@@ -247,17 +256,24 @@ rx_timeout: ; The receive timeout handler
 ;  BC
 ;===========================================================================
 write_uart_byte: 
-	push af
+	push af,de
     ; Send response back
     ld bc,PORT_UART_TX
     ; Check if ready for transmit
+    ld e,0
 .wait_tx:
     in a,(c)
     bit UART_TX_READY,a
+    jr z,.byte_ready
+    dec e
     jr nz,.wait_tx
-    
+
+    nop ; LOGPOINT write_uart_byte: ERROR=TIMEOUT
+    jp tx_timeout   ; ASSERT
+
+.byte_ready:   
     ; Transmit byte
-	pop af
+	pop de, af
     out (c),a
 	ret
 

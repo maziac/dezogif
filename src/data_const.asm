@@ -74,11 +74,13 @@ SELECTED_TEXT_TABLE:
 TEXT_LAST_ERROR:    
     defb AT, 0, 12*8, "Last Error:", AT, 0, 13*8, 0
 
-TEXT_ERROR_TIMEOUT: defb "Rx Timeout", 0
+TEXT_ERROR_RX_TIMEOUT: defb "RX Timeout", 0
+TEXT_ERROR_TX_TIMEOUT: defb "TX Timeout", 0
 TEXT_ERROR_WRONG_FUNC_NUMBER: defb "Wrong function number", 0
 
 ERROR_TEXT_TABLE:  
-    defw TEXT_ERROR_TIMEOUT
+    defw TEXT_ERROR_RX_TIMEOUT
+    defw TEXT_ERROR_TX_TIMEOUT
     defw TEXT_ERROR_WRONG_FUNC_NUMBER
 
 
