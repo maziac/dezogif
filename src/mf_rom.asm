@@ -61,24 +61,31 @@ nmi66h:
 	nextreg REG_MMU+MAIN_SLOT,MAIN_BANK
 
 	; Compare with magic number
-	ld a,(magic_number.a)
-	cp MAGIC_NUMBER.A
+    push hl
+	ld a,(main_prg_copy+magic_number.a)
+	ld hl,MAIN_ADDR+magic_number.a
+	cp (hl)
 	jr nz,init_main_bank
-	ld a,(magic_number.b)
-	cp MAGIC_NUMBER.B
+	ld a,(main_prg_copy+magic_number.b)
+    inc hl
+	cp (hl)
 	jr nz,init_main_bank
-	ld a,(magic_number.c)
-	cp MAGIC_NUMBER.C
+	ld a,(main_prg_copy+magic_number.c)
+	ld hl,MAIN_ADDR+magic_number.c
+	cp (hl)
 	jr nz,init_main_bank
-	ld a,(magic_number.d)
-	cp MAGIC_NUMBER.D
+	ld a,(main_prg_copy+magic_number.d)
+	inc hl
+	cp (hl)
 	jr nz,init_main_bank
     ; Also check build time
-	ld a,(magic_number.e)
-	cp MAGIC_NUMBER.E
+	ld a,(main_prg_copy+build_time_rel)
+	ld hl,MAIN_ADDR+magic_number.c
+	cp (hl)
 	jr nz,init_main_bank
-	ld a,(magic_number.f)
-	cp MAGIC_NUMBER.F
+	ld a,(main_prg_copy+build_time_rel+1)
+	inc hl
+	cp (hl)
 	jr nz,init_main_bank
 
     ; Check if MAIN_BANK is already paged in
@@ -90,7 +97,7 @@ nmi66h:
 	ld (slot_backup.slot7),a    
 
     ; Restore registers from MF stack
-    pop bc, af 
+    pop hl, bc, af 
 
     jp mf_nmi_button_pressed
 

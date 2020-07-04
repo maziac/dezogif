@@ -28,17 +28,9 @@ MAIN_ADDR:      EQU MAIN_SLOT*0x2000
 SWAP_ADDR:      EQU SWAP_SLOT*0x2000
 
 ; Use the build time
-BTIME: equ BUILD_TIME & 0xFFFF
+BUILD_TIME16: equ BUILD_TIME & 0xFFFF
 ; DISPLAY "BUILD_TIME: ", BTIME  
 
-; Magic number to recognize the debugger
-MAGIC_NUMBER:
-.A:     equ 0xED
-.B:     equ 0x77
-.C:     equ 0xFD
-.D:     equ 0xA9
-.E:     equ LOW BTIME
-.F:     equ HIGH BTIME
 
 
 ; UART baudrate

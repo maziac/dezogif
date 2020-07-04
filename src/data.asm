@@ -3,84 +3,15 @@
 ;
 ; All volatile data is defined here.
 ; 
-; Note: The area does not need to be copied. i.e. is initiatlized on the fly.
+; Note: The area does not need to be copied. i.e. is initialized on the fly.
 ;===========================================================================
 
-
-;===========================================================================
-; Const data
-;===========================================================================
-
-INTRO_TEXT: 
-    defb AT, 0, 0
-    defb "ZX Next UART DeZog Interface" 
-    defb AT, 0, 1*8
-    PRG_VERSION
-    defb AT, 0, 2*8
-    defb "ESP UART Baudrate: "
-    STRINGIFY BAUDRATE
-
-;    defb AT, 0, 4*8
-;    defb "Tx=7, Rx=9"
-    defb AT, 0, 5*8
-    defb "Keys:"
-    defb AT, 0, 6*8
-    defb "1 = Joy 1"
-    defb AT, 0, 7*8
-    defb "2 = Joy 2"
-    defb AT, 0, 8*8
-    defb "3 = No joystick port"
-    defb AT, 0, 9*8
-    defb "0 = Reset"
-;.end
-    defb 0
-
-JOY1_SELECTED_TEXT:
-    defb AT, 0, 3*8, "Using Joy 1 (left)", 0
-JOY2_SELECTED_TEXT:
-    defb AT, 0, 3*8, "Using Joy 2 (right)", 0
-NOJOY_SELECTED_TEXT:
-    defb AT, 0, 3*8, "No joystick port used.", 0
-
-SELECTED_TEXT_TABLE:
-    defw NOJOY_SELECTED_TEXT
-    defw JOY1_SELECTED_TEXT
-    defw JOY2_SELECTED_TEXT
-
-
-; Error texts
-TEXT_LAST_ERROR:    
-    defb AT, 0, 12*8, "Last Error:", AT, 0, 13*8, 0
-
-TEXT_ERROR_TIMEOUT: defb "Rx Timeout", 0
-TEXT_ERROR_WRONG_FUNC_NUMBER: defb "Wrong function number", 0
-
-ERROR_TEXT_TABLE:  
-    defw TEXT_ERROR_TIMEOUT
-    defw TEXT_ERROR_WRONG_FUNC_NUMBER
-
-
-;===========================================================================
-; Magic number to recognize the debugger
-;===========================================================================
-magic_number:   
-.a:     defb MAGIC_NUMBER.A
-.b:     defb MAGIC_NUMBER.B
-.c:     defb MAGIC_NUMBER.C
-.d:     defb MAGIC_NUMBER.D
-.e:     defb MAGIC_NUMBER.E
-.f:     defb MAGIC_NUMBER.F
 
 
 ;===========================================================================
 ; BSS data
 ;===========================================================================
  
-
-;===========================================================================
-; Data. 
-;===========================================================================
-
 
 ; If an error occures it is stored here for display.
 last_error: defb 0
@@ -93,10 +24,6 @@ last_error: defb 0
 tmp_breakpoint_1:	TMP_BREAKPOINT
 tmp_breakpoint_2:	TMP_BREAKPOINT
 
-; Temporary storage for register. Used as long as it is not save to use the (user) stack.
-;tmp_backup:
-;.af:    defw 0
-;.bc:    defw 0
 
 
 ; Used to stroe the stack contents of the debugged program.

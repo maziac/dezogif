@@ -24,11 +24,6 @@ tmp_slot:	defb	; Normally SWAP_SLOT but could be also other.
 ;===========================================================================
 
 
-; The dezogif program version:
- MACRO PRG_VERSION
- 	defb "v0.11.0"
- ENDM 
-
 ; DZRP version 1.6.0
 DZRP_VERSION:	defb 1, 6, 0
 ; Flow through to program name.

@@ -20,6 +20,7 @@ main_bank_entry:    equ 0x0000  ; Not used
     include "zx/zx.inc"
     include "zx/zxnext_regs.inc"
     include "breakpoints.asm"
+    include "data_const.asm"
     include "functions.asm"
     include "mf.asm"
     include "utilities.asm"
