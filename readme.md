@@ -26,6 +26,18 @@ This goes on until the UART driver receives a CONTINUE command.
 The UART driver will restore all registers and return to the debugged program's main loop.
 
 
+
+## License
+
+This program is licensed under the [MIT license](https://github.com/maziac/dezogif/blob/master/LICENSE.txt).
+
+The source code is available on [github](https://github.com/maziac/dezogif).
+
+This program includes parts of the Amstrad ROM and here is the copyright notice:
+"Amstrad have kindly given their permission for the redistribution of their copyrighted material but retain that copyright".
+See [Amstrad ROM permissions](documentation/amstrad-rom-permissions.txt).
+
+
 # Acknowledgements
 
 Many thanks to Chris Kirby. I have used his NDS code https://github.com/Ckirby101/NDS-NextDevSystem as starting point and used e.g. his routine to set the baudrate.
