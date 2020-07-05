@@ -153,7 +153,14 @@
             "rootFolder": "${workspaceFolder}",
             "topOfStack": "debug_stack.top",
             "loadObjs": [
-                { "path": "out/enNextMf.rom", "start": "MF_ORIGIN_ROM" }
+                {
+                    "path": "out/enNextMf.rom",
+                    "start": "MF_ORIGIN_ROM"
+                },
+                {   // To fake the NMI:
+                    "path": "out/main.bin",
+                    "start": "0xE000"
+                }
             ],
             "execAddress": "MF.nmi66h",    // "NMI" address
             "smallValuesMaximum": 513,

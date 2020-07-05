@@ -46,6 +46,9 @@
 ; In MAIN_BANK/MAIN_SLOT.
 main_bank_entry:
     di
+    ; Setup stack
+    ld sp,debug_stack.top
+
     ; Init state
     MEMCLEAR tmp_breakpoint_1, 2*TMP_BREAKPOINT
 
@@ -66,7 +69,7 @@ main_bank_entry:
     ; Switch in ROM bank
     nextreg REG_MMU+0,ROM_BANK
     nextreg REG_MMU+1,ROM_BANK
-    MEMCOPY MAIN_ADDR+0x2000-ROM_FONT_SIZE, ROM_FONT, ROM_FONT_SIZE
+    ;MEMCOPY MAIN_ADDR+0x2000-ROM_FONT_SIZE, ROM_FONT, ROM_FONT_SIZE
 
     ; Restore SWAP_SLOT bank
     ;nextreg REG_MMU+SWAP_SLOT,a
@@ -197,7 +200,7 @@ main_loop:
 fake_nmi:
     push af, bc 
     ld bc,PORT_KEYB_YUIOP
-    in a,(c)    ; Chec key "I"
+    in a,(c)    ; Check key "I"
     pop bc
     bit 2,a
     jr z,.pressed 
@@ -206,17 +209,6 @@ fake_nmi:
 .pressed:
     pop af
     jp MF.nmi66h
-
-    ; TODO: REMOVE:
- IF 0
-   	; Save registers
-	push hl
-	ld hl,mf_nmi_button_pressed.save_registers_continue
-	ld (save_registers.ret_jump+1),hl
-	pop hl
-    jp mf_nmi_button_pressed.for_test
-    ;jp mf_nmi_button_pressed
- ENDIF 
 
 main_end:
     ASSERT main_end <= (MAIN_SLOT+1)*0x2000
@@ -235,7 +227,7 @@ main_end:
     ;SAVENEX BAR 0, 0            ; no load bar
     ;SAVENEX AUTO
 
-    SAVEBIN "out/main.bin", 0xE000, MF_ORIGIN_ROM+0x2000-MF.main_prg_copy
+    SAVEBIN "out/main.bin", 0xE000, MF_ORIGIN_ROM+0x2000-MF.main_prg_copy-0x300  ; 0x300 for the font
 
     ;SAVENEX CLOSE
 

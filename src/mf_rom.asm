@@ -76,35 +76,11 @@ nmi66h:
 	in a,(c)
 	ld (backup.speed),a
 
-    ; Switch clock
-    nextreg REG_TURBO_MODE,RTM_3MHZ
-
-    ; Check for long or short key press
-    ld de,0xFFFF    ; counter (ca. 1.5 sec)
-.wait_m1_button_loop:   ; ca. 23us per loop
-    ; Decrement counter
-    dec de
-    ld a,d
-    or e
-    jr z,init_main_bank_key_release ; Init if long press
-
- IFDEF MF_FAKE
-     ; Fake M1 button press, uses key "I" instead
-    ld bc,PORT_KEYB_YUIOP 
+    ; Check for SPACE being pressed the same time -> Init
+    ld bc,PORT_KEYB_BNMSHIFTSPACE
     in a,(c)
-    bit 2,a     ; Check key "I"
-    jr z,.wait_m1_button_loop ; Wait until key release
- ELSE
-    ; Check M1 button state
-	dec b   ; IO_NEXTREG_REG
-	ld a,REG_ANTI_BRICK
-	out (c),a
-	; Read register
-    inc b
-	in a,(c)	; A contains the M1 button status in bit 0
-    bit RAB_BUTTON_MULTIFACE,a
-    jr nz,.wait_m1_button_loop ; Wait until key release
- ENDIF
+    bit 1,a ; Symbol Shift
+    jr z,init_main_bank
 
     ; Speed up
     nextreg REG_TURBO_MODE,RTM_28MHZ
@@ -134,6 +110,7 @@ nmi66h:
 	jr nz,init_main_bank
 	ld a,(main_prg_copy+build_time_rel+1)
 	inc hl
+ ;inc a
 	cp (hl)
 	jr nz,init_main_bank
 
@@ -151,42 +128,25 @@ nmi66h:
 
 
 ;===========================================================================
-; Initializes the main bank. But waits on M1 key release before.
-; During waiting the border flashes to indicate that the button was
-; pressed long enough.
-;===========================================================================
-init_main_bank_key_release: 
-.wait_on_release_loop:
-    ; Flash border
-    inc e
-    ld a,e
-    and 0x07
-    out (BORDER),a
- IFDEF MF_FAKE
-     ; Fake M1 button press, uses key "I" instead
-    ld bc,PORT_KEYB_YUIOP 
-    in a,(c)
-    bit 2,a     ; Check key "I"
-    jr z,.wait_on_release_loop ; Wait until key release
- ELSE
-    ; Check M1 button state
-	ld bc,IO_NEXTREG_REG
-	ld a,REG_ANTI_BRICK
-	out (c),a
-	; Read register
-    inc b
-	in a,(c)	; A contains the M1 button status in bit 0
-    bit RAB_BUTTON_MULTIFACE,a
-    jr nz,.wait_on_release_loop ; Wait until key release
- ENDIF
-    ;  Flow through
- 
-;===========================================================================
 ; Initializes the main bank. I.e. copies the code from MF to MAIN_BANK.
 ;===========================================================================
 init_main_bank:   
     di
-    ld sp,debug_stack.top
+    ; Switch clock
+    nextreg REG_TURBO_MODE,RTM_3MHZ
+    ; Wait and flash the border
+    ld bc,0xFFFF
+.wait:
+    ld a,c
+    srl a : srl a : srl a
+    and 0x07
+    out (BORDER),a
+    dec bc 
+    ld a,c
+    or b
+    jr nz,.wait
+    out (BORDER),a  ; a is 0 = BLACK
+    ; pop bc, af ; doesn't matter. program control is now moved to dezog.
 
 	; Maximize clock speed
 	nextreg REG_TURBO_MODE,RTM_28MHZ
@@ -199,7 +159,7 @@ init_main_bank:
     ; The main program needs to be copied to MAIN_BANK
     ; Page in MAIN_BANK
     nextreg REG_MMU+MAIN_SLOT,MAIN_BANK 
-    MEMCOPY MAIN_ADDR, main_prg_copy, MF_ORIGIN_ROM+0x2000-main_prg_copy 
+    MEMCOPY MAIN_ADDR, main_prg_copy, MF_ORIGIN_ROM+0x2000-main_prg_copy-MF_DIFF_TO_RAM 
 
     ; Jump to main bank
     jp main_bank_entry

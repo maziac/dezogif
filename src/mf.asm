@@ -38,6 +38,9 @@ mf_nmi_disable:
 	; And save value for exiting
 	or 00001000b	; Enable M1 button bit
 	ld (restore_registers.enable_nmi),a
+
+	nextreg REG_PERIPHERAL_2,a	; TODO: Remove: Enable for testings
+
 	ret 
 
 
@@ -56,7 +59,7 @@ mf_hide:
 	ret 
 
 mf_page_out:
-	in a,(0xbf)
+	in a,(0xbf) 
 	ret 
 
 
@@ -133,7 +136,7 @@ mf_nmi_button_pressed:
 ;===========================================================================
 ; Is called from the Multiface ROM when the NMI button was pressed
 ; and the MAIN_BANK is already paged in.
-; That means the debugger is already running andthe NMI should immediately return.
+; That means the debugger is already running and the NMI should immediately return.
 ; The stack is used by the debugger already, so it's safe to use it here as well.
 ; When entered:
 ;   SP is pointing to the MF.stack.
@@ -150,7 +153,7 @@ mf_nmi_button_pressed_immediate_return:
 	; Restore SP
 	ld sp,(MF.backup_sp)	; debugger stack
 	; Page out MF ROM/RAM
-	push af		; TODO: SP could still be in MF area
+	push af		; If the debugger is running it is using it's stack in slot 7
 	in a,(0xbf)
 	pop af
 	; Return from NMI
