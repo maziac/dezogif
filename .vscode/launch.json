@@ -4,6 +4,7 @@
     // Weitere Informationen finden Sie unter https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
             "type": "dezog",
             "request": "launch",
@@ -144,6 +145,7 @@
             "commandsAfterLaunch": [
                 //"-logpoint enable",
                 "-assert enable",
+                "-md 0 0x100 0xc000 0x100",
                 //"-logpoint enable DEFAULT"
                 //"-md 0 100 0xc000 100 0x2000 100 0xe000 100"
             ],
@@ -157,16 +159,63 @@
                     "path": "out/enNextMf.rom",
                     "start": "MF_ORIGIN_ROM"
                 },
-                {   // To fake the NMI:
+                { // To fake the NMI:
                     "path": "out/main.bin",
                     "start": "0xE000"
                 }
             ],
-            "execAddress": "MF.nmi66h",    // "NMI" address
+            "execAddress": "MF.nmi66h", // "NMI" address
             "smallValuesMaximum": 513,
             "tmpDir": ".tmp"
         },
-        
+        {
+            "type": "dezog",
+            "request": "launch",
+            "name": "ZEsarUX MF ROM",
+            "remoteType": "zrcp",
+            "cspect": {
+                "hostname": "localhost",
+                "port": 11000,
+                "socketTimeout": 50
+            },
+            "listFiles": [
+                {
+                    "path": "out/dezogif.list",
+                    "asm": "sjasmplus",
+                    "mainFile": "main.asm",
+                    "srcDirs": [
+                        "src"
+                    ]
+                }
+            ],
+            //"startAutomatically": false,
+            "startAutomatically": true,
+            "skipInterrupt": true,
+            "commandsAfterLaunch": [
+                //"-logpoint enable",
+                //"-assert enable",
+                //"-logpoint enable DEFAULT"
+                //"-md 0 100 0xc000 100 0x2000 100 0xe000 100"
+            ],
+            "disassemblerArgs": {
+                "esxdosRst": true
+            },
+            "rootFolder": "${workspaceFolder}",
+            "topOfStack": "debug_stack.top",
+            "loadObjs": [
+                {
+                    "path": "out/enNextMf.rom",
+                    "start": "MF_ORIGIN_ROM"
+                },
+                { // To fake the NMI:
+                    "path": "out/main.bin",
+                    "start": "0xE000"
+                }
+            ],
+            "execAddress": "MF.nmi66h", // "NMI" address
+            "smallValuesMaximum": 513,
+            "tmpDir": ".tmp"
+        },
 
         {
             "type": "dezog",
