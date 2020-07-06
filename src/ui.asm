@@ -28,10 +28,7 @@ check_key_reset:
     bit 0,a ; "0"
     ret nz 
     ; Reset
-    nextreg REG_ALTROM,0
-    nextreg REG_MMU,ROM_BANK
-    nextreg REG_MMU+1,ROM_BANK
-    jp 0
+    nextreg REG_RESET, 01b
 
 
 ;===========================================================================
