@@ -45,8 +45,9 @@ bp_address			defw	; The location of the temporary breakpoint
 ; This instructions needs to be copied to address 0x0000.
 ;===========================================================================
 	ORG MAIN_ADDR
+copy_rom_start_0000h_code:	; Located at 0x0000/0xE000
+
 	DISP 0x0000	; Compile for address 0x0000
-copy_rom_start_0000h_code:	; Located at 0x0000
 
 ; Will be executed whenever a RST 0 (SW breakpoint) happens.
 entry_code:
@@ -67,8 +68,8 @@ exit_code_di:
 	pop af	
 	; Jump to the address on the stack, i.e. the PC
     ret 
-copy_rom_start_0000h_code_end
 	ENT 
+copy_rom_start_0000h_code_end
 
 	ORG MAIN_ADDR+0x0066
 	DISP 0x0066
