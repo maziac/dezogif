@@ -125,9 +125,6 @@ restore_registers:
 	; Get debugged program stack
 	ld sp,(backup.sp)
 
-.ret_jump:	; TODO: Brauch ich das wirklich?
-	nop : nop : nop		; Self modifying code. Is temporarily overwritten by NMI
-
 	; Check interrupt state
 	ld a,(backup.interrupt_state)
 	bit 2,a

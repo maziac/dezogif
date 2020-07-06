@@ -15,20 +15,7 @@
 ;===========================================================================
 copy_altrom:
     nextreg REG_MEMORY_MAPPING,011b ; ROM3 = 48k Basic
-    call copy_modify_altrom
-    ret 
-
-    ; TODO : REMOVE:
-    ; Copy program also to bank 1 to survive the MEMORY_PAGING_CONTROL
-    nextreg REG_MMU+SWAP_SLOT,1
-    MEMCOPY SWAP_ADDR, MAIN_ADDR, 0x2000   
-    ; First 128K ROM
-    ld a,0 
-    call copy_modify_altrom
-    ; Then 48K ROM
-    ld a,00010000b
-    call copy_modify_altrom
-    ret
+    jp copy_modify_altrom
 
 
 ;===========================================================================

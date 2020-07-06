@@ -82,7 +82,6 @@ mf_nmi_button_pressed:
 	ld (save_registers.ret_jump+1),hl
 	pop hl
 	ld sp,(MF.backup_sp)	; Restore SP
-.for_test:  ; TODO: REMOVE label
 	jp save_registers  ; Note: a CALL/RET cannot be used here
 .save_registers_continue:
 
@@ -128,6 +127,9 @@ mf_nmi_button_pressed:
     di
     call nmi_return
 
+	; Disable MF
+	call mf_page_out
+	
 	; Enter debugging loop
 	;ld sp,debug_stack.top
 	jp cmd_loop

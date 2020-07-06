@@ -47,5 +47,5 @@ BAUDRATE:   equ 921600
 
 
 ; Program states
-PRGM_STOPPED:	equ 0
-PRGM_RUNNING:	equ 1
+PRGM_STOPPED:	equ 1
+PRGM_RUNNING:	equ 2
