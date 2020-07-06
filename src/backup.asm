@@ -221,7 +221,6 @@ save_layer2_rw:
     in a,(c)
 	push af
 	; Turn off layer 2 reading/writing
-	;xor a
 	and 11111010b	; Disable read/write only
 	out (c),a
 	; Store

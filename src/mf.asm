@@ -90,7 +90,7 @@ mf_nmi_button_pressed:
 
 	; Get the return address from the debugged program
 	; Read debugged program stack
-	ld hl,(backup.sp)
+	ld hl,(MF.backup_sp)
 	ld de,2	; Just the return address
 	ld bc,debugged_prgm_stack_copy.return1
 	call read_debugged_prgm_mem
@@ -129,7 +129,7 @@ mf_nmi_button_pressed:
 
 	; Disable MF
 	call mf_page_out
-	
+
 	; Enter debugging loop
 	;ld sp,debug_stack.top
 	jp cmd_loop

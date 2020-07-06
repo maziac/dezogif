@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.12.0
+- enNextMf.rom version: M1/NMI working now to PAUSE the debugged program.
+
 ## 0.11.0
 - Moved main functionality to slot 7 to allow correct read of slot 0 if set to ROM (ROM is only visible correctly in slot 0/1).
 - Error output on main screen.
