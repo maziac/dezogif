@@ -48,7 +48,8 @@ mf_rom:	$(OUT)/enNextMf.rom
 
 $(OUT)/enNextMf.rom:	$(PRG_BIN)
 	# Simply concatenate the mf_nmi code and the main.bin
-	cat $(OUT)/mf_nmi.bin $(OUT)/main.bin data/font.bin > $(OUT)/enNextMf.rom
+	#cat $(OUT)/mf_nmi.bin $(OUT)/main.bin data/font.bin > $(OUT)/enNextMf.rom
+	cat $(OUT)/mf_nmi.bin $(OUT)/main.bin > $(OUT)/enNextMf.rom
 
 
 # Create 'out' folder:
