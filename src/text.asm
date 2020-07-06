@@ -26,7 +26,7 @@ init:
     ; Store the used font address. The font starts normally at char index 0, so
     ; it's lower than the original address.
     ;ld hl,ROM_START+ROM_SIZE-ROM_FONT_SIZE-0x20*8
-    ld hl,(MAIN_SLOT+1)*0x2000-ROM_FONT_SIZE-0x20*8+MF_ORIGIN_ROM-MF.main_prg_copy
+    ld hl,MAIN_ADDR+0x2000-ROM_FONT_SIZE-0x20*8+MF_ORIGIN_ROM-MF.main_prg_copy
     ; Flow through
 
 
