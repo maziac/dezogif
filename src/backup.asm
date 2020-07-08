@@ -136,6 +136,10 @@ restore_registers:
 	ld a,PRGM_RUNNING
 	ld (prgm_state),a
 
+ IFDEF MF_FAKE
+	nextreg REG_MMU,MAIN_BANK
+ ENDIF
+
 	; Turn on NMI
 .enable_nmi:	equ $+3
 	nextreg REG_PERIPHERAL_2,0	; self-modifying code
@@ -198,14 +202,14 @@ adjust_debugged_program_stack_for_function:
 
 ;===========================================================================
 ; Adjusts the stack of the debugged program by 2 bytes.
-; I.e. it adds AF because AF is popped on exit.
+; I.e. skips the return address.
 ; Before (debugged_prgm_stack_copy):
 ; - [SP]:	The return address 
 ; ===========================================================================
 adjust_debugged_program_stack_for_nmi: 
 	; Adjust debugged program SP
 	ld hl,(backup.sp)	
-	dec hl : dec hl	; Skip complete stack
+	inc hl : inc hl	; Skip complete stack
 	ld (backup.sp),hl	
 	ret
 

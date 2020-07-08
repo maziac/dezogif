@@ -158,13 +158,9 @@
                 {
                     "path": "out/enNextMf.rom",
                     "start": "MF_ORIGIN_ROM"
-                },
-                //{ // To fake the NMI:
-                //    "path": "out/main.bin",
-                //    "start": "0xE000"
-                //}
+                }
             ],
-            "execAddress": "MF.nmi66h", // "NMI" address
+            "execAddress": "MF.init_main_bank",
             "smallValuesMaximum": 513,
             "tmpDir": ".tmp"
         },
@@ -206,10 +202,6 @@
                 {
                     "path": "out/enNextMf.rom",
                     "start": "MF_ORIGIN_ROM"
-                },
-                { // To fake the NMI:
-                    "path": "out/main.bin",
-                    "start": "0xE000"
                 }
             ],
             "execAddress": "MF.nmi66h", // "NMI" address
