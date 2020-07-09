@@ -108,6 +108,9 @@ mf_nmi_button_pressed:
 	ld a,l	; Bit 2 contains the interrupt state.
 	ld (backup.interrupt_state),a
 
+	; First work on all messages that might be in the queue
+	call execute_cmds_loop
+
 	; Send pause notification
 	ld d,BREAK_REASON.MANUAL_BREAK
 	ld hl,0 ; bp address

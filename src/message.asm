@@ -97,6 +97,20 @@ execute_cmds:
 	call adjust_debugged_program_stack_for_function
 	; Maximize clock speed
 	nextreg REG_TURBO_MODE,RTM_28MHZ
+	
+	; Return to debugged program
+	jp restore_registers
+
+
+
+;===========================================================================
+; Executes available commands and leaves the loop as soon as no commands
+; are available anymore.
+; Immediately returns if no message is available.
+;===========================================================================
+execute_cmds_loop:
+	call check_uart_byte_available
+	ret z
 .loop:
 	; Receive length sequence number and command
 	ld hl,receive_buffer
@@ -107,7 +121,7 @@ execute_cmds:
 	; Handle command
 	call cmd_call
 
-	; Check for some time if another command is available
+	; Check for some time to see if another command is available
 	ld de,256*200
 .wait:
 	push de
@@ -118,10 +132,7 @@ execute_cmds:
 	ld a,d
 	or e
 	jr nz,.wait
-	
-	; Return to debugged program
-	jp restore_registers
-
+	ret
 
 ;===========================================================================
 ; Receives a number of bytes from the UART.
