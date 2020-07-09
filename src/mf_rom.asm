@@ -69,7 +69,7 @@ nmi66h:
 	; Page in slot 7
 	nextreg REG_MMU+MAIN_SLOT,MAIN_BANK
 	; Save previous bank
-	ld (slot_backup.slot7),a    
+	ld (slot_backup.slot7),a   
 
     ; Save IO_NEXTREG_REG
     pop af
@@ -143,7 +143,7 @@ init_main_bank:
     ; Switch clock
     nextreg REG_TURBO_MODE,RTM_3MHZ
     ; Wait and flash the border
-    ld bc,0x8000
+    ld bc,0x4000
 .wait:
     ld a,c
     srl a : srl a : srl a

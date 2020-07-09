@@ -97,7 +97,8 @@ execute_cmds:
 	call adjust_debugged_program_stack_for_function
 	; Maximize clock speed
 	nextreg REG_TURBO_MODE,RTM_28MHZ
-	
+	; Execute commands
+	call execute_cmds_loop
 	; Return to debugged program
 	jp restore_registers
 
@@ -306,6 +307,9 @@ send_4bytes_length_and_seqno:
 ;===========================================================================
 send_ntf_pause:
 	; LOGPOINT [CMD] send_ntf_pause: reason=${D}, breakpoint=${HL:hex}h (${HL})
+	; Change main state
+	ld a,PRGM_STOPPED
+	ld (prgm_state),a
 	; First length byte
 	ld a,6
 	call write_uart_byte
