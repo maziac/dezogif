@@ -121,6 +121,12 @@ copy_rom_start_0066h_code_end
 	ld bc,LAYER_2_PORT
 	out (c),a
 
+    ; Backup contents of IO_NEXTREG_REG
+    ld bc,IO_NEXTREG_REG
+	in a,(c)
+	; Save IO_NEXTREG_REG
+    ld (backup.io_next_reg-MAIN_ADDR),a
+	
 	; Now backup main slot.
 	ld bc,IO_NEXTREG_REG
 	ld a,REG_MMU+MAIN_SLOT

@@ -589,8 +589,6 @@ cmd_set_breakpoints:
 	; Check for end
 	ld a,e
 	or d
-	;jp z,restore_rom_slots	; Returns
-	;jp z,restore_swap_slot0	; Returns
 	ret z
 	; Loop
 	push de

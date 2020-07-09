@@ -116,6 +116,11 @@ restore_registers:
 	call restore_layer2_rw
 	; It's still possible to read/write in slot 7
 
+	; Restore IO_NEXTREG_REG
+	ld bc,IO_NEXTREG_REG
+	ld a,(backup.io_next_reg)
+	out (c),a
+
 	; Restore DE value
 	ld de,(backup.de)	
 	; Restore BC value

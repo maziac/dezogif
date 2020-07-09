@@ -54,8 +54,12 @@ nmi66h:
     ld (MF.border_color),a
     out (BORDER),a
 
+    ; First backup contents of IO_NEXTREG_REG
+    ld bc,IO_NEXTREG_REG
+	in a,(c)
+    push af
+
 	; Now backup main slot.
-	ld bc,IO_NEXTREG_REG
 	ld a,REG_MMU+MAIN_SLOT
 	out (c),a
 	; Read register
@@ -67,6 +71,10 @@ nmi66h:
 	; Save previous bank
 	ld (slot_backup.slot7),a    
 
+    ; Save IO_NEXTREG_REG
+    pop af
+    ld (backup.io_next_reg),a
+	
     ; Save clock
 	ld a,REG_TURBO_MODE
 	dec b   ; IO_NEXTREG_REG
@@ -135,7 +143,7 @@ init_main_bank:
     ; Switch clock
     nextreg REG_TURBO_MODE,RTM_3MHZ
     ; Wait and flash the border
-    ld bc,0xFFFF
+    ld bc,0x8000
 .wait:
     ld a,c
     srl a : srl a : srl a
