@@ -125,7 +125,7 @@ main:
 	ld (backup.interrupt_state),a
 
     ; Init slot 0 bank
-    ld a,MAIN_BANK
+    ld a,ROM_BANK
     ld (slot_backup.slot0),a
 
     ; Set UART

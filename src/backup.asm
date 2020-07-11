@@ -142,10 +142,6 @@ restore_registers:
 	; Set bank to restore for slot 7
 	ld a,(slot_backup.slot7)
 
- IFDEF MF_FAKE
-	nextreg REG_MMU,MAIN_BANK
- ENDIF
-
 	; Turn on NMI
 .enable_nmi:	equ $+3
 	nextreg REG_PERIPHERAL_2,0	; self-modifying code
