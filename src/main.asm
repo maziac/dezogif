@@ -62,18 +62,14 @@ main_bank_entry:
     call nmi_return ; Note: if not called by NMI nothing special will happen.
 
     ; Initialize the bank for slot 0 with the required code.
- IFNDEF MF_FAKE
-     call copy_altrom 
- ENDIF
+    call copy_altrom 
 
     ; Copy the ZX character font from address ROM_FONT (0x3D00)
     ; to the debugger area at the end of the bank (0x2000-ROM_FONT_SIZE).
     ; Switch in ROM bank
     nextreg REG_MMU+0,ROM_BANK
     nextreg REG_MMU+1,ROM_BANK
- IFNDEF MF_FAKE
-     nextreg REG_MEMORY_MAPPING,011b  ; 48k Basic TODO: Maybe remove
- ENDIF
+    nextreg REG_MEMORY_MAPPING,011b  ; 48k Basic TODO: Maybe remove
     ;MEMCOPY MAIN_ADDR+0x2000-ROM_FONT_SIZE, ROM_FONT, ROM_FONT_SIZE
     MEMCOPY MAIN_ADDR+0x2000-ROM_FONT_SIZE+MF_ORIGIN_ROM-MF.main_prg_copy, ROM_FONT, ROM_FONT_SIZE
 
