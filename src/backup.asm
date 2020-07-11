@@ -134,12 +134,13 @@ restore_registers:
 	ld a,(backup.interrupt_state)
 	bit 2,a
 	; NZ if interrupts enabled
-	; Set bank to restore for slot 7
-	ld a,(slot_backup.slot7)
 
 	; Change main state
 	ld a,PRGM_RUNNING
 	ld (prgm_state),a
+
+	; Set bank to restore for slot 7
+	ld a,(slot_backup.slot7)
 
  IFDEF MF_FAKE
 	nextreg REG_MMU,MAIN_BANK
