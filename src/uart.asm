@@ -376,6 +376,7 @@ set_uart_joystick:
 ; Changed:
 ;  AF, BC, HL
 ;===========================================================================
+ IF 0
 wait_scan_lines:
     ld bc,IO_NEXTREG_REG
     ld a,REG_ACTIVE_VIDEO_LINE_L
@@ -394,3 +395,5 @@ wait_scan_lines:
     dec h
     jr nz,.loop
     ret
+ ENDIF
+ 
