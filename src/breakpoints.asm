@@ -277,6 +277,9 @@ enter_breakpoint:
 	ld d,BREAK_REASON.BREAKPOINT_HIT
 .no_reason:
 
+	; Make sure the joyport is configured for the UART
+	call set_uart_joystick
+
     ; Send pause notification
 	ld hl,(backup.pc)	; breakpoint address
 	call send_ntf_pause

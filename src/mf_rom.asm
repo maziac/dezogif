@@ -182,7 +182,7 @@ init_main_bank:
 
 
 ;===========================================================================
-; The are here contains a copy of the main debug program.
+; This here contains a copy of the main debug program.
 ; It will be copied from here into the MAIN_BANK/MAIN_SLOT.
 ;===========================================================================   
 

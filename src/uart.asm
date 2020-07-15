@@ -256,7 +256,7 @@ tx_timeout: ; The receive timeout handler
 ;  BC
 ;===========================================================================
 write_uart_byte: 
-	push af,de
+	push af, de
     ; Send response back
     ld bc,PORT_UART_TX
     ; Check if ready for transmit
@@ -327,23 +327,27 @@ set_uart_baudrate:
 ; These pins are not used on normal Joystick.
 ; Only for Sega Genesis controller which cannot be used.
 ; Parameters:
-;  E: 0x0=00b => no joystick port used
+;  uart_joyport_selection:
+;     0x0=00b => no joystick port used
 ;     0x1=01b => joyport 1
 ;     0x2=10b => joyport 2
 ; Changed:
-;  A, BC
+;  AF, BC, HL
 ;===========================================================================
 set_uart_joystick:
+    ld a,(uart_joyport_selection)
+    ld l,a
     ; Read reg 0x05 to preserve the 50/60 Hz setting and scandoubler
     ld a,REG_PERIPHERAL_1
     call read_tbblue_reg    ; Reading the joysticks returns the original joy mode, even if set to UART
+    ld d,a  ; Save value
     ; Joy 1
-    bit 0,e
+    bit 0,l
     jr z,.no_joy1
     or 11001000b
 .no_joy1:
     ; Joy 2
-    bit 1,e
+    bit 1,l
     jr z,.no_joy2
     or 00110010b
 .no_joy2:
@@ -352,16 +356,41 @@ set_uart_joystick:
 
     ; Write to 0x37
     ld a,10010000b  ; Right joystick (Joy 2)
-    bit 1,e
+    bit 1,l
     jr nz,.joy_2
     ; Check for joy 1
-    bit 0,e
-    jr z,.end   ; Neither 1 or 2
+    bit 0,l
+    jr z,.no_joys  ; Neither 1 or 2  
     ; Joy 1
     ld a,10000000b  ; Left joystick (Joy 1)
 .joy_2:
     out (KEMPSTON_JOY_2),a
-.end:
-    ; Now drain the RX to overcome garbage
-    jp drain_rx_buffer
-    
+.no_joys:
+    ret
+
+
+;===========================================================================
+; Waits for a certain number of scanlines.
+; Parameters:
+;  H = the number of scanlines to wait.
+; Changed:
+;  AF, BC, HL
+;===========================================================================
+wait_scan_lines:
+    ld bc,IO_NEXTREG_REG
+    ld a,REG_ACTIVE_VIDEO_LINE_L
+    out (c),a     
+    inc b     
+    ; Read first value
+    in a,(c)  
+    ld l,a
+    ; Loop
+.loop:
+    in a,(c)        ; read the raster line LSB
+    cp l    
+    jr z,.loop
+    ; Line changed
+    ld l,a
+    dec h
+    jr nz,.loop
+    ret

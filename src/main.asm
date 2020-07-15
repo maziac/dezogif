@@ -129,75 +129,10 @@ main:
     ld (slot_backup.slot0),a
 
     ; Set UART
-    ld a,(uart_joyport_selection)
-    ld e,a
     call set_uart_joystick
 
     ; Drain
     call drain_rx_buffer
-
- IF 0
- ;TODO: this needs to go to CMD:INIT and load ROM fonts
- /*
-   [14:39] garryl: The 48K ROM (+3 ROM 3) is always present when a USR is executed from a BASIC program (or a dot command is started), so this is the one you'll normally see in loaded programs/games. You can switch between them using the standard 128K/+3 paging ports 7FFD and 1FFD. The Next now also provides a simpler way using NextReg 0x8E.
-   The ROM you see when the Browser is active is actually ROM 0 (the "editor" ROM): enNextZX.rom contains ROMs 0,1,2,3 in that order (each of 16K).
-*/
-  ; WAIT_SPACE YELLOW
-
-
-    ; Testing
-    ; Disable altrom
-    nextreg REG_ALTROM,0
-
-    ; Enable different ROMs
-    nextreg REG_MEMORY_MAPPING,000b
-    nextreg REG_MEMORY_MAPPING,001b
-    nextreg REG_MEMORY_MAPPING,010b
-    nextreg REG_MEMORY_MAPPING,011b
-
-    nextreg REG_MEMORY_MAPPING,000b
-
-    ld bc,PLUS_3_MEMORY_PAGING_CONTROL
-    ld a,0
-    out (c),a
-
-    ld bc,MEMORY_PAGING_CONTROL
-    ld a,0          ; 128k
-    out (c),a
-    ld a,010000b    ; 48K Basic
-    out (c),a
-
-    ld bc,PLUS_3_MEMORY_PAGING_CONTROL
-    ld a,0100b
-    out (c),a
-
-    ld bc,MEMORY_PAGING_CONTROL
-    ld a,0          ; 128k
-    out (c),a
-    ld a,010000b    ; 48K Basic
-    out (c),a
- 
-
-
-  ;nextreg REG_MMU, 20
-
-    ld a,REG_MEMORY_MAPPING
-    call read_tbblue_reg
-    and 11110011b   ; W = 0, Paging mode = normal
-    or  00000011b   ; ROM 48k
-    ; 00 = ROM0 = 128K editor and menu system
-    ; 01 = ROM1 = 128K syntax checker
-    ; 10 = ROM2 = +3DOS
-    ; 11 = ROM3 = 48K BASIC
-    nextreg REG_MEMORY_MAPPING,a
-
-    nextreg REG_MMU,0xFF
-    ; TODO  REMOVE above
- ENDIF
-
-
-
-
 
     ; Show the text
     call show_ui
@@ -282,7 +217,7 @@ main_end:
 
 
 ;===========================================================================
-; NEX file is used for testing.
+; Save bin file.
 ;===========================================================================
 
     ; Save NEX file
@@ -292,7 +227,6 @@ main_end:
     ;SAVENEX BAR 0, 0            ; no load bar
     ;SAVENEX AUTO
 
-    ;SAVEBIN "out/main.bin", 0xE000, MF_ORIGIN_ROM+0x2000-MF.main_prg_copy-0x300  ; 0x300 for the font
     SAVEBIN "out/main.bin", 0xE000, MF_ORIGIN_ROM+0x2000-MF.main_prg_copy
 
     ;SAVENEX CLOSE

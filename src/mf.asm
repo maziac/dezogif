@@ -108,6 +108,9 @@ mf_nmi_button_pressed:
 	ld a,l	; Bit 2 contains the interrupt state.
 	ld (backup.interrupt_state),a
 
+	; Make sure the joyport is configured for the UART
+	call set_uart_joystick
+
 	; First work on all messages that might be in the queue
 	call execute_cmds_loop
 
@@ -122,10 +125,6 @@ mf_nmi_button_pressed:
 	; Debugged program stack ändern
 	call adjust_debugged_program_stack_for_nmi
 
-	; Change main state
-	ld a,PRGM_STOPPED
-	ld (prgm_state),a
-
     ; Return from NMI (Interrupts are disabled)
     di
     call nmi_return
@@ -134,7 +133,6 @@ mf_nmi_button_pressed:
 	call mf_page_out
 
 	; Enter debugging loop
-	;ld sp,debug_stack.top
 	jp cmd_loop
 
 
