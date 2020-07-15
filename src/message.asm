@@ -17,6 +17,11 @@
 ; Constants
 ;===========================================================================
 
+; Each sent message has to start with this byte.
+; The ZX Next transmit a lot of zeroes if the joy port is not configured.
+; Therefore this byte is required to recognize when a message starts.
+MESSAGE_START_BYTE:	equ 0xA5
+
 
 ;===========================================================================
 ; Structs. 
@@ -271,6 +276,9 @@ send_length_and_seqno:
 ;  A, DE, BC
 ;===========================================================================
 send_4bytes_length_and_seqno: 
+	; Write first byte to recognize message
+	ld a,MESSAGE_START_BYTE
+	call write_uart_byte
 	; First length byte
 	ld a,e
 	; Write to UART
@@ -310,6 +318,9 @@ send_ntf_pause:
 	; Change main state
 	ld a,PRGM_STOPPED
 	ld (prgm_state),a
+	; Write first byte to recognize message
+	ld a,MESSAGE_START_BYTE
+	call write_uart_byte
 	; First length byte
 	ld a,6
 	call write_uart_byte
