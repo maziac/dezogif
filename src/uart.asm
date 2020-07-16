@@ -340,7 +340,6 @@ set_uart_joystick:
     ; Read reg 0x05 to preserve the 50/60 Hz setting and scandoubler
     ld a,REG_PERIPHERAL_1
     call read_tbblue_reg    ; Reading the joysticks returns the original joy mode, even if set to UART
-    ld d,a  ; Save value
     ; Joy 1
     bit 0,l
     jr z,.no_joy1
@@ -396,4 +395,3 @@ wait_scan_lines:
     jr nz,.loop
     ret
  ENDIF
- 
