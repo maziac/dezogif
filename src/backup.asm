@@ -56,6 +56,14 @@ save_registers:
 ;   -
 ; ===========================================================================
 restore_registers:
+    ; Wait for TX ready. (This is to make sure everything is transmitted before the joyport configuration is changed.)
+    call wait_for_uart_tx
+
+	; Restore the joysticks
+	ld a,REG_PERIPHERAL_1
+    call read_tbblue_reg    ; Reading the joysticks returns the original joy mode, even if set to UART
+	nextreg REG_PERIPHERAL_1,a	; Writing it will restore it
+
 	; Skip IM
 	ld sp,backup.r
 
