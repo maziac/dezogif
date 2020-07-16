@@ -91,27 +91,6 @@ cmd_loop:
 ;===========================================================================
 ; Executes available commands and leaves the loop as soon as no commands
 ; are available anymore.
-; This is called from the coop routine (from the debugged program) when
-; a new byte is available at the UART.
-; Or when an NMI happens.
-; Changes:
-;  At the end the registers are restored.
-;===========================================================================
-execute_cmds:
-	; Adjust the stack
-	call adjust_debugged_program_stack_for_function
-	; Maximize clock speed
-	nextreg REG_TURBO_MODE,RTM_28MHZ
-	; Execute commands
-	call execute_cmds_loop
-	; Return to debugged program
-	jp restore_registers
-
-
-
-;===========================================================================
-; Executes available commands and leaves the loop as soon as no commands
-; are available anymore.
 ; Immediately returns if no message is available.
 ;===========================================================================
 execute_cmds_loop:

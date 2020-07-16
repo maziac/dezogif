@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.13.0
+- Removed command for dezog_poll.
+
 ## 0.12.0
 - enNextMf.rom version: M1/NMI working now to PAUSE the debugged program.
 
