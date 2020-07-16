@@ -54,10 +54,14 @@ STACK_SIZE: equ 100    ; in words
 
 
 ; The debug stack begins here. 
-    defw 0  ; WPMEM, 2
 debug_stack:	defs STACK_SIZE*2, 0xAA
 .top:
-    defw 0  ; WPMEM, 2
+
+
+; Small stack used for special purpose by NMI.
+nmi_small_stack:	defs 10, 0x55
+.top:
+nmp_sp_backup:		defw 0
 
 
 ; The registers of the debugged program are stored here.

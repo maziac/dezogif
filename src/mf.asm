@@ -154,16 +154,24 @@ mf_nmi_button_pressed_immediate_return:
 	ld a,(backup.io_next_reg)
 	out (c),a
 	pop bc
+	; Change border to red
+	ld a,RED
+    out (BORDER),a
 	; Restore speed
 	ld a,(backup.speed)
     nextreg REG_TURBO_MODE,a
 	; Pop from MF stack
 	pop af 
-	; Restore SP
-	ld sp,(MF.backup_sp)	; debugger stack
+	; Save stack pointer
+	ld sp,(MF.backup_sp)
+	ld (nmp_sp_backup),sp
+	; Load some stack
+	ld sp,nmi_small_stack.top
 	; Page out MF ROM/RAM
-	push af		; If the debugger is running it is using it's stack in slot 7
+	push af	
 	in a,(0xbf)
 	pop af
+	; Restore SP
+	ld sp,(nmp_sp_backup)
 	; Return from NMI
 	retn

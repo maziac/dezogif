@@ -256,7 +256,22 @@ tx_timeout: ; The receive timeout handler
 ;  BC
 ;===========================================================================
 write_uart_byte: 
-	push af, de
+	push de, af
+    ; Wait for TX ready
+    call wait_for_uart_tx
+    ; Transmit byte
+	pop af, de
+    out (c),a
+    ret
+
+
+;===========================================================================
+; Waits until TX is ready on the UART.
+; If it takes too long an error is generated.
+; Changes:
+;  AF, BC (=PORT_UART_TX), E
+;===========================================================================
+wait_for_uart_tx:
     ; Send response back
     ld bc,PORT_UART_TX
     ; Check if ready for transmit
@@ -264,18 +279,12 @@ write_uart_byte:
 .wait_tx:
     in a,(c)
     bit UART_TX_READY,a
-    jr z,.byte_ready
+    ret z
     dec e
     jr nz,.wait_tx
 
     nop ; LOGPOINT write_uart_byte: ERROR=TIMEOUT
     jp tx_timeout   ; ASSERT
-
-.byte_ready:   
-    ; Transmit byte
-	pop de, af
-    out (c),a
-	ret
 
 
 
