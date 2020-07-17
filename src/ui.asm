@@ -15,6 +15,7 @@
 ERROR_RX_TIMEOUT:			equ 1
 ERROR_TX_TIMEOUT:			equ 2
 ERROR_WRONG_FUNC_NUMBER:	equ 3
+ERROR_WRITE_MAIN_BANK:	    equ 4
 
 
 ;===========================================================================

@@ -97,6 +97,9 @@ cmd_call:	; Get pointer to subroutine
 cmd_init:
 	; LOGPOINT [CMD] cmd_init
 	call .inner
+	; Reset error
+	xor a
+	ld (last_error),a
 	; Afterwards start all over again / show the "UI"
     jp show_ui
 
@@ -260,6 +263,7 @@ cmd_set_register:
 ;===========================================================================
 ; CMD_WRITE_BANK
 ; Writes one memory bank.
+; If MAIN_BANK should be written an error occurs.
 ; Changes:
 ;  NA
 ;===========================================================================
@@ -272,14 +276,19 @@ cmd_write_bank:
 	jp send_length_and_seqno
 
 .inner:
-	; Choose the right slot: don't use a slot where this program is located.
-;.slot:	equ ((cmd_write_bank+2*0x2000)>>13)&0x07
-	; Remember current bank for slot
-	call save_swap_slot
-
-	; Change bank for slot 
 	; Read bank number of message
 	call read_uart_byte
+
+	; Check if it is own bank
+	cp MAIN_BANK   
+	jr z,error_write_main_bank
+	
+	; Remember current bank for slot
+	ld e,a
+	call save_swap_slot
+	ld a,e
+
+	; Change bank for slot 
 	nextreg REG_MMU+SWAP_SLOT,a
 
 	; Read bytes from UART and put into bank
@@ -290,7 +299,10 @@ cmd_write_bank:
 	; Restore slot/bank (D)
 	jp restore_swap_slot
 
-.tdata:	defb 0
+error_write_main_bank:
+	ld a,ERROR_WRITE_MAIN_BANK
+    ld (last_error),a
+    jp main
 
 
 ;===========================================================================

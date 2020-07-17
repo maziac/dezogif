@@ -10,7 +10,7 @@
 
 ; The dezogif program version:
  MACRO PRG_VERSION
- 	defb "v0.13.0"
+ 	defb "v0.13.1"
  ENDM 
 
  
@@ -77,10 +77,14 @@ TEXT_LAST_ERROR:
 TEXT_ERROR_RX_TIMEOUT: defb "RX Timeout", 0
 TEXT_ERROR_TX_TIMEOUT: defb "TX Timeout", 0
 TEXT_ERROR_WRONG_FUNC_NUMBER: defb "Wrong function number", 0
+TEXT_ERROR_WRITE_MAIN_BANK: defb "CMD_WRITE_BANK: Can't write to  bank "
+    STRINGIFY MAIN_BANK
+    defb ". Bank is used by DeZog.", 0
 
 ERROR_TEXT_TABLE:  
     defw TEXT_ERROR_RX_TIMEOUT
     defw TEXT_ERROR_TX_TIMEOUT
     defw TEXT_ERROR_WRONG_FUNC_NUMBER
+    defw TEXT_ERROR_WRITE_MAIN_BANK
 
 

@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.13.1
+- New error output if trying to overwrite MAIN_BANK.
+
 ## 0.13.0
 - Removed command for dezog_poll.
 

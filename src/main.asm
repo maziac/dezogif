@@ -137,10 +137,6 @@ main:
     ; Show the text
     call show_ui
 
-    ; Clear possibly error code
-    xor a
-    ld (last_error),a
-
     ; Border color timer
     ld c,1     
     ld de,0
