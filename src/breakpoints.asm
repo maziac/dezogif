@@ -280,6 +280,9 @@ enter_breakpoint:
 	; Make sure the joyport is configured for the UART
 	call set_uart_joystick
 
+	; Drain receive message queue
+	call drain_rx_buffer
+
     ; Send pause notification
 	ld hl,(backup.pc)	; breakpoint address
 	call send_ntf_pause

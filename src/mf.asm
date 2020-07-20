@@ -111,8 +111,8 @@ mf_nmi_button_pressed:
 	; Make sure the joyport is configured for the UART
 	call set_uart_joystick
 
-	; First work on all messages that might be in the queue
-	call execute_cmds_loop
+	; First drain receive message queue
+	call drain_rx_buffer
 
 	; Send pause notification
 	ld d,BREAK_REASON.MANUAL_BREAK
