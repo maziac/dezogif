@@ -117,18 +117,21 @@ UT_1_cmd_init:
 	ld ix,test_memory_output
 	call cmd_init.inner
 
+	; Test special first byte
+	TEST_MEMORY_BYTE test_memory_output, MESSAGE_START_BYTE
+
 	; Test length
-	TEST_MEMORY_WORD test_memory_output, 5+PROGRAM_NAME.end-PROGRAM_NAME
+	TEST_MEMORY_WORD test_memory_output+1, 5+PROGRAM_NAME.end-PROGRAM_NAME
 	TEST_MEMORY_WORD test_memory_output+2, 0
 
 	; Test error
-	TEST_MEMORY_BYTE test_memory_output+5, 0	; no error
+	TEST_MEMORY_BYTE test_memory_output+6, 0	; no error
 	
 	; Test DZRP version
-	TEST_MEM_CMP test_memory_output+6, DZRP_VERSION, 3
+	TEST_MEM_CMP test_memory_output+7, DZRP_VERSION, 3
 
 	; Test program name
-	TEST_STRING_PTR test_memory_output+6+3, PROGRAM_NAME
+	TEST_STRING_PTR test_memory_output+7+3, PROGRAM_NAME
  TC_END
 
 .cmd_data:
@@ -148,8 +151,8 @@ UT_2_cmd_close:
 	call cmd_close
 
 	; Test length
-	TEST_MEMORY_WORD test_memory_output, 1
-	TEST_MEMORY_WORD test_memory_output+2, 0
+	TEST_MEMORY_WORD test_memory_output+1, 1
+	TEST_MEMORY_WORD test_memory_output+3, 0
  TC_END
 
 ; cmd_close jumps here:
@@ -173,11 +176,11 @@ UT_3_cmd_get_registers:
 	call cmd_get_registers
 
 	; Test length
-	TEST_MEMORY_WORD test_memory_output, 29
-	TEST_MEMORY_WORD test_memory_output+2, 0
+	TEST_MEMORY_WORD test_memory_output+1, 29
+	TEST_MEMORY_WORD test_memory_output+3, 0
 
 	; Test returned data
-	TEST_MEM_CMP test_memory_output+5, .cmp_data, .cmp_data_end-.cmp_data
+	TEST_MEM_CMP test_memory_output+6, .cmp_data, .cmp_data_end-.cmp_data
 
  TC_END
 
@@ -498,6 +501,12 @@ UT_5_cmd_write_bank:
 UT_6_continue:
 	; Redirect
 	call redirect_uart
+	; Redirect "return"
+	ld a,0xC3	; JP
+	ld (restore_registers.ret_jump1),a
+	ld hl,.exit_code
+	ld (restore_registers.ret_jump1+1),hl
+	
 	; Prepare
 	ld hl,2+PAYLOAD_CONTINUE
 	ld (receive_buffer.length),hl
@@ -514,12 +523,16 @@ UT_6_continue:
 .continue:
 
 	; Test length
-	TEST_MEMORY_WORD test_memory_output, 1
-	TEST_MEMORY_WORD test_memory_output+2, 0
+	TEST_MEMORY_WORD test_memory_output+1, 1
+	TEST_MEMORY_WORD test_memory_output+3, 0
 
  TC_END
 
 .cmd_data:	PAYLOAD_CONTINUE 0, 0, 0, 0
+
+.exit_code:
+	pop af
+	ret 
 
 
 ; Test cmd_pause
@@ -539,19 +552,22 @@ UT_7_pause:
 	ld ix,test_memory_output
 	call cmd_pause
 
+	; Test start byte
+	TEST_MEMORY_BYTE test_memory_output, 	MESSAGE_START_BYTE
 	; Test length
-	TEST_MEMORY_WORD test_memory_output, 	1
-	TEST_MEMORY_WORD test_memory_output+2, 	0
+	TEST_MEMORY_WORD test_memory_output+1, 	1
+	TEST_MEMORY_WORD test_memory_output+3, 	0
 
-	; Afterwards thenotification is written
+	; Afterwards the notification is written
 	; Length
-	TEST_MEMORY_WORD test_memory_output+5, 	6
-	TEST_MEMORY_WORD test_memory_output+7, 	0
-	TEST_MEMORY_BYTE test_memory_output+9, 	0
-	TEST_MEMORY_BYTE test_memory_output+10, 	1	; NTF_PAUSE
-	TEST_MEMORY_BYTE test_memory_output+11, BREAK_REASON.MANUAL_BREAK	; Break reason
-	TEST_MEMORY_WORD test_memory_output+12,	0	; BP address
-	TEST_MEMORY_BYTE test_memory_output+14, 0	; No error text
+	TEST_MEMORY_BYTE test_memory_output+6, 	MESSAGE_START_BYTE
+	TEST_MEMORY_WORD test_memory_output+7, 	6
+	TEST_MEMORY_WORD test_memory_output+9, 	0
+	TEST_MEMORY_BYTE test_memory_output+11, 	0
+	TEST_MEMORY_BYTE test_memory_output+12, 	1	; NTF_PAUSE
+	TEST_MEMORY_BYTE test_memory_output+13, BREAK_REASON.MANUAL_BREAK	; Break reason
+	TEST_MEMORY_WORD test_memory_output+14,	0	; BP address
+	TEST_MEMORY_BYTE test_memory_output+16, 0	; No error text
  TC_END
 
 
@@ -690,7 +706,7 @@ UT_9_cmd_write_mem.UT_normal:
 	ld ix,test_memory_output
 	call cmd_write_mem
 
-	TEST_MEMORY_BYTE test_memory_dst, 0xD1
+	TEST_MEMORY_BYTE test_memory_dst,   0xD1
 	TEST_MEMORY_BYTE test_memory_dst+1, 0xD2
 	TEST_MEMORY_BYTE test_memory_dst+2, 0xD3
  TC_END
@@ -822,17 +838,17 @@ UT_10_cmd_get_slots:
 	call cmd_get_slots
 
 	; Check length
-	TEST_MEMORY_WORD test_memory_output, 	9
-	TEST_MEMORY_WORD test_memory_output+2,	0	
+	TEST_MEMORY_WORD test_memory_output+1, 	9
+	TEST_MEMORY_WORD test_memory_output+3,	0	
 	; Compare with standard slots
-	TEST_MEMORY_BYTE test_memory_output+5, 0xFF	; ROM
 	TEST_MEMORY_BYTE test_memory_output+6, 0xFF	; ROM
-	TEST_MEMORY_BYTE test_memory_output+7, 10
-	TEST_MEMORY_BYTE test_memory_output+8, 11
-	TEST_MEMORY_BYTE test_memory_output+9, 4
-	TEST_MEMORY_BYTE test_memory_output+10, 5
-	TEST_MEMORY_BYTE test_memory_output+11, 0
-	TEST_MEMORY_BYTE test_memory_output+12, 70
+	TEST_MEMORY_BYTE test_memory_output+7, 0xFF	; ROM
+	TEST_MEMORY_BYTE test_memory_output+8, 10
+	TEST_MEMORY_BYTE test_memory_output+9, 11
+	TEST_MEMORY_BYTE test_memory_output+10, 4
+	TEST_MEMORY_BYTE test_memory_output+11, 5
+	TEST_MEMORY_BYTE test_memory_output+12, 0
+	TEST_MEMORY_BYTE test_memory_output+13, 70
  TC_END
 
 
@@ -855,8 +871,8 @@ UT_11_set_slot:
 	call read_tbblue_reg
 	TEST_A	75
 	; Check length
-	TEST_MEMORY_WORD test_memory_output, 	2
-	TEST_MEMORY_WORD test_memory_output+2,	0	
+	TEST_MEMORY_WORD test_memory_output+1, 	2
+	TEST_MEMORY_WORD test_memory_output+3,	0	
 
 	; Test
 	ld iy,.cmd_data
@@ -921,9 +937,9 @@ UT_12_cmd_get_tbblue_reg:
 	call cmd_get_tbblue_reg
 
 	; Check result
-	TEST_MEMORY_WORD test_memory_output, 2
-	TEST_MEMORY_WORD test_memory_output+2, 0
-	TEST_MEMORY_BYTE test_memory_output+5, 74
+	TEST_MEMORY_WORD test_memory_output+1, 2
+	TEST_MEMORY_WORD test_memory_output+3, 0
+	TEST_MEMORY_BYTE test_memory_output+6, 74
 
 	; Test
 	nextreg REG_MMU+SWAP_SLOT, 73
@@ -932,9 +948,9 @@ UT_12_cmd_get_tbblue_reg:
 	call cmd_get_tbblue_reg
 
 	; Check result
-	TEST_MEMORY_WORD test_memory_output, 2
-	TEST_MEMORY_WORD test_memory_output+2, 0
-	TEST_MEMORY_BYTE test_memory_output+5, 73
+	TEST_MEMORY_WORD test_memory_output+1, 2
+	TEST_MEMORY_WORD test_memory_output+3, 0
+	TEST_MEMORY_BYTE test_memory_output+6, 73
  TC_END
 
 .cmd_data:	defb REG_MMU+SWAP_SLOT
@@ -955,8 +971,8 @@ UT_13_cmd_set_border:
 	call cmd_set_border
 
 	; Check length
-	TEST_MEMORY_WORD test_memory_output, 1
-	TEST_MEMORY_WORD test_memory_output+2, 0
+	TEST_MEMORY_WORD test_memory_output+1, 1
+	TEST_MEMORY_WORD test_memory_output+3, 0
 
 	; Check result - Only works for zsim
 	ld a,CYAN ; Required for zsim as it decodes the full 16 bit IO address
@@ -993,8 +1009,8 @@ UT_14_cmd_set_breakpoints.UT_no_bp:
 	call cmd_set_breakpoints
 
 	; Check length
-	TEST_MEMORY_WORD test_memory_output,	1
-	TEST_MEMORY_WORD test_memory_output+2,	0
+	TEST_MEMORY_WORD test_memory_output+1,	1
+	TEST_MEMORY_WORD test_memory_output+3,	0
  TC_END
 
 
@@ -1016,8 +1032,8 @@ UT_14_cmd_set_breakpoints.UT_2_bps:
 	call cmd_set_breakpoints
 
 	; Check length
-	TEST_MEMORY_WORD test_memory_output, 	1+2
-	TEST_MEMORY_WORD test_memory_output+2,	0
+	TEST_MEMORY_WORD test_memory_output+1, 	1+2
+	TEST_MEMORY_WORD test_memory_output+3,	0
 
 	; Test
 	TEST_MEMORY_BYTE 0xC000, BP_INSTRUCTION
@@ -1052,8 +1068,8 @@ UT_14_cmd_set_breakpoints.UT_restore_slots:
 	call cmd_set_breakpoints
 
 	; Check length
-	TEST_MEMORY_WORD test_memory_output, 	1+2
-	TEST_MEMORY_WORD test_memory_output+2,	0
+	TEST_MEMORY_WORD test_memory_output+1, 	1+2
+	TEST_MEMORY_WORD test_memory_output+3,	0
 
 	; Test that slots are restored
 	ld a,REG_MMU
@@ -1087,8 +1103,8 @@ UT_15_cmd_restore_mem.UT_no_values:
 	call cmd_restore_mem
 
 	; Check length
-	TEST_MEMORY_WORD test_memory_output,	1
-	TEST_MEMORY_WORD test_memory_output+2,	0
+	TEST_MEMORY_WORD test_memory_output+1,	1
+	TEST_MEMORY_WORD test_memory_output+3,	0
  TC_END
 
 
@@ -1110,8 +1126,8 @@ UT_15_cmd_restore_mem.UT_2_values:
 	call cmd_restore_mem
 
 	; Check length
-	TEST_MEMORY_WORD test_memory_output, 	1
-	TEST_MEMORY_WORD test_memory_output+2,	0
+	TEST_MEMORY_WORD test_memory_output+1, 	1
+	TEST_MEMORY_WORD test_memory_output+3,	0
 
 	; Test
 	TEST_MEMORY_BYTE 0xC000, 0xAA
@@ -1150,8 +1166,8 @@ UT_15_cmd_restore_mem.UT_restore_slots:
 	call cmd_restore_mem
 
 	; Check length
-	TEST_MEMORY_WORD test_memory_output, 	1
-	TEST_MEMORY_WORD test_memory_output+2,	0
+	TEST_MEMORY_WORD test_memory_output+1, 	1
+	TEST_MEMORY_WORD test_memory_output+3,	0
 
 	; Test that slots are restored
 	ld a,REG_MMU
@@ -1197,10 +1213,10 @@ UT_16_cmd_loopback:
 	TEST_A 69
 
 	; Check length
-	TEST_MEMORY_WORD test_memory_output, 	1+30
-	TEST_MEMORY_WORD test_memory_output+2,	0
+	TEST_MEMORY_WORD test_memory_output+1, 	1+30
+	TEST_MEMORY_WORD test_memory_output+3,	0
 	; Check all value
-	TEST_MEM_CMP test_memory_output+5, .cmd_data, .cmd_data_end-.cmd_data
+	TEST_MEM_CMP test_memory_output+6, .cmd_data, .cmd_data_end-.cmd_data
  TC_END
 
 .cmd_data:	defb 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
@@ -1226,8 +1242,8 @@ UT_17_cmd_get_sprites_palette:
 	call cmd_get_sprites_palette
 
 	; Check length
-	TEST_MEMORY_WORD test_memory_output, 	513
-	TEST_MEMORY_WORD test_memory_output+2,	0
+	TEST_MEMORY_WORD test_memory_output+1, 	513
+	TEST_MEMORY_WORD test_memory_output+3,	0
 	; Note: the values itself are not checked.
 
 	; Test
@@ -1238,8 +1254,8 @@ UT_17_cmd_get_sprites_palette:
 	call cmd_get_sprites_palette:
 
 	; Check length
-	TEST_MEMORY_WORD test_memory_output, 	513
-	TEST_MEMORY_WORD test_memory_output+2,	0
+	TEST_MEMORY_WORD test_memory_output+1, 	513
+	TEST_MEMORY_WORD test_memory_output+3,	0
 	; Note: the values itself are not checked.
  TC_END
 
@@ -1279,8 +1295,8 @@ UT_18_cmd_get_sprites_clip_window_and_control:
 	call cmd_get_sprites_clip_window_and_control
 
 	; Check length
-	TEST_MEMORY_WORD test_memory_output, 	6
-	TEST_MEMORY_WORD test_memory_output+2,	0
+	TEST_MEMORY_WORD test_memory_output+1, 	6
+	TEST_MEMORY_WORD test_memory_output+3,	0
 	
 	/*
 	; Check clipping values

@@ -2,6 +2,7 @@
 
 ## 0.13.1
 - New error output if trying to overwrite MAIN_BANK.
+- IM is returned as 0xFF.
 
 ## 0.13.0
 - Removed command for dezog_poll.
@@ -15,7 +16,7 @@
 
 ## 0.10.0
 - Interoperable with Layer 2 read/write.
-- M1/NMI disabled/re-eanbled.
+- M1/NMI disabled/re-enabled.
 
 ## 0.9.1
 - Key "0" to reset.

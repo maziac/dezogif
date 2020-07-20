@@ -6,7 +6,7 @@
 
 
 ; For testing purposes: the MF code is put at address 0x6000.
-;	DEFINE MF_FAKE
+	DEFINE MF_FAKE
 
 ; The program is loaded here first, then copied to USED_MAIN_BANK. So dezogif can also load itself. Debugged programs may use this bank.
 LOADED_BANK:    EQU 92    
