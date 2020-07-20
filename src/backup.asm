@@ -38,7 +38,7 @@ save_registers:
 	push hl
 	
 	; Save IM, note: IM cannot be saved
-	ld hl,0
+	ld hl,0xFF	; 0xFF = undefined
 	push hl
 
 	; Switch back registers
