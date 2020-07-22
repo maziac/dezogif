@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.14.0
+- Version for beta testing.
+
 ## 0.13.1
 - New error output if trying to overwrite MAIN_BANK.
 - IM is returned as 0xFF.
