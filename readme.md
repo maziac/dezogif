@@ -1,8 +1,8 @@
-# Debug Uart Interface
+# DeZog Uart Interface
 
 # Introduction
 
-This is a ZXNext assembler program that communicates via the UART with a debugger on a PC.
+This is a ZXNext assembler program named 'dezogif' that communicates via the UART with a debugger on a PC.
 
 It is intended to use this with the DeZog, a vscode debug adapter.
 
@@ -10,20 +10,19 @@ It is intended to use this with the DeZog, a vscode debug adapter.
 
 # Design
 
-This uart driver needs cooperation by the debugged program.
-I.e. the debugged program needs to call it in it's main loop.
+There are basically 2 states:
+- the debugged program is running
+- the debugged program is stopped
 
-The UART driver receive register is checked. If nothing has been received then the driver immediately returns. 
-Thus the overhead for a program should be just a few instructions.
+When the debugged program is running no communication takes place and the joy ports are restored for joystick usage.
+When the debugged program is stopped the dezogif takes over and configures the joy port for UART communication.
 
-When a byte has been received the UART driver takes over control.
-It disables interrupts and receives the complete UART message.
-When received the message/command is interpreted.
-A response is sent. E.g. the register values are sent.
+This implies that it is not possible to stop the debugged program from DeZog.
+to stop it you need to press the yellow NMI button.
 
-The UART driver stays in it's own loop waiting for the next message/command.
-This goes on until the UART driver receives a CONTINUE command.
-The UART driver will restore all registers and return to the debugged program's main loop.
+When the NMI button was pressed dezogif send a DZRP pause notification to DeZog to notify about the state change. Then dezogif will wait for further requests from DeZog, e.g. to read register values etc.
+
+The program is started when DeZog sends a DZRP continue request.
 
 
 
