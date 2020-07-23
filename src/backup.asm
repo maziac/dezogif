@@ -150,9 +150,6 @@ restore_registers:
 	; Set bank to restore for slot 7
 	ld a,(slot_backup.slot7)
 
-	; Turn on NMI
-.enable_nmi:	equ $+3
-	nextreg REG_PERIPHERAL_2,0	; self-modifying code
 .ret_jump1:	; Label for unit tests
 	jp nz,exit_code_ei
 .ret_jump2:	; Label for unit tests

@@ -30,18 +30,16 @@ mf_nmi_enable:
 ; Changes:
 ; A, BC, F
 ; ===========================================================================
+/*
 mf_nmi_disable:
 	ld a,REG_PERIPHERAL_2
 	call read_tbblue_reg
 	and 11110111b	; Disable MF NMI
 	nextreg REG_PERIPHERAL_2,a
 	; And save value for exiting
-	or 00001000b	; Enable M1 button bit
 	ld (restore_registers.enable_nmi),a
-
-	nextreg REG_PERIPHERAL_2,a	; TODO: Remove: Enable for testings
-
 	ret 
+*/
 
 
 ;===========================================================================
@@ -52,16 +50,20 @@ mf_nmi_disable:
 nmi_return:
 	retn
 
-
+/*
 mf_hide:
 	out (0x3F),a
 	in a,(0xbf)
 	ret 
+*/
 
-mf_page_out:
+
+;===========================================================================
+; Macro to page out the Multiface ROM/RAM.
+; ===========================================================================
+ 	MACRO MF_PAGE_OUT
 	in a,(0xbf) 
-	ret 
-
+	ENDM
 
 
 
@@ -130,7 +132,7 @@ mf_nmi_button_pressed:
     call nmi_return
 
 	; Disable MF
-	call mf_page_out
+	 MF_PAGE_OUT
 
 	; Enter debugging loop
 	jp cmd_loop

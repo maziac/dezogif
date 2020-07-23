@@ -1,10 +1,10 @@
 # dezogif - ZX Next Interface
 
-For implementing the ZX Next Remote in [DeZog]() it is necessary to implement a piece of SW, a counterpart, that is running on the ZX Next and communicates with DeZog.
+For implementing the ZX Next Remote in [DeZog](https://github.com/maziac/DeZog) it is necessary to implement a piece of SW, a counterpart, that is running on the ZX Next and communicates with DeZog.
 
 For debugging there is no specific support on the ZX Next so everything, breakpoints, stepping, etc. is done in SW.
 
-The protocol used is the [DZRP](). Not all commands care working on the Next. Especially the commands to readout the sprites data are not available. 
+The protocol used is the [DZRP](https://github.com/maziac/DeZog/blob/master/design/DeZogProtocol.md). Not all commands care working on the Next. Especially the commands to readout the sprites data are not available. 
 It is also not possible to get any coverage or history information from the Next.
 
 Furthermore one of the main problems is that the dezogif program itself has to be present in the Z80/ZX Spectrum program area. Getting in the way we the debugged program. Therefore dezogif has to be paged in/out when ever necessary.
@@ -16,7 +16,6 @@ This document deals with the main problems/solutions and design decisions.
 
 The ZX Next has a UART, e.g. to connect to Wifi.
 It is available at the WIFI connector CN9.
-![](images/Next_ESP_Port.png)
 
 It is possible to connect a serial/USB adapter cable to it.
 The UART can be programmed via port registers 0x133B and 0x143B.

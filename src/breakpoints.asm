@@ -187,9 +187,6 @@ copy_rom_start_code_end
 ; - [SP]:	BC
 ;===========================================================================
 enter_debugger:
-	; Disable the M1 (MF NMI) button
-    call mf_nmi_disable
-
 	; Save clock speed
 	ld a,REG_TURBO_MODE
 	call read_tbblue_reg

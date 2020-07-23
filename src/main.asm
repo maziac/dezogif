@@ -52,11 +52,8 @@ main_bank_entry:
     ; Init state
     MEMCLEAR tmp_breakpoint_1, 2*TMP_BREAKPOINT
 
-    ; Disable MF M1 button
-    call mf_nmi_disable
-
     ; Disable Multiface
-    call mf_page_out
+    MF_PAGE_OUT
 
     ; Return from RETN (if called by NMI)
     call nmi_return ; Note: if not called by NMI nothing special will happen.
@@ -102,9 +99,6 @@ main:
     di
     ; Setup stack
     ld sp,debug_stack.top
-
-    ; Disable the M1 (MF NMI) button
-    call mf_nmi_disable
 
     ; Init layer 2
     ld bc,LAYER_2_PORT
