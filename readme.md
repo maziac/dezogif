@@ -24,9 +24,30 @@ When the NMI button was pressed dezogif send a DZRP pause notification to DeZog 
 
 The program is started when DeZog sends a DZRP continue request.
 
+See [Design.md](documentation/Design.doc) for more info.
 
 
-## License
+# Build
+
+~~~
+make main
+~~~
+
+will create the enNextMf.rom binary.
+
+
+# Deployment
+
+The enNextMf.rom binary needs to be copied to the ZX Next SD card under machines/next/enNextMf.rom.
+
+There exists already one, so you need to backup the original.
+
+The program (dezogif/enNextMf.rom) is started after NextOS has been started by pressing the yellow NMI button.
+
+To re-initialize later you need to hold down the "Symbol Shift" (or CTRL) key while hitting the NMI button.
+
+
+# License
 
 This program is licensed under the [MIT license](https://github.com/maziac/dezogif/blob/master/LICENSE.txt).
 
