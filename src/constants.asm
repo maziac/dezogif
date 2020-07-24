@@ -47,5 +47,7 @@ BAUDRATE:   equ 921600
 
 
 ; Program states
-PRGM_STOPPED:	equ 1
-PRGM_RUNNING:	equ 2
+PRGM_IDLE:		equ 1	; Waiting for a new program (at program start and after CMD_CLOSE)
+PRGM_LOADING:	equ 2	; After CMD_INIT until the first CMD_CONTINUE
+PRGM_STOPPED:	equ 3	; After breakpoint or NMI
+PRGM_RUNNING:	equ 4	; After CMD_CONTINUE
