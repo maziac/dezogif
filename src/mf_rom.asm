@@ -47,12 +47,14 @@ nmi66h:
     ; Save to MF stack
     push af, bc
 
+    IF 0
     ; Change border
     ld a,(MF.border_color)
     inc a
     and 0x07
     ld (MF.border_color),a
     out (BORDER),a
+    ENDIF
 
     ; First backup contents of IO_NEXTREG_REG
     ld bc,IO_NEXTREG_REG
@@ -126,8 +128,8 @@ nmi66h:
 
     ; Check if program was already stopped
     ld a,(prgm_state)
-    cp PRGM_STOPPED
-    jp z,mf_nmi_button_pressed_immediate_return
+    cp PRGM_RUNNING
+    jp nz,mf_nmi_button_pressed_immediate_return
 
     ; Restore registers from MF stack
     pop af 

@@ -156,9 +156,13 @@ mf_nmi_button_pressed_immediate_return:
 	ld a,(backup.io_next_reg)
 	out (c),a
 	pop bc
+
+	IF 0
 	; Change border to red
 	ld a,RED
     out (BORDER),a
+	ENDIF
+	
 	; Restore speed
 	ld a,(backup.speed)
     nextreg REG_TURBO_MODE,a
