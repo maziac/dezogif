@@ -93,10 +93,6 @@ restore_registers:
 	pop de
 	pop bc
 
-	; Restore border color
-	ld a,(backup.border_color)
-	out (BORDER),a
-
 	; Restore clock speed
 	ld a,(backup.speed) 
 	nextreg REG_TURBO_MODE,a

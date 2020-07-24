@@ -195,10 +195,6 @@ enter_debugger:
 	; Change clock speed
 	nextreg REG_TURBO_MODE,RTM_28MHZ
 
-	; Save border
-	in a,(BORDER)
-	ld (backup.border_color),a
-
 	; Read debugged program stack
 	ld hl,(backup.sp)
 	ld de,DEBUGGED_PRGM_USED_STACK_SIZE
