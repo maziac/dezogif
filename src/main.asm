@@ -122,6 +122,9 @@ main:
     ld a,ROM_BANK
     ld (slot_backup.slot0),a
 
+    ; Enable flashing border
+    call uart_flashing_border.enable
+
     ; Set UART
     call set_uart_joystick
 

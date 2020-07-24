@@ -122,12 +122,14 @@ wait_for_uart_rx:
     ld bc,LAYER_2_PORT
     out (c),a
 .color_change:
+    IF 0
     ; Change border color
     ld a,c
     inc a
     and 0x07
     out (BORDER),a
     ld c,a
+    ENDIF
     ; Counter
     ld de,0
     ld b,20
@@ -182,8 +184,12 @@ check_uart_byte_available:
 ;   2.4us at 28MHz
 ;===========================================================================
 read_uart_byte:
-    ;push de
-    ;ld de,250*256
+    ; Change border
+.flash1:
+    ld a,BLUE
+    out (BORDER),a
+  
+    ; Wait on byte
     ld e,0
 	ld bc,PORT_UART_TX
 .wait_loop:
@@ -191,41 +197,22 @@ read_uart_byte:
     bit UART_RX_FIFO_EMPTY,a
     jr nz,.byte_received
     dec e
-    ;dec de
-    ;ld a,e
-    ;or d
     jr nz,.wait_loop
     
     ; "Timeout"
-    ;pop de
     ; Waited for 256*43 T-states=393us
     nop ; LOGPOINT read_uart_byte: ERROR=TIMEOUT
     jp rx_timeout   ; ASSERT
 
 .byte_received:
-    ;pop de
+    ; Change border
+.flash2:
+    ld a,YELLOW 
+    out (BORDER),a
     ; At least 1 byte received, read it
     inc b	; The low byte stays the same
     in a,(c)
-  
-  ;ret
-    ; Change border
-    ld e,a
-    and 0x1F
-    inc a
-    push hl
-    ld hl,border_color
-    add (hl)
-    ld (hl),a
-    pop hl
-    bit 2,a
-    ld a,YELLOW 
-    jr z,.yellow
-    ld a,BLUE
-.yellow:
-    out (BORDER),a
-    ld a,e
-	ret 
+    ret
 
 
 ; Called if a UART RX timeout occurs.
@@ -245,6 +232,34 @@ tx_timeout: ; The receive timeout handler
     ld a,ERROR_TX_TIMEOUT
     jr timeout
 
+
+
+;===========================================================================
+; Enables flashing of the border while receiving data.
+;===========================================================================
+uart_flashing_border.enable:
+    ld a,0x3E   ; LD A,n
+    ld (read_uart_byte.flash1),a
+    ld (read_uart_byte.flash2),a
+    ld a,BLUE
+    ld (read_uart_byte.flash1+1),a
+    ld a,YELLOW
+    ld (read_uart_byte.flash2+1),a
+    ret    
+
+
+;===========================================================================
+; Disables flashing of the border while receiving data.
+;===========================================================================
+uart_flashing_border.disable:
+    ld a,0x18   ; JR 2
+    ld (read_uart_byte.flash1),a
+    ld (read_uart_byte.flash2),a
+    ld a,2
+    ld (read_uart_byte.flash1+1),a
+    ld (read_uart_byte.flash2+1),a
+    ret
+    
 
 ;===========================================================================
 ; Waits until TX is ready on the UART and writes one byte to the UART.

@@ -104,7 +104,7 @@ cmd_init:
 	ld a,PRGM_LOADING
 	ld (prgm_state),a
     ; Enable flashing border
-;    call uart_flashing_border.enable
+    call uart_flashing_border.enable
 	; Afterwards start all over again / show	; Afterwards start all over again / show the "UI"
     jp show_ui
 
@@ -158,7 +158,7 @@ cmd_close:
 	ld a,PRGM_IDLE
 	ld (prgm_state),a
     ; Enable flashing border
- ;   call uart_flashing_border.enable
+    call uart_flashing_border.enable
 	; Afterwards start all over again / show the "UI"
 	jp main
 
@@ -366,7 +366,7 @@ cmd_continue:
 	ld a,(backup.border_color)
 	out (BORDER),a
     ; Disable flashing border
-;    call uart_flashing_border.disable
+    call uart_flashing_border.disable
 .not_loading:
 	; Continue
 	jp restore_registers
