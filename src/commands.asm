@@ -100,7 +100,12 @@ cmd_init:
 	; Reset error
 	xor a
 	ld (last_error),a
-	; Afterwards start all over again / show the "UI"
+	; Program state
+	ld a,PRGM_LOADING
+	ld (prgm_state),a
+    ; Enable flashing border
+;    call uart_flashing_border.enable
+	; Afterwards start all over again / show	; Afterwards start all over again / show the "UI"
     jp show_ui
 
 .inner:
@@ -149,6 +154,11 @@ cmd_close:
 	; Send response
 	ld de,1
 	call send_length_and_seqno
+	; Program state
+	ld a,PRGM_IDLE
+	ld (prgm_state),a
+    ; Enable flashing border
+ ;   call uart_flashing_border.enable
 	; Afterwards start all over again / show the "UI"
 	jp main
 
@@ -309,8 +319,7 @@ error_write_main_bank:
 ; CMD_CONTINUE
 ; Continues debugged program execution.
 ; Restores the back'uped registers and jumps to the last
-; execution point. The instruction after the call to 
-; 'check_for_message'.
+; execution point.
 ; Changes:
 ;  NA
 ;===========================================================================
@@ -348,7 +357,18 @@ cmd_continue:
 	ld hl,(payload_continue.bp2_address)
 	ld de,tmp_breakpoint_2
 	call set_tmp_breakpoint
-.start:
+.start:	
+	; Check program state
+	ld a,(prgm_state)
+	cp PRGM_LOADING
+	jr nz,.not_loading
+	; Loading finished: Set border color after loading
+	ld a,(backup.border_color)
+	out (BORDER),a
+    ; Disable flashing border
+;    call uart_flashing_border.disable
+.not_loading:
+	; Continue
 	jp restore_registers
 
 
@@ -570,7 +590,7 @@ cmd_set_border:
 	; LOGPOINT [CMD] cmd_set_border
 	; Read border color
 	call read_uart_byte
-	out (BORDER),a
+	ld (backup.border_color),a
 	; Send response
 	ld de,1
 	jp send_length_and_seqno

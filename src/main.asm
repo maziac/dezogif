@@ -111,7 +111,7 @@ main:
     ld (backup.speed),a
 
     ; Init state
-    ld a,PRGM_STOPPED
+    ld a,PRGM_IDLE
     ld (prgm_state),a 
 
     ; Init interrupt state
