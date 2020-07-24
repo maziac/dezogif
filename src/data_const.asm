@@ -10,7 +10,7 @@
 
 ; The dezogif program version:
  MACRO PRG_VERSION
- 	defb "v0.13.1"
+ 	defb "v0.14.1"
  ENDM 
 
  
@@ -42,8 +42,6 @@ INTRO_TEXT:
     defb "ESP UART Baudrate: "
     STRINGIFY BAUDRATE
 
-;    defb AT, 0, 4*8
-;    defb "Tx=7, Rx=9"
     defb AT, 0, 5*8
     defb "Keys:"
     defb AT, 0, 6*8
@@ -53,8 +51,9 @@ INTRO_TEXT:
     defb AT, 0, 8*8
     defb "3 = No joystick port"
     defb AT, 0, 9*8
-    defb "0 = Reset"
-;.end
+    defb "R = Reset"
+    defb AT, 0, 10*8
+    defb "B = Border"
     defb 0
 
 JOY1_SELECTED_TEXT:
@@ -68,6 +67,12 @@ SELECTED_TEXT_TABLE:
     defw NOJOY_SELECTED_TEXT
     defw JOY1_SELECTED_TEXT
     defw JOY2_SELECTED_TEXT
+
+
+BORDER_OFF_TEXT:
+    defb AT, 11*8, 10*8, "off", 0
+BORDER_ON_TEXT:
+    defb AT, 11*8, 10*8, "on", 0
 
 
 ; Error texts

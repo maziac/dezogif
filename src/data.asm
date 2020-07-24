@@ -148,6 +148,11 @@ slot_backup:	SLOT_BACKUP
 ; 2 = joy 2
 uart_joyport_selection: defb 0
 
+; Selection if border is slowly changing or not.
+; 0 = off
+; 1 = on
+slow_border_change:	defb 1
+
 
 ;===========================================================================
 ; Used by: text.asm

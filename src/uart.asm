@@ -98,6 +98,9 @@ drain_rx_buffer:
 ; Just changes the border color.
 ;===========================================================================
 change_border_color:
+    ld a,(slow_border_change)
+    or a
+    ret z   ; Don't change color if off
     ld a,(border_color)
     inc a
     and 0x07

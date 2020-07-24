@@ -84,12 +84,18 @@ main_bank_entry:
     ld (uart_joyport_selection),a
     xor a
     ld (last_error),a
+
+    ; Enable flashing border
+    call uart_flashing_border.enable
+
+    ; Enable slow border change
+    ld a,1
+    ld (slow_border_change),a
     
     ; Return from NMI (Interrupts are disabled)
     call nmi_return
 
-    jp main
-    ;ENT
+    ; Flow through
 
 
 ;===========================================================================
@@ -100,6 +106,10 @@ main:
     ; Setup stack
     ld sp,debug_stack.top
 
+    ; Black border
+    xor a
+    out (BORDER),a
+    
     ; Init layer 2
     ld bc,LAYER_2_PORT
     xor a
@@ -121,9 +131,6 @@ main:
     ; Init slot 0 bank
     ld a,ROM_BANK
     ld (slot_backup.slot0),a
-
-    ; Enable flashing border
-    call uart_flashing_border.enable
 
     ; Set UART
     call set_uart_joystick
@@ -148,6 +155,8 @@ main_loop:
 .no_uart_byte:
     ; Check keyboard
     call check_key_reset
+    call check_key_border
+    jp z,main   ; Jump if "B" pressed 
     call read_key_joyport
     inc e
     jr z,.no_keyboard

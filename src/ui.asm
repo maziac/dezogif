@@ -19,17 +19,48 @@ ERROR_WRITE_MAIN_BANK:	    equ 4
 
 
 ;===========================================================================
-; Checks key "0".
-; If pressed a reset (jp 0) is done.
+; Checks key "R".
+; If pressed a reset is done.
 ;===========================================================================
 check_key_reset:
     ; Read port
-    ld a,HIGH PORT_KEYB_67890
-    in a,(LOW PORT_KEYB_67890)
-    bit 0,a ; "0"
+    ld bc,PORT_KEYB_TREWQ
+    in a,(c)
+    bit 3,a ; "R"
     ret nz 
+    ; Wait on key release
+.wait_on_release:
+    call wait_on_key_release
     ; Reset
     nextreg REG_RESET, 01b
+
+
+;===========================================================================
+; Checks key "B".
+; For turning slow border change on/off.
+; Returns:
+;   Z = B pressed
+;   NZ = B not pressed
+;===========================================================================
+check_key_border:
+    ; Read port
+    ld bc,PORT_KEYB_BNMSHIFTSPACE
+    in a,(c)
+    bit 4,a ; "B"
+    ret nz 
+    ; Wait on key release
+    call wait_on_key_release
+    ; Toggle
+    ld a,(slow_border_change)
+    xor 1
+    ld (slow_border_change),a
+    jr nz,.ret
+    ; Turn border black
+    xor a
+    out (BORDER),a
+.ret:
+    xor a   ; Z
+    ret
 
 
 ;===========================================================================
@@ -60,11 +91,21 @@ read_key_joyport:
     ld e,0x00
 
 .cont:
-    ; Wait on key release
+    ; Flow through wait_on_key_release
+
+
+;===========================================================================
+; Waits on key release.
+; Parameters: 
+;   BC = the port to usefor the keys.
+; Changes:
+;   AF
+;===========================================================================
+wait_on_key_release:
     in a,(c)
     and 0x1F
     cp 0x1F
-    jr nz,.cont
+    jr nz,wait_on_key_release
     ret
 
 
@@ -89,12 +130,21 @@ show_ui:
     ld de,INTRO_TEXT
 	call text.ula.print_string
 
-    ; Show right selected option
+    ; Show right selected joy port option
     ld hl,SELECTED_TEXT_TABLE
     ld a,(uart_joyport_selection)
     add a   ; *2
     add hl,a
     ld de,(hl)
+	call text.ula.print_string
+
+    ; Show border option
+    ld de,BORDER_ON_TEXT
+    ld a,(slow_border_change)
+    or a
+    jr z,.print_border
+    ld de,BORDER_OFF_TEXT
+.print_border:
 	call text.ula.print_string
 
 	; Show possibly error
