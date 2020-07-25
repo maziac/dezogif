@@ -151,6 +151,7 @@ main_loop:
     call check_uart_byte_available
     ; If so leave loop and enter command loop
     jp nz,cmd_loop    
+.continue:
 
 .no_uart_byte:
     ; Check keyboard

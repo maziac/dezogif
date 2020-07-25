@@ -802,7 +802,10 @@ cmd_loopback:
 	jr nz,.send_loop
 	
 	; Restore slot
-	jp restore_swap_slot
+	call restore_swap_slot
+	; Continue
+	pop af	; swallow return address
+	jp main_loop.continue
 
 
 ;===========================================================================

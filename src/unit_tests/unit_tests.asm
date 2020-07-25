@@ -11,7 +11,9 @@
 ; Required labels:
 main_bank_entry:    equ 0x0000  ; Not used
 main_end:    equ 0xE100  ; Not used
- 
+main_loop.continue:     ret
+
+
     include "constants.asm"
 
     MMU MAIN_SLOT e, LOADED_BANK ; e -> Everything should fit into one page, error if not.

@@ -83,45 +83,6 @@
         {
             "type": "dezog",
             "request": "launch",
-            "name": "CSpect",
-            "remoteType": "cspect",
-            "cspect": {
-                "hostname": "localhost",
-                "port": 11000,
-                "socketTimeout": 50
-            },
-            "listFiles": [
-                {
-                    "path": "out/dezogif.list",
-                    "asm": "sjasmplus",
-                    "mainFile": "main.asm",
-                    "srcDirs": [
-                        "src"
-                    ]
-                }
-            ],
-            //"startAutomatically": false,
-            "startAutomatically": true,
-            "skipInterrupt": true,
-            "commandsAfterLaunch": [
-                //"-logpoint enable",
-                "-assert enable",
-                //"-logpoint enable DEFAULT"
-                "-md 0 100 0xc000 100 0x2000 100 0xe000 100"
-            ],
-            "disassemblerArgs": {
-                "esxdosRst": true
-            },
-            "rootFolder": "${workspaceFolder}",
-            "topOfStack": "debug_stack.top",
-            "load": "out/dezogif.nex",
-            "smallValuesMaximum": 513,
-            "tmpDir": ".tmp"
-        },
-
-        {
-            "type": "dezog",
-            "request": "launch",
             "name": "CSpect MF ROM",
             "remoteType": "cspect",
             "cspect": {

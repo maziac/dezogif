@@ -72,14 +72,14 @@ SELECTED_TEXT_TABLE:
 
 
 BORDER_OFF_TEXT:
-    defb AT, 11*8, 10*8, "off", 0
+    defb AT, 11*8, 11*8, "off", 0
 BORDER_ON_TEXT:
-    defb AT, 11*8, 10*8, "on", 0
+    defb AT, 11*8, 11*8, "on", 0
 
 
 ; Error texts
 TEXT_LAST_ERROR:    
-    defb AT, 0, 12*8, "Last Error:", AT, 0, 13*8, 0
+    defb AT, 0, 13*8, "Last Error:", AT, 0, 14*8, 0
 
 TEXT_ERROR_RX_TIMEOUT: defb "RX Timeout", 0
 TEXT_ERROR_TX_TIMEOUT: defb "TX Timeout", 0

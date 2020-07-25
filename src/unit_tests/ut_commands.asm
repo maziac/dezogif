@@ -1205,7 +1205,7 @@ UT_16_cmd_loopback:
 	nextreg REG_MMU+SWAP_SLOT, 69
 	ld iy,.cmd_data
 	ld ix,test_memory_output
-	call cmd_loopback
+	call .wrap_cmd_loopback
 
 	; Test that slot was restored
 	ld a,REG_MMU+SWAP_SLOT
@@ -1224,6 +1224,10 @@ UT_16_cmd_loopback:
 	defb 20, 21, 22, 23, 24, 25, 26, 27, 28, 29
 .cmd_data_end
 
+.wrap_cmd_loopback
+	call cmd_loopback
+	; Does not return here:
+	; ASSERT
 
 ; Test cmd_get_sprites_palette.
 ; Test that 513 bytes are send for both palettes.
