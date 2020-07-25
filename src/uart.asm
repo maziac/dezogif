@@ -310,6 +310,8 @@ wait_for_uart_tx:
 ; Sets the UART baud rate.
 ; Source code is taken from NDS, https://github.com/Ckirby101/NDS-NextDevSystem.
 ; See also https://dl.dropboxusercontent.com/s/a4c4k9fsh2aahga/UsingUART2andWIFI.txt?dl=0
+; The baudrate timings depend on the video timings in register 0x11.
+; They don't depend on video mode being 50 or 60 Hz.
 ; Returns:
 ;  -
 ; Changes:

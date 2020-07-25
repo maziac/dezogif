@@ -130,6 +130,16 @@ show_ui:
     ld de,INTRO_TEXT
 	call text.ula.print_string
 
+    ; Get display timing
+    ld a,REG_VIDEO_TIMING
+    call read_tbblue_reg
+	and 0111b			;video timing is in bottom 3 bits, e.g. HDMI=111b
+    ; Print the number
+    add '0' ; convert to ASCII
+    ld (text_one_char.char),a
+    ld de,text_one_char
+	call text.ula.print_string
+
     ; Show right selected joy port option
     ld hl,SELECTED_TEXT_TABLE
     ld a,(uart_joyport_selection)
