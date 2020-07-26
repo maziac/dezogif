@@ -1,4 +1,4 @@
-# DeZog Uart Interface
+# DeZog ZX Next Uart Interface
 
 # Introduction
 
