@@ -35,10 +35,10 @@
     include "text.asm"
     include "ui.asm"
     include "altrom.asm"
- 
+
 
 ;===========================================================================
-; After loading the program starts here. Moves the bank to the destination 
+; After loading the program starts here. Moves the bank to the destination
 ; slot and jumps there.
 ;===========================================================================
     ;DISP $-MAIN_ADDR   ; Is in MF space.
@@ -59,7 +59,7 @@ main_bank_entry:
     call nmi_return ; Note: if not called by NMI nothing special will happen.
 
     ; Initialize the bank for slot 0 with the required code.
-    call copy_altrom 
+    call copy_altrom
 
     ; Copy the ZX character font from address ROM_FONT (0x3D00)
     ; to the debugger area at the end of the bank (0x2000-ROM_FONT_SIZE).
@@ -91,7 +91,7 @@ main_bank_entry:
     ; Enable slow border change
     ld a,1
     ld (slow_border_change),a
-    
+
     ; Return from NMI (Interrupts are disabled)
     call nmi_return
 
@@ -109,7 +109,7 @@ main:
     ; Black border
     xor a
     out (BORDER),a
-    
+
     ; Init layer 2
     ld bc,LAYER_2_PORT
     xor a
@@ -122,7 +122,7 @@ main:
 
     ; Init state
     ld a,PRGM_IDLE
-    ld (prgm_state),a 
+    ld (prgm_state),a
 
     ; Init interrupt state
     xor a
@@ -142,7 +142,7 @@ main:
     call show_ui
 
     ; Border color timer
-    ld c,1     
+    ld c,1
     ld de,0
 main_loop:
     push bc, de
@@ -150,18 +150,18 @@ main_loop:
     ; Check if byte available.
     call check_uart_byte_available
     ; If so leave loop and enter command loop
-    jp nz,cmd_loop    
+    jp nz,cmd_loop
 .continue:
 
 .no_uart_byte:
     ; Check keyboard
     call check_key_reset
     call check_key_border
-    jp z,main   ; Jump if "B" pressed 
+    jp z,main   ; Jump if "B" pressed
     call read_key_joyport
     inc e
     jr z,.no_keyboard
-    
+
     ; Key pressed
     dec e
     ld a,e
@@ -175,7 +175,7 @@ main_loop:
     ld a,d
     or e
     jr nz,main_loop
-    dec c 
+    dec c
     jr nz,main_loop
 
     ; Change color of the border
@@ -189,7 +189,7 @@ main_loop:
 ; DATA: All (writable) data needs to be located in
 ; area 0x2000-0x3FFF.
 ;===========================================================================
-   
+
     ; Note: Page and slot doesn't matter as this is bss area and will be located in divmmc.
     ; However for testing (without divmmc) it is better that a bank is mapped
     ;MMU USED_DATA_SLOT e, USED_DATA_BANK
@@ -198,20 +198,6 @@ main_loop:
     ; Note: The area does not need to be copied. i.e. is initialized on the fly.
     include "data.asm"
 
-; TODO: REMOVE, just for testing
-    defs 0xF000-$
-fake_nmi:
-    push af, bc 
-    ld bc,PORT_KEYB_YUIOP
-    in a,(c)    ; Check key "I"
-    pop bc
-    bit 2,a
-    jr z,.pressed 
-    pop af 
-    ret 
-.pressed:
-    pop af
-    jp MF.nmi66h
 
 main_end:
     ASSERT main_end <= (MAIN_SLOT+1)*0x2000
@@ -224,8 +210,8 @@ main_end:
 ;===========================================================================
 
     ; Save NEX file
-    ;SAVENEX OPEN BIN_FILE, start_entry_point2, debug_stack.top //stack_top: The ZX Next has a problem (crashes the program immediately when it is run) if stack points to stack_top 
-    ;SAVENEX CORE 3, 1, 5  
+    ;SAVENEX OPEN BIN_FILE, start_entry_point2, debug_stack.top //stack_top: The ZX Next has a problem (crashes the program immediately when it is run) if stack points to stack_top
+    ;SAVENEX CORE 3, 1, 5
     ;SAVENEX CFG 0               ; black border
     ;SAVENEX BAR 0, 0            ; no load bar
     ;SAVENEX AUTO

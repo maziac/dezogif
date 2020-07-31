@@ -2,7 +2,7 @@
 ; data.asm
 ;
 ; All volatile data is defined here.
-; 
+;
 ; Note: The area does not need to be copied. i.e. is initialized on the fly.
 ;===========================================================================
 
@@ -10,10 +10,10 @@
 
 ; The dezogif program version:
  MACRO PRG_VERSION
- 	defb "v0.14.1"
- ENDM 
+ 	defb "v0.15.0"
+ ENDM
 
- 
+
 ;===========================================================================
 ; Magic number addresses to recognize the debugger
 ;===========================================================================
@@ -33,9 +33,9 @@ build_time_rel = build_time_abs-MAIN_ADDR;
 
 
 ; UI
-INTRO_TEXT: 
+INTRO_TEXT:
     defb AT, 0, 0
-    defb "ZX Next UART DeZog Interface" 
+    defb "ZX Next UART DeZog Interface"
     defb AT, 0, 1*8
     PRG_VERSION
     defb AT, 0, 2*8
@@ -78,7 +78,7 @@ BORDER_ON_TEXT:
 
 
 ; Error texts
-TEXT_LAST_ERROR:    
+TEXT_LAST_ERROR:
     defb AT, 0, 13*8, "Last Error:", AT, 0, 14*8, 0
 
 TEXT_ERROR_RX_TIMEOUT: defb "RX Timeout", 0
@@ -88,7 +88,7 @@ TEXT_ERROR_WRITE_MAIN_BANK: defb "CMD_WRITE_BANK: Can't write to  bank "
     STRINGIFY MAIN_BANK
     defb ". Bank is used by DeZog.", 0
 
-ERROR_TEXT_TABLE:  
+ERROR_TEXT_TABLE:
     defw TEXT_ERROR_RX_TIMEOUT
     defw TEXT_ERROR_TX_TIMEOUT
     defw TEXT_ERROR_WRONG_FUNC_NUMBER

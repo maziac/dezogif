@@ -1,11 +1,14 @@
 # Changelog
 
+## 0.15.0
+- Released.
+
 ## 0.14.1
 - Optimized Rx timing.
 - Border colors disabled after loading.
 - With "B" the slowly changing border color can be turned on/off.
 - "0" changed to "R" for reset now.
-- Prints out video timings. 
+- Prints out video timings.
 
 ## 0.14.0
 - Version for beta testing.
