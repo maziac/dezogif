@@ -6,5 +6,4 @@
 *.lst
 *.nex
 notes.md
-*.bin
-*.rom
+out/
