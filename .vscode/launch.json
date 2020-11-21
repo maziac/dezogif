@@ -197,7 +197,7 @@
             },
             "sjasmplus": [
                 {
-                    "path": "out/dezogif.list",
+                    "path": "out/ut.list",
                     "asm": "sjasmplus",
                     "srcDirs": [
                         "src"

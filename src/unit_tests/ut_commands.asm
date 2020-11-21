@@ -976,9 +976,8 @@ UT_13_cmd_set_border:
 	TEST_MEMORY_WORD test_memory_output+1, 1
 	TEST_MEMORY_WORD test_memory_output+3, 0
 
-	; Check result - Only works for zsim
-	ld a,CYAN ; Required for zsim as it decodes the full 16 bit IO address
-	in a,(BORDER)
+	; Check result
+	ld a,(backup.border_color)
 	and 0x07
 	TEST_A CYAN
 
@@ -989,8 +988,8 @@ UT_13_cmd_set_border:
 	call cmd_set_border
 
 	; Check result
-	ld a,BLACK ; Required for zsim as it decodes the full 16 bit IO address
-	in a,(BORDER)
+	ld a,(backup.border_color)
+	and 0x07
 	TEST_A BLACK
  TC_END
 

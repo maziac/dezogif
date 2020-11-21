@@ -1,4 +1,4 @@
-# Makefile 
+# Makefile
 
 
 # The DeZog Interface program:
@@ -13,9 +13,9 @@ UT_BIN = $(UT).nex
 
 SRC = src
 OUT = out
-MAIN_ASM = $(SRC)/main.asm 
+MAIN_ASM = $(SRC)/main.asm
 ASM_FILES = $(wildcard $(SRC)/*.asm)
-UT_ASM = $(SRC)/unit_tests/unit_tests.asm 
+UT_ASM = $(SRC)/unit_tests/unit_tests.asm
 UT_ASM_FILES = $(wildcard $(SRC)/unit_tests/*.asm) $(wildcard $(SRC)/unit_tests/*.inc) $(ASM_FILES)
 LIST_OUT = $(OUT)/$(PROJ).list
 
