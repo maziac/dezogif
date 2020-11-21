@@ -11,7 +11,6 @@
 ; Required labels:
 main_bank_entry:    equ 0x0000  ; Not used
 main_end:    equ 0xE100  ; Not used
-main_loop.continue:     ret
 
 
     include "constants.asm"
@@ -37,17 +36,20 @@ main_loop.continue:     ret
     include "altrom.asm"
 
     include "mf_rom.asm"
-    
-     
+
+
     ORG 0x7000
 PRG_START:
-    include "unit_tests/unit_tests.inc"  
+    include "unit_tests/unit_tests.inc"
     include "unit_tests/ut_utilities.asm"
     include "unit_tests/ut_uart.asm"
     include "unit_tests/ut_backup.asm"
     include "unit_tests/ut_commands.asm"
     include "unit_tests/ut_breakpoints.asm"
- 
+
+; Required labels:
+main_loop.continue:     ret
+
     ; Initialization routine.
     UNITTEST_INITIALIZE
     ; Page in main bank
@@ -56,7 +58,7 @@ PRG_START:
 PRG_END:
 
 
-; Check to avoid that program is put in a memory area that is used 
+; Check to avoid that program is put in a memory area that is used
 ; in unit testing.
     ;ASSERT PRG_START >= 0x7000
     ASSERT PRG_END <= 0xBFFF
