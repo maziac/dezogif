@@ -39,7 +39,7 @@ INTRO_TEXT:
     defb AT, 0, 1*8
     PRG_VERSION
     defb " (DZRP v"
-    defb DZRP_VERSION.MAJOR+'0', DZRP_VERSION.MINOR+'0', DZRP_VERSION.PATCH+'0'
+    defb DZRP_VERSION.MAJOR+'0', '.', DZRP_VERSION.MINOR+'0', '.', DZRP_VERSION.PATCH+'0'
     defb ")"
     defb AT, 0, 2*8
     defb "ESP UART Baudrate: "
