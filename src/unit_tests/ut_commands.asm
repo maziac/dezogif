@@ -1060,20 +1060,26 @@ UT_14_cmd_set_breakpoints.UT_2_bps:
 	ld (receive_buffer.length),hl
 
 	; Test
-	xor a
+	ld a,8
 	ld (0xC000),a
+	ld a,123
 	ld (0xC0FF),a
 	ld iy,.cmd_data
 	ld ix,test_memory_output
 	call cmd_set_breakpoints
 
+	; Check response
 	; Check length
-	TEST_MEMORY_WORD test_memory_output+1, 	1+2
-	TEST_MEMORY_WORD test_memory_output+3,	0
+	TEST_MEMORY_WORD test_memory_output+1, 1+2
+	TEST_MEMORY_WORD test_memory_output+3, 0
+	; Check returned values
+	TEST_MEMORY_BYTE test_memory_output+6, 8
+	TEST_MEMORY_WORD test_memory_output+7, 123
 
-	; Test
+	; Test memory (breakpoints)
 	TEST_MEMORY_BYTE 0xC000, BP_INSTRUCTION
 	TEST_MEMORY_BYTE 0xC0FF, BP_INSTRUCTION
+
  TC_END
 
 .cmd_data:	defw 0xC000

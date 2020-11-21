@@ -622,26 +622,26 @@ cmd_set_border:
 cmd_set_breakpoints:
 	; LOGPOINT [CMD] cmd_set_breakpoints
 	call save_swap_slot
-
-	; Get the count
+	; Calculate the count
 	ld hl,(receive_buffer.length)	; Read only the lower bytes
 	add hl,-2
-	; Reset counter
-	ld de,0
+	; divide by 3
+	ld e,3
+	call div_hl_e	; hl = hl/3
+	; Send response
+	ld de,hl
+	push de
+	inc de
+	call send_length_and_seqno
+	pop de 	; count
 
 .loop:
 	; Check for end
-	ld a,l
-	or h
-	jr z,.end
-
+	ld a,e
+	or d
+	ret z
 	; Loop
-	push hl
-
-	; Increase counter
-	inc de
 	push de
-
 	; Get breakpoint address
 	call read_uart_byte
 	ld l,a
@@ -686,14 +686,8 @@ cmd_set_breakpoints:
 	; Send memory
 	call write_uart_byte
 	pop de
-	pop hl
-	add hl,-3
+	dec de
 	jr .loop
-
-.end:
-	; hl contains the number of breakpoints
-	inc de	; add 1 byte for the sequence
-	jp send_length_and_seqno
 
 
 ;===========================================================================

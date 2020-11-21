@@ -140,9 +140,9 @@ write_tbblue_reg:
 
 ;===========================================================================
 ; Unsigned division: 16-bit / 8-bit
-; Input: hl = Dividend, e = Divisor, e < 128
-; Output: hl = hl / e
-; Changes: af, b
+; Input: HL = Dividend, E = Divisor, E < 128
+; Output: HL = HL / E
+; Changes: AF, B
 ; See http://sgate.emt.bme.hu/patai/publications/z80guide/part4.html
 ;===========================================================================
 div_hl_e:
