@@ -10,7 +10,7 @@
 
 ; The dezogif program version:
  MACRO PRG_VERSION
- 	defb "v1.0.0"
+ 	defb "v2.0.0"
  ENDM
 
 
@@ -38,6 +38,9 @@ INTRO_TEXT:
     defb "ZX Next UART DeZog Interface"
     defb AT, 0, 1*8
     PRG_VERSION
+    defb " (DZRP v"
+    defb DZRP_VERSION.MAJOR+'0', DZRP_VERSION.MINOR+'0', DZRP_VERSION.PATCH+'0'
+    defb ")"
     defb AT, 0, 2*8
     defb "ESP UART Baudrate: "
     STRINGIFY BAUDRATE

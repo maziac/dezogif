@@ -10,7 +10,7 @@
 
 ; Data area for testing
 test_stack:		defw 0
-	
+
 	defb 0	; WPMEM
 test_memory_src:	defb 1, 2, 3, 4, 5, 6, 7, 8
 test_memory_src_end:
@@ -22,7 +22,7 @@ test_memory_dst_end:
 
 test_memory_write_mem:
 	defb 0	; Reserved
-.address:	
+.address:
 	defw 0  ; Address
 .values:
 	defb 0, 0, 0	; Values
@@ -40,7 +40,7 @@ cmd_data_init:
 	ld (hl),0xFF
 	ld bc,backup_top-backup-1
 	ldir
-	ret 
+	ret
 
 
 ; Helper function to redirect the uart input/output.
@@ -126,9 +126,11 @@ UT_1_cmd_init:
 
 	; Test error
 	TEST_MEMORY_BYTE test_memory_output+6, 0	; no error
-	
+
 	; Test DZRP version
-	TEST_MEM_CMP test_memory_output+7, DZRP_VERSION, 3
+	TEST_MEMORY_BYTE test_memory_output+7, DZRP_VERSION.MAJOR
+	TEST_MEMORY_BYTE test_memory_output+8, DZRP_VERSION.MINOR
+	TEST_MEMORY_BYTE test_memory_output+9, DZRP_VERSION.PATCH
 
 	; Test program name
 	TEST_STRING_PTR test_memory_output+7+3, PROGRAM_NAME
@@ -160,7 +162,7 @@ UT_2_cmd_close:
 	ret
 
 ; Test cmd_get_registers.
-UT_3_cmd_get_registers:	
+UT_3_cmd_get_registers:
 	; Redirect
 	call redirect_uart
 
@@ -205,7 +207,7 @@ UT_4_cmd_set_register.UT_pc:
 	ld (payload_set_reg.register_value),hl
 	ld a,0	; PC
 	ld (payload_set_reg.register_number),a
-	
+
     ; Test
     call cmd_set_register.inner
 
@@ -224,7 +226,7 @@ cmd_set_dreg:
 	ld (payload_set_reg.register_number),a	; register number
     ; set
     call cmd_set_register.inner
-    ret 
+    ret
 
 
 
@@ -315,7 +317,7 @@ set_reg:
 	ld (payload_set_reg.register_number),a	; register number
     ; Set first byte
     call cmd_set_register.inner
-    ret 
+    ret
 
 
 ; Test that register A to H' are set correctly.
@@ -452,20 +454,20 @@ UT_5_cmd_write_bank:
 	; Check that slot/bank has been restored
 	ld a,REG_MMU+SWAP_SLOT
 	call read_tbblue_reg	; Result in A
-	pop de		; Get original bank in D 
+	pop de		; Get original bank in D
 	push de
 	TEST_A d
 
 	; Page in the memory bank
 	nextreg REG_MMU+SWAP_SLOT,28
-	
+
 	ld hl,SWAP_ADDR	; .slot<<13	; Start address
 	ld a,(hl)
 	TEST_A 0x55
 	add hl,0x2000-1
 	ld a,(hl)
 	TEST_A 0x55
-	
+
 
 	; Redirect
 	call redirect_uart_write_bank
@@ -480,14 +482,14 @@ UT_5_cmd_write_bank:
 
 	; Page in the memory bank
 	nextreg REG_MMU+SWAP_SLOT,28
-	
+
 	ld hl,SWAP_ADDR	;.slot<<13	; Start address
 	ld a,(hl)
 	TEST_A 0xAA
 	add hl,0x2000-1
 	ld a,(hl)
 	TEST_A 0xAA
-	
+
 
 	; Restore slot/bank (D)
 	pop de
@@ -506,7 +508,7 @@ UT_6_continue:
 	ld (restore_registers.ret_jump1),a
 	ld hl,.exit_code
 	ld (restore_registers.ret_jump1+1),hl
-	
+
 	; Prepare
 	ld hl,2+PAYLOAD_CONTINUE
 	ld (receive_buffer.length),hl
@@ -532,7 +534,7 @@ UT_6_continue:
 
 .exit_code:
 	pop af
-	ret 
+	ret
 
 
 ; Test cmd_pause
@@ -611,7 +613,7 @@ UT_8_cmd_read_mem.UT_banks:
 	; Test
 	ld hl,1
 	ld (payload_read_mem.mem_size),hl
-	
+
 	; Location 0x1FFF
 	ld ix,test_memory_dst	; Pointer to write to
 	ld hl,0x1FFF
@@ -663,7 +665,7 @@ UT_8_cmd_read_mem.UT_banks:
 	; Location 0xFFFF
 	ld ix,test_memory_dst	; Pointer to write to
 	ld hl,0xFFFF
-	; Page in different bank in slot 7 area 
+	; Page in different bank in slot 7 area
 	ld a,80
 	ld (slot_backup.slot7),a
 	nextreg REG_MMU+MAIN_SLOT,a
@@ -710,7 +712,7 @@ UT_9_cmd_write_mem.UT_normal:
 	TEST_MEMORY_BYTE test_memory_dst+1, 0xD2
 	TEST_MEMORY_BYTE test_memory_dst+2, 0xD3
  TC_END
-	
+
 
 ; Test writing memory in each relevant bank.
 ; Note: The locations should not contain any code/data of
@@ -726,7 +728,7 @@ UT_9_cmd_write_mem.UT_banks:
 	; Prepare
 	ld hl,5+1
 	ld (receive_buffer.length),hl
-	
+
 	; Location 0x1FFF
 	ld hl,test_memory_write_mem.address
 	ld de,0x1FFF
@@ -839,7 +841,7 @@ UT_10_cmd_get_slots:
 
 	; Check length
 	TEST_MEMORY_WORD test_memory_output+1, 	9
-	TEST_MEMORY_WORD test_memory_output+3,	0	
+	TEST_MEMORY_WORD test_memory_output+3,	0
 	; Compare with standard slots
 	TEST_MEMORY_BYTE test_memory_output+6, 0xFF	; ROM
 	TEST_MEMORY_BYTE test_memory_output+7, 0xFF	; ROM
@@ -872,7 +874,7 @@ UT_11_set_slot:
 	TEST_A	75
 	; Check length
 	TEST_MEMORY_WORD test_memory_output+1, 	2
-	TEST_MEMORY_WORD test_memory_output+3,	0	
+	TEST_MEMORY_WORD test_memory_output+3,	0
 
 	; Test
 	ld iy,.cmd_data
@@ -902,8 +904,8 @@ UT_11_set_slot:
 	; Check bank
 	ld a,REG_MMU+0
 	call read_tbblue_reg
-	TEST_A	ROM_BANK	
-	
+	TEST_A	ROM_BANK
+
 	; Test ROM in slot 0
 	ld iy,.cmd_data
 	ld (iy),0
@@ -1134,7 +1136,7 @@ UT_15_cmd_restore_mem.UT_2_values:
 	TEST_MEMORY_BYTE 0xC0FF, 0x55
  TC_END
 
-.cmd_data:	
+.cmd_data:
 	defw 0xC000
 	defb 0xAA
 	defw 0xC0FF
@@ -1284,7 +1286,7 @@ UT_18_cmd_get_sprites_clip_window_and_control:
 	; Write a 5th time
 	nextreg REG_CLIP_WINDOW_SPRITES, 10		; xl again
 
-	
+
     ld a,2 : nextreg 25, a		; 0
     ld a,200 : nextreg 25, a	; 1
     ld a,3 : nextreg 25, a		; 2
@@ -1301,7 +1303,7 @@ UT_18_cmd_get_sprites_clip_window_and_control:
 	; Check length
 	TEST_MEMORY_WORD test_memory_output+1, 	6
 	TEST_MEMORY_WORD test_memory_output+3,	0
-	
+
 	/*
 	; Check clipping values
 	TEST_MEMORY_WORD test_memory_output+5,	10		; xl
@@ -1313,4 +1315,3 @@ UT_18_cmd_get_sprites_clip_window_and_control:
 
 
     ENDMODULE
-    

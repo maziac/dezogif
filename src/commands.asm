@@ -1,11 +1,11 @@
 ;===========================================================================
 ; commands.asm
 ;
-; 
+;
 ;===========================================================================
 
 
-    
+
 ;===========================================================================
 ; Structs
 ;===========================================================================
@@ -20,13 +20,15 @@ tmp_slot:	defb	; Normally SWAP_SLOT but could be also other.
 
 
 ;===========================================================================
-; Const data. 
+; Const data.
 ;===========================================================================
 
-
 ; DZRP version 1.6.0
-DZRP_VERSION:	defb 1, 6, 0
-; Flow through to program name.
+DZRP_VERSION.MAJOR:		equ 1
+DZRP_VERSION.MINOR:		equ 6
+DZRP_VERSION.PATCH:		equ 0
+
+
 
 ; The own program name and version
 PROGRAM_NAME:	defb "dezogif "
@@ -44,7 +46,7 @@ cmd_jump_table:
 .write_bank:		defw cmd_write_bank			; 5
 .continue:			defw cmd_continue			; 6
 .pause:				defw cmd_pause				; 7
-.read_mem:			defw cmd_read_mem			; 8 
+.read_mem:			defw cmd_read_mem			; 8
 .write_mem:			defw cmd_write_mem			; 9
 .get_slots:			defw cmd_get_slots			; 10
 .set_slot:			defw cmd_set_slot			; 11
@@ -86,7 +88,7 @@ cmd_call:	; Get pointer to subroutine
 	ld l,a
 	; jump to subroutine
 	jp (hl)
-	
+
 
 ;===========================================================================
 ; CMD_INIT
@@ -126,13 +128,13 @@ cmd_init:
 	xor a
 	call write_uart_byte
 	; Send config
-	ld hl,DZRP_VERSION
-	ld e,3
-.write_dzrp_version_loop:
-	ldi a,(hl)
+	; DZRP version
+	ld a,DZRP_VERSION.MAJOR
 	call write_uart_byte
-	dec e
-	jr nz,.write_dzrp_version_loop
+	ld a,DZRP_VERSION.MINOR
+	call write_uart_byte
+	ld a,DZRP_VERSION.PATCH
+	call write_uart_byte
 	; Send own program name and version
 	ld hl,PROGRAM_NAME
 .write_prg_name_loop:
@@ -185,7 +187,7 @@ cmd_get_registers:
 	ld a,(hl)
 	call write_uart_byte
 	; Next
-	add hl,de 
+	add hl,de
 	pop bc
 	djnz .loop
 	ret
@@ -208,7 +210,7 @@ cmd_set_register:
 	; Send response
 	ld de,1
 	jp send_length_and_seqno
-	
+
 .inner:	; jump label for unit tests
 	; Get value in DE
 	ld hl,payload_set_reg.register_value+1
@@ -252,7 +254,7 @@ cmd_set_register:
 	im 2
 	ret
 
-.next4:	
+.next4:
 	; Here: F=1, A=2, ...., I'=22
 	sub 23
 	; Here: F=-22, A=-21, ...., I'=-1
@@ -290,15 +292,15 @@ cmd_write_bank:
 	call read_uart_byte
 
 	; Check if it is own bank
-	cp MAIN_BANK   
+	cp MAIN_BANK
 	jr z,error_write_main_bank
-	
+
 	; Remember current bank for slot
 	ld e,a
 	call save_swap_slot
 	ld a,e
 
-	; Change bank for slot 
+	; Change bank for slot
 	nextreg REG_MMU+SWAP_SLOT,a
 
 	; Read bytes from UART and put into bank
@@ -329,7 +331,7 @@ cmd_continue:
 	ld hl,receive_buffer.payload
 	ld de,PAYLOAD_CONTINUE
 	call receive_bytes
-	
+
 	; Read unused bytes
 	ld d,11-PAYLOAD_CONTINUE
 .loop_unused:
@@ -357,7 +359,7 @@ cmd_continue:
 	ld hl,(payload_continue.bp2_address)
 	ld de,tmp_breakpoint_2
 	call set_tmp_breakpoint
-.start:	
+.start:
 	; Check program state
 	ld a,(prgm_state)
 	cp PRGM_LOADING
@@ -385,7 +387,7 @@ cmd_pause:
 	; Send response
 	ld de,1
 	call send_length_and_seqno
-	
+
 	; Send pause notification
 	ld d,BREAK_REASON.MANUAL_BREAK
 	ld hl,0 ; bp address
@@ -398,8 +400,8 @@ cmd_pause:
 ;===========================================================================
 ; CMD_READ_MEM
 ; Reads a memory area.
-; Special is that if slot 7 area is read, 
-; then the memory bank of slot_backup.slot7 is temporarily paged into 
+; Special is that if slot 7 area is read,
+; then the memory bank of slot_backup.slot7 is temporarily paged into
 ; SWAP_SLOT and read.
 ; Changes:
 ;  NA
@@ -438,8 +440,8 @@ cmd_read_mem.read:
 ;===========================================================================
 ; CMD_WRITE_MEM
 ; Writes a memory area.
-; Special is that if slot 7 area is read, 
-; then the memory bank of slot_backup.slot7 is temporarily paged into 
+; Special is that if slot 7 area is read,
+; then the memory bank of slot_backup.slot7 is temporarily paged into
 ; SWAP_SLOT and written.
 ; Changes:
 ;  NA
@@ -462,7 +464,7 @@ cmd_write_mem:
 	ld hl,(payload_write_mem.mem_start)
 	ld bc,.write
 	call memory_loop
-	
+
 	; Send response
 	ld de,1
 	jp send_length_and_seqno
@@ -560,7 +562,7 @@ cmd_set_slot:
 ;	call read_uart_byte	; read dummy value
 ;	ld a,1	; error
 ;	jp write_uart_byte
-	
+
 
 ;===========================================================================
 ; CMD_GET_TBBLUE_REG
@@ -576,7 +578,7 @@ cmd_get_tbblue_reg:
 	; Read register number
 	call read_uart_byte	; Register number
 	call read_tbblue_reg	; Result in A
-	; Send 
+	; Send
 	jp write_uart_byte
 
 
@@ -664,8 +666,8 @@ cmd_set_breakpoints:
 .next:
 	; Send memory
 	call write_uart_byte
-	pop de 
-	dec de 
+	pop de
+	dec de
 	jr .loop
 
 
@@ -733,7 +735,7 @@ cmd_restore_mem:
 
 .next:
 	; Next address
-	pop de 
+	pop de
 	add de,-3
 	jr .loop
 
@@ -755,7 +757,7 @@ cmd_loopback:
 	; Get length
 	ld de,(receive_buffer.length)
 	dec de : dec de
-	
+
 	; Read all data in swap slot
 	ld hl,SWAP_ADDR
 	jr .rcv_check_end
@@ -800,7 +802,7 @@ cmd_loopback:
 	ld a,e
 	or d
 	jr nz,.send_loop
-	
+
 	; Restore slot
 	call restore_swap_slot
 	; Continue
@@ -865,7 +867,7 @@ cmd_get_sprites_palette:
             byte selSprites = (byte)((eUlaCtrlReg & 0x0F) | 0b0010_0000 | (paletteIndex << 6));
             cspect.SetNextRegister(0x43, selSprites); // Resets also 0x44
   */
-  
+
 	// Read palette
 	ld d,0	; Index
 .loop:
@@ -881,7 +883,7 @@ cmd_get_sprites_palette:
 	ld a,REG_PALETTE_VALUE_16  ; color9th
 	call read_tbblue_reg ; Result in A
 	call write_uart_byte
-	inc d 
+	inc d
 	jr nz,.loop		; Loop 256x
 
     /*
@@ -914,7 +916,7 @@ cmd_get_sprites_palette:
 	; Write it to increase the index
 	; l = colorReg
 	WRITE_TBBLUE_REG REG_PALETTE_VALUE_16,e
-	ret 
+	ret
 
 	/*
             // Restore values
@@ -927,7 +929,7 @@ cmd_get_sprites_palette:
                 cspect.SetNextRegister(REG_PALETTE_VALUE_16, colorReg);
             }
 	*/
-	
+
 
 ;===========================================================================
 ; CMD_GET_SPRITES_CLIP_WINDOW_AND_CONTROL
@@ -941,7 +943,7 @@ cmd_get_sprites_clip_window_and_control:
 	ld de,6
 	call send_length_and_seqno
 
-    ; Get index 
+    ; Get index
 	ld a,REG_CLIP_WINDOW_CONTROL
 	call read_tbblue_reg
 	rra : rra
@@ -965,7 +967,7 @@ cmd_get_sprites_clip_window_and_control:
 	and 011b
 	dec d
 	jr nz,.loop
-	
+
 	; Send xl, xr, yt or yb
 	ld d,4
 	ld hl,tmp_clip_window
@@ -974,9 +976,9 @@ cmd_get_sprites_clip_window_and_control:
 	call write_uart_byte 	; Send xl, xr, yt or yb
 	dec d
 	jr nz,.send_loop
-		
+
 	; Get sprite control byte
 	ld a,REG_SPRITE_LAYER_SYSTEM
 	call read_tbblue_reg
 	jp write_uart_byte 	; Send sprite control byte
-	
+
