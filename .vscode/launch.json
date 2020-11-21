@@ -12,29 +12,34 @@
             "remoteType": "zsim",
             "zsim": {
                 "Z80N": true,
+                "memoryModel": "ZXNEXT",
+                "ulaScreen": true,
+                "zxKeyboard": true,
+                "customCode": {
+                    "jsPath": "src/simulation/uart.js",
+                }
             },
-            "listFiles": [
+            "sjasmplus": [
                 {
                     "path": "out/dezogif.list",
                     "asm": "sjasmplus",
-                    "mainFile": "main.asm",
                     "srcDirs": [
                         "src"
                     ]
                 }
             ],
             "startAutomatically": false,
-            "skipInterrupt": true,
             "commandsAfterLaunch": [
-                //"-sprites",
-                //"-patterns"
             ],
             "disassemblerArgs": {
                 "esxdosRst": true
             },
             "rootFolder": "${workspaceFolder}",
-            "topOfStack": "stack_top",
-            "load": "out/dezogif.nex",
+            "topOfStack": "debug_stack.top",
+            "loadObjs": [
+                { "path": "out/enNextMf.rom", "start": "0"}
+            ],
+            "execAddress": "0x0066",
             "smallValuesMaximum": 513,
             "tmpDir": ".tmp"
         },
@@ -53,18 +58,16 @@
             "zsim": {
                 "Z80N": true,
             },
-            "listFiles": [
+            "sjasmplus": [
                 {
                     "path": "out/dezogif.list",
                     "asm": "sjasmplus",
-                    "mainFile": "main.asm",
                     "srcDirs": [
                         "src"
                     ]
                 }
             ],
             "startAutomatically": true,
-            "skipInterrupt": true,
             "commandsAfterLaunch": [
                 //"-sprites",
                 //"-patterns"
@@ -90,11 +93,10 @@
                 "port": 11000,
                 "socketTimeout": 50
             },
-            "listFiles": [
+            "sjasmplus": [
                 {
                     "path": "out/dezogif.list",
                     "asm": "sjasmplus",
-                    "mainFile": "main.asm",
                     "srcDirs": [
                         "src"
                     ]
@@ -102,7 +104,6 @@
             ],
             //"startAutomatically": false,
             "startAutomatically": true,
-            "skipInterrupt": true,
             "commandsAfterLaunch": [
                 //"-logpoint enable",
                 "-assert enable",
@@ -135,11 +136,10 @@
                 "port": 11000,
                 "socketTimeout": 50
             },
-            "listFiles": [
+            "sjasmplus": [
                 {
                     "path": "out/dezogif.list",
                     "asm": "sjasmplus",
-                    "mainFile": "main.asm",
                     "srcDirs": [
                         "src"
                     ]
@@ -147,7 +147,6 @@
             ],
             //"startAutomatically": false,
             "startAutomatically": true,
-            "skipInterrupt": true,
             "commandsAfterLaunch": [
                 //"-logpoint enable",
                 //"-assert enable",
@@ -178,11 +177,15 @@
             "remoteType": "zsim",
             "zsim": {
                 "Z80N": true,
-                "tbblueMemoryManagementSlots": true
+                "memoryModel": "ZXNEXT",
+                "ulaScreen": true,
+                "zxKeyboard": true,
+                "customCode": {
+                    "jsPath": "src/simulation/uart.js",
+                }
             },
             "resetOnLaunch": true,
             "startAutomatically": true,
-            "skipInterrupt": true,
             "unitTestTimeout": 2,
             "commandsAfterLaunch": [
                 "-wpmem enable",
@@ -192,11 +195,10 @@
             "disassemblerArgs": {
                 "esxdosRst": true
             },
-            "listFiles": [
+            "sjasmplus": [
                 {
-                    "path": "out/ut.list",
+                    "path": "out/dezogif.list",
                     "asm": "sjasmplus",
-                    "mainFile": "unit_tests/unit_tests.asm",
                     "srcDirs": [
                         "src"
                     ]
