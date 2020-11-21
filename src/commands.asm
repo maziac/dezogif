@@ -24,8 +24,8 @@ tmp_slot:	defb	; Normally SWAP_SLOT but could be also other.
 ;===========================================================================
 
 ; DZRP version 1.6.0
-DZRP_VERSION.MAJOR:		equ 1
-DZRP_VERSION.MINOR:		equ 6
+DZRP_VERSION.MAJOR:		equ 2
+DZRP_VERSION.MINOR:		equ 0
 DZRP_VERSION.PATCH:		equ 0
 
 
@@ -135,6 +135,9 @@ cmd_init:
 	call write_uart_byte
 	ld a,DZRP_VERSION.PATCH
 	call write_uart_byte
+	; Machine type: 4 = ZX Next
+	ld a,4
+	call write_uart_byte
 	; Send own program name and version
 	ld hl,PROGRAM_NAME
 .write_prg_name_loop:
@@ -167,16 +170,17 @@ cmd_close:
 
 ;===========================================================================
 ; CMD_READ_REGS
-; Reads all register values and sends them in the response.
+; Reads all register and slot values and sends them in the response.
 ; Changes:
 ;  NA
 ;===========================================================================
 cmd_get_registers:
 	; LOGPOINT [CMD] cmd_get_regs
 	; Send response
-	ld de,29
+	ld de,37
 	call send_length_and_seqno
-	; Loop all values
+
+	; Loop all register values
 	ld hl,backup.pc
 	ld de,-3
 	ld b,14
@@ -190,7 +194,11 @@ cmd_get_registers:
 	add hl,de
 	pop bc
 	djnz .loop
-	ret
+
+	; Now the slot values
+	ld a,8	; 8 slots
+	call write_uart_byte
+	jp send_slots
 
 
 ;===========================================================================
@@ -284,8 +292,14 @@ cmd_write_bank:
 	; Execute command
 	call cmd_write_bank.inner
 	; Send response
-	ld de,1
-	jp send_length_and_seqno
+	ld de,3
+	call send_length_and_seqno
+	; No error
+	xor a
+	call write_uart_byte
+	; No error string
+	jp write_uart_byte
+
 
 .inner:
 	; Read bank number of message
@@ -493,6 +507,7 @@ cmd_get_slots:
 	ld de,9
 	call send_length_and_seqno
 
+send_slots:	; Note: is also used by get_registers
 	; Send the first 7 slots
 	ld de,256*REG_MMU+7	; Load D and E at the same time
 .loop:
@@ -607,30 +622,34 @@ cmd_set_border:
 cmd_set_breakpoints:
 	; LOGPOINT [CMD] cmd_set_breakpoints
 	call save_swap_slot
-	; Calculate the count
-	ld de,(receive_buffer.length)	; Read only the lower bytes
-	add de,-2
-	; divide by 2
-	ld b,1
-	bsrl de,b
-	; Send response
-	push de
-	inc de
-	call send_length_and_seqno
-	pop de 	; count
+
+	; Get the count
+	ld hl,(receive_buffer.length)	; Read only the lower bytes
+	add hl,-2
+	; Reset counter
+	ld de,0
 
 .loop:
 	; Check for end
-	ld a,e
-	or d
-	ret z
+	ld a,l
+	or h
+	jr z,.end
+
 	; Loop
+	push hl
+
+	; Increase counter
+	inc de
 	push de
+
 	; Get breakpoint address
 	call read_uart_byte
 	ld l,a
 	call read_uart_byte
 	ld h,a
+	; Get bank+1
+	call read_uart_byte
+
 	; Check memory area
 	cp HIGH MAIN_ADDR	; 0xE000
 	jr c,.normal
@@ -667,8 +686,14 @@ cmd_set_breakpoints:
 	; Send memory
 	call write_uart_byte
 	pop de
-	dec de
+	pop hl
+	add hl,-3
 	jr .loop
+
+.end:
+	; hl contains the number of breakpoints
+	inc de	; add 1 byte for the sequence
+	jp send_length_and_seqno
 
 
 ;===========================================================================

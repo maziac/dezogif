@@ -3,7 +3,7 @@
 ;
 ; Misc subroutines.
 ;===========================================================================
- 
+
 
 ;===========================================================================
 ; Constants
@@ -26,11 +26,11 @@ PORT_KEYB_VCXZCAPS:         equ 0xFEFE ; V, C, X, Z, Caps Shift
 
 
 ; Clears the screen and opens channel 2
-ROM_CLS                 EQU  0x0DAF             
+ROM_CLS                 EQU  0x0DAF
 ; Open a channel
 ROM_OPEN_CHANNEL        EQU  0x1601
 ; Print a string
-ROM_PRINT               EQU  0x203C              
+ROM_PRINT               EQU  0x203C
 
 
 ; The address of the original ZX Spectrum character set in ROM.
@@ -135,3 +135,26 @@ write_tbblue_reg:
 	nextreg 0,a
 	ret
 */
+
+
+
+;===========================================================================
+; Unsigned division: 16-bit / 8-bit
+; Input: hl = Dividend, e = Divisor, e < 128
+; Output: hl = hl / e
+; Changes: af, b
+; See http://sgate.emt.bme.hu/patai/publications/z80guide/part4.html
+;===========================================================================
+div_hl_e:
+	xor a		; Clearing the upper 8 bits of AHL
+	ld b,16		; The length of the dividend (16 bits)
+.loop:
+	add hl,hl	; Advancing a bit
+	rla
+	cp e		; Checking if the divisor divides the digits chosen (in A)
+	jp c,.skip	; If not, advancing without subtraction
+	sub e		; Subtracting the divisor
+	inc l		; and setting the next digit of the quotient
+.skip:
+	djnz .loop
+	ret

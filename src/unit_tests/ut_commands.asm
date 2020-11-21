@@ -132,8 +132,11 @@ UT_1_cmd_init:
 	TEST_MEMORY_BYTE test_memory_output+8, DZRP_VERSION.MINOR
 	TEST_MEMORY_BYTE test_memory_output+9, DZRP_VERSION.PATCH
 
+	; Test machine type: 4 = ZX Next
+	TEST_MEMORY_BYTE test_memory_output+10, 4
+
 	; Test program name
-	TEST_STRING_PTR test_memory_output+7+3, PROGRAM_NAME
+	TEST_STRING_PTR test_memory_output+11, PROGRAM_NAME
  TC_END
 
 .cmd_data:
@@ -170,6 +173,25 @@ UT_3_cmd_get_registers:
 	ld hl,2
 	ld (receive_buffer.length),hl
 
+	; Save current slot configuration
+
+	; Send the first 7 slots
+	ld d,REG_MMU
+	ld e,7
+	ld hl,.cmp_slots
+.loop:
+	; Get bank for slot
+	ld a,d
+	call read_tbblue_reg	; Result in A
+	; Store for later comparison
+	ldi (hl),a
+	inc d
+	dec e
+	jr nz,.loop
+	; Last slot
+	ld a,(slot_backup.slot7)
+	ld (.cmp_slots+7),a
+
 	; Copy data
 	MEMCOPY backup, .cmd_data, .cmd_data_end-.cmd_data
 	; Test
@@ -178,11 +200,15 @@ UT_3_cmd_get_registers:
 	call cmd_get_registers
 
 	; Test length
-	TEST_MEMORY_WORD test_memory_output+1, 29
+	TEST_MEMORY_WORD test_memory_output+1, 37
 	TEST_MEMORY_WORD test_memory_output+3, 0
 
 	; Test returned data
 	TEST_MEM_CMP test_memory_output+6, .cmp_data, .cmp_data_end-.cmp_data
+
+	; Test slots
+	TEST_MEMORY_BYTE test_memory_output+34, 8	; 8 slots
+	TEST_MEM_CMP test_memory_output+35, .cmp_slots, 8
 
  TC_END
 
@@ -194,6 +220,7 @@ UT_3_cmd_get_registers:
 	defw 2007, 2006, 2005, 2004, 2003, 2002, 2001
 	defw 1007, 1006, 1005, 1004, 1003, 1002, 1001
 .cmp_data_end
+.cmp_slots:	defs 8
 
 
 ; Test that register is set correctly.
@@ -490,6 +517,14 @@ UT_5_cmd_write_bank:
 	ld a,(hl)
 	TEST_A 0xAA
 
+	; Test response
+	TEST_MEMORY_WORD test_memory_output+1, 3	; Length
+	TEST_MEMORY_WORD test_memory_output+3, 0
+
+	; No error
+	TEST_MEMORY_BYTE test_memory_output+6, 0
+	; No error string
+	TEST_MEMORY_BYTE test_memory_output+7, 0
 
 	; Restore slot/bank (D)
 	pop de
@@ -1021,7 +1056,7 @@ UT_14_cmd_set_breakpoints.UT_2_bps:
 	; Redirect
 	call redirect_uart
 	; Prepare
-	ld hl,2+2*2
+	ld hl,2+2*3
 	ld (receive_buffer.length),hl
 
 	; Test
@@ -1041,7 +1076,11 @@ UT_14_cmd_set_breakpoints.UT_2_bps:
 	TEST_MEMORY_BYTE 0xC0FF, BP_INSTRUCTION
  TC_END
 
-.cmd_data:	defw 0xC000, 0xC0FF
+.cmd_data:	defw 0xC000
+			defb 0
+			defw 0xC0FF
+			defb 0
+
 
 
 ; Test cmd_set_breakpoints.

@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.0.0
+- Changed to DZRP 2.0.0.
+
 ## 1.0.0
 - Released.
 

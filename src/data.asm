@@ -2,7 +2,7 @@
 ; data.asm
 ;
 ; All volatile data is defined here.
-; 
+;
 ; Note: The area does not need to be copied. i.e. is initialized on the fly.
 ;===========================================================================
 
@@ -11,7 +11,7 @@
 ;===========================================================================
 ; BSS data
 ;===========================================================================
- 
+
 
 ; If an error occures it is stored here for display.
 last_error: defb 0
@@ -53,7 +53,7 @@ DEBUGGED_PRGM_USED_STACK_SIZE:  equ debugged_prgm_stack_copy.end-debugged_prgm_s
 STACK_SIZE: equ 100    ; in words
 
 
-; The debug stack begins here. 
+; The debug stack begins here.
 debug_stack:	defs STACK_SIZE*2, 0xAA
 .top:
 
@@ -95,7 +95,7 @@ backup_top:
 ; Main use: message.asm
 
 ; The UART data is put here before being interpreted.
-receive_buffer: 
+receive_buffer:
 .length:
 	defw 0, 0		; 4 bytes length
 .seq_no:
@@ -170,7 +170,7 @@ prgm_state:	defb PRGM_IDLE
 
 ;===========================================================================
 ; Used by: ui.asm
-text_one_char:	
+text_one_char:
     defb AT, 14*8, 3*8
 .char:
 	defb 0, 0
