@@ -53,6 +53,16 @@ UT_div_hl_e:
 	call div_hl_e
 	TEST_DREG HL, 2
 
+	ld hl,2*3+1
+	ld e,3
+	call div_hl_e
+	TEST_DREG HL, 2
+
+	ld hl,2*3+2
+	ld e,3
+	call div_hl_e
+	TEST_DREG HL, 2
+
 	ld hl,7*89
 	ld e,89
 	call div_hl_e

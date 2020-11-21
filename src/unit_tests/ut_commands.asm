@@ -1074,7 +1074,7 @@ UT_14_cmd_set_breakpoints.UT_2_bps:
 	TEST_MEMORY_WORD test_memory_output+3, 0
 	; Check returned values
 	TEST_MEMORY_BYTE test_memory_output+6, 8
-	TEST_MEMORY_WORD test_memory_output+7, 123
+	TEST_MEMORY_BYTE test_memory_output+7, 123
 
 	; Test memory (breakpoints)
 	TEST_MEMORY_BYTE 0xC000, BP_INSTRUCTION
@@ -1095,7 +1095,7 @@ UT_14_cmd_set_breakpoints.UT_restore_slots:
 	; Redirect
 	call redirect_uart
 	; Prepare
-	ld hl,2+2*2
+	ld hl,2+2*3
 	ld (receive_buffer.length),hl
 
 	; Page in banks in ROM area
@@ -1113,9 +1113,13 @@ UT_14_cmd_set_breakpoints.UT_restore_slots:
 	ld ix,test_memory_output
 	call cmd_set_breakpoints
 
+	; Check response
 	; Check length
 	TEST_MEMORY_WORD test_memory_output+1, 	1+2
 	TEST_MEMORY_WORD test_memory_output+3,	0
+	; Check returned values
+	TEST_MEMORY_BYTE test_memory_output+6, 0
+	TEST_MEMORY_BYTE test_memory_output+7, 0
 
 	; Test that slots are restored
 	ld a,REG_MMU
@@ -1132,7 +1136,10 @@ UT_14_cmd_set_breakpoints.UT_restore_slots:
 	TEST_MEMORY_BYTE 0x3FFF, BP_INSTRUCTION
  TC_END
 
-.cmd_data:	defw 0x0200, 0x3FFF
+.cmd_data:	defw 0x0200
+			defb 0
+			defw 0x3FFF
+			defb 0
 
 
 ; Test cmd_restore_mem with no values.

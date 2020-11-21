@@ -16,7 +16,7 @@ UT_save_registers.UT_returns:
     ; Init
     ld hl,.return
     ld (save_registers.ret_jump+1),hl
-    
+
     ; Test
     jp save_registers
 .return:
@@ -34,7 +34,7 @@ UT_save_registers.UT_save:
     ld (sp_backup),sp
 
     ; Prepare registers
-    exx 
+    exx
     ex af,af'
     ld a,0x2A
     ld bc,0x2B2C
@@ -53,10 +53,10 @@ UT_save_registers.UT_save:
     ld bc,0x1B1C
     ld de,0x1D1E
     ld hl,0x1112
-    
+
     ld ix,0x1314
     ld iy,0x1516
-   
+
     ; Test
     jp save_registers
 .return:
@@ -113,12 +113,12 @@ UT_save_registers.UT_restore:
     ld (backup.de),hl
     ld hl,0x1112
     ld (backup.hl),hl
-    
+
     ld hl,0x1314
     ld (backup.ix),hl
     ld hl,0x1516
     ld (backup.iy),hl
-    
+
     ; I
     ld a,0x81
     ld (backup.i),a
@@ -170,10 +170,10 @@ UT_save_registers.UT_restore:
 ; Test that all registers are correctly enabled/disabled.
 UT_save_registers.UT_restore_interrupts:
     ; The jump address for enable interrupts
-    ld hl,.continue_ei 
+    ld hl,.continue_ei
     ld (restore_registers.ret_jump1+1),hl
     ; The jump address for enable interrupts
-    ld hl,.continue_di 
+    ld hl,.continue_di
     ld (restore_registers.ret_jump2+1),hl
 
     ; Enable interrupts
@@ -213,80 +213,17 @@ UT_save_registers.UT_restore_interrupts:
     ret
 
 
-; Test that save register function for coop works.
-UT_save_registers:
-    ; Remember SP
-    ld (sp_backup),sp
-
-    ; Prepare registers
-    exx 
-    ex af,af'
-    ld a,0x2A
-    ld bc,0x2B2C
-    ld de,0x2D2E
-    ld hl,0x2122
-    ex af,af'
-    exx
-
-    ld a,0x1A
-    ld bc,0x1B1C
-    ld de,0x1D1E
-    ld hl,0x1112
-    
-    ld ix,0x1314
-    ld iy,0x1516
-
-    ; I, R
-    push af
-    ld a,0x81
-    ld i,a
-    ld a,0x82
-    ld r,a
-    pop af
-
-    ; Test
-    push 0x9768    ; Push a test value used as reurn address/PC
-    call save_registers
-
-    TEST_MEMORY_BYTE backup.af+1, 0x1A
-    TEST_MEMORY_WORD backup.bc, 0x1B1C
-    TEST_MEMORY_WORD backup.de, 0x1D1E
-    TEST_MEMORY_WORD backup.hl, 0x1112
-    TEST_MEMORY_WORD backup.ix, 0x1314
-    TEST_MEMORY_WORD backup.iy, 0x1516
-
-    TEST_MEMORY_BYTE backup.af2+1, 0x2A
-    TEST_MEMORY_WORD backup.bc2, 0x2B2C
-    TEST_MEMORY_WORD backup.de2, 0x2D2E
-    TEST_MEMORY_WORD backup.hl2, 0x2122
-
-    TEST_MEMORY_BYTE backup.i, 0x81
-    ;TEST_MEMORY_BYTE backup.r, 0x82   Useless to test
-
-    TEST_MEMORY_WORD backup.pc, 0x9768
- 
-    ; Test stack pointer
-    ld hl,(sp_backup)       ; Remember
-    ld (sp_backup),sp       ; Store to check
-    TEST_MEMORY_WORD sp_backup, debug_stack.top
-
-    ; Deinit
-    ld sp,hl
- TC_END
-
-
-
 ; Test that memory is read correctly. Area outside ROM and slot 7.
 UT_read_debugged_prgm_mem.UT_simple:
     ; Init
-    MEMCLEAR .mem_write, .mem_length 
+    MEMCLEAR .mem_write, .mem_length
 
     ld hl,.mem_read
-    ld de,.mem_length 
+    ld de,.mem_length
     ld bc,.mem_write
     call read_debugged_prgm_mem
 
-    TEST_MEM_CMP .mem_read, .mem_write, .mem_length 
+    TEST_MEM_CMP .mem_read, .mem_write, .mem_length
  TC_END
 .mem_read:  defb 0xA1, 0xA2, 0xA3
 .mem_length:    equ $-.mem_read
@@ -302,7 +239,7 @@ UT_read_debugged_prgm_mem.UT_slot7:
     nextreg REG_MMU+MAIN_SLOT,a
     ld a,0xB0
     ld hl,0xE000
-    ld b,5 
+    ld b,5
 .loop:
     ldi (hl),a
     inc a
@@ -333,7 +270,7 @@ UT_read_debugged_prgm_mem.UT_border_0xE000:
     nextreg REG_MMU+MAIN_SLOT,a
     ld a,0xB0
     ld hl,0xDFFD
-    ld b,5 
+    ld b,5
 .loop:
     ldi (hl),a
     inc a
@@ -365,7 +302,7 @@ UT_read_debugged_prgm_mem.UT_border_0x0000:
     nextreg REG_MMU,a
     ld a,0xC0
     ld hl,0xFFFD
-    ld b,5 
+    ld b,5
 .loop:
     ldi (hl),a
     inc a
@@ -389,14 +326,14 @@ UT_read_debugged_prgm_mem.UT_border_0x0000:
 ; Test that memory is read correctly. Area outside ROM and slot 7.
 UT_write_debugged_prgm_mem.UT_simple:
     ; Init
-    MEMCLEAR .mem_write, .mem_length 
+    MEMCLEAR .mem_write, .mem_length
 
     ld hl,.mem_write
-    ld de,.mem_length 
+    ld de,.mem_length
     ld bc,.mem_read
     call write_debugged_prgm_mem
 
-    TEST_MEM_CMP .mem_write, .mem_read, .mem_length 
+    TEST_MEM_CMP .mem_write, .mem_read, .mem_length
  TC_END
 .mem_read:  defb 0xA1, 0xA2, 0xA3
 .mem_length:    equ $-.mem_read
@@ -404,4 +341,3 @@ UT_write_debugged_prgm_mem.UT_simple:
 
 
     ENDMODULE
-    
