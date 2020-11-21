@@ -1209,7 +1209,7 @@ UT_15_cmd_restore_mem.UT_2_values:
 	; Redirect
 	call redirect_uart
 	; Prepare
-	ld hl,2+2*3
+	ld hl,2+2*4
 	ld (receive_buffer.length),hl
 
 	; Test
@@ -1230,10 +1230,13 @@ UT_15_cmd_restore_mem.UT_2_values:
  TC_END
 
 .cmd_data:
-	defw 0xC000
-	defb 0xAA
-	defw 0xC0FF
-	defb 0x55
+	defw 0xC000	; Address
+	defb 0		; No bank
+	defb 0xAA	; Value
+
+	defw 0xC0FF	; Address
+	defb 0		; No bank
+	defb 0x55	; Value
 
 
 ; Test cmd_restore_mem.
@@ -1242,13 +1245,11 @@ UT_15_cmd_restore_mem.UT_restore_slots:
 	; Redirect
 	call redirect_uart
 	; Prepare
-	ld hl,2+2*3
+	ld hl,2+2*4
 	ld (receive_buffer.length),hl
 
 	; Page in banks in ROM area
-	ld a,70
-	nextreg REG_MMU+0,a
-	;ld (slot_backup.slot0),a
+	nextreg REG_MMU+0,70
 	nextreg REG_MMU+1,71
 	nextreg REG_MMU+SWAP_SLOT,72
 
@@ -1280,11 +1281,54 @@ UT_15_cmd_restore_mem.UT_restore_slots:
  TC_END
 
 .cmd_data:
-	defw 0x0200
-	defb 0xA5
-	defw 0x3FFF
-	defb 0x5A
+	defw 0x0200	; Address
+	defb 0		; No bank
+	defb 0xA5	; Value
 
+	defw 0x3FFF	; Address
+	defb 0		; No bank
+	defb 0x5A	; Value
+
+
+; Test cmd_restore_mem.
+; 2 values.
+UT_15_cmd_restore_mem.UT_long_addresses:
+	; Redirect
+	call redirect_uart
+	; Prepare
+	ld hl,2+2*4
+	ld (receive_buffer.length),hl
+
+	; Page in banks in ROM area
+	nextreg REG_MMU+0,73
+	nextreg REG_MMU+1,74
+	nextreg REG_MMU+SWAP_SLOT,72
+
+	; Test
+	ld a,0xFF
+	ld (0xCF00&0x1FFF),a
+	ld ((0xC0FF&0x1FFF)+0x2000),a
+	ld iy,.cmd_data
+	ld ix,test_memory_output
+	call cmd_restore_mem
+
+	; Check length
+	TEST_MEMORY_WORD test_memory_output+1, 	1
+	TEST_MEMORY_WORD test_memory_output+3,	0
+
+	; Test
+	TEST_MEMORY_BYTE 0xCF00&0x1FFF, 0xAA
+	TEST_MEMORY_BYTE (0xC0FF&0x1FFF)+0x2000, 0x55
+ TC_END
+
+.cmd_data:
+	defw 0xCF00	; Address
+	defb 73+1	; Bank
+	defb 0xAA	; Value
+
+	defw 0xC0FF	; Address
+	defb 74+1	; Bank
+	defb 0x55	; Value
 
 
 ; Test cmd_loopback.

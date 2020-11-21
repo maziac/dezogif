@@ -730,11 +730,23 @@ cmd_restore_mem:
 	ld l,a
 	call read_uart_byte
 	ld h,a
+	; Get bank+1
+	call read_uart_byte
+	or a
+	jr z,.handle_64k_address
+
+	; Handle long address
+	dec a	; A = bank
+	; Page in bank in upper memory
+	jr .page_in_bank
+
+.handle_64k_address:
 	; Check memory area
 	cp HIGH MAIN_ADDR	; 0xE000
 	jr c,.normal
 
 	ld a,(slot_backup.slot7)
+.page_in_bank:
 	nextreg REG_MMU+SWAP_SLOT,a
 	ld a,h
 	and 0x1F
@@ -747,8 +759,6 @@ cmd_restore_mem:
 
 	; Restore slot/bank
 	ld e,a
-	;ld a,(slot_backup+SWAP_SLOT0)
-	;nextreg REG_MMU+SWAP_SLOT0,a
 	call restore_swap_slot
 
 	; Restore a
@@ -764,7 +774,7 @@ cmd_restore_mem:
 .next:
 	; Next address
 	pop de
-	add de,-3
+	add de,-4
 	jr .loop
 
 
