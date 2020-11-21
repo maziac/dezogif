@@ -649,13 +649,23 @@ cmd_set_breakpoints:
 	ld h,a
 	; Get bank+1
 	call read_uart_byte
+	or a
+	jr z,.handle_64k_address
 
+	; Handle long address
+	dec a	; A = bank
+	; Page in bank in upper memory
+	jr .page_in_bank
+
+.handle_64k_address:
+	; Normal 64k address:
 	; Check memory area
 	cp HIGH MAIN_ADDR	; 0xE000
 	jr c,.normal
 
 	; Page in bank
 	ld a,(slot_backup.slot7)
+.page_in_bank:
 	nextreg REG_MMU+SWAP_SLOT,a
 	ld a,h
 	and 0x1F
@@ -668,8 +678,6 @@ cmd_set_breakpoints:
 
 	; Restore slot/bank
 	ld e,a
-	;ld a,(slot_backup+SWAP_SLOT0)
-	;nextreg REG_MMU+SWAP_SLOT0,a
 	call restore_swap_slot
 
 	; Restore a
@@ -688,6 +696,7 @@ cmd_set_breakpoints:
 	pop de
 	dec de
 	jr .loop
+
 
 
 ;===========================================================================

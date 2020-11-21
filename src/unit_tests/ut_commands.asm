@@ -1099,15 +1099,13 @@ UT_14_cmd_set_breakpoints.UT_restore_slots:
 	ld (receive_buffer.length),hl
 
 	; Page in banks in ROM area
-	ld a,70
-	nextreg REG_MMU+0,a
-	ld (slot_backup.slot0),a
+	nextreg REG_MMU+0,70
 	nextreg REG_MMU+1,71
 	nextreg REG_MMU+SWAP_SLOT,72
 
 	; Test
 	xor a
-	ld (0x0200),a
+	ld (0x8200),a
 	ld (0x3FFF),a
 	ld iy,.cmd_data
 	ld ix,test_memory_output
@@ -1140,6 +1138,50 @@ UT_14_cmd_set_breakpoints.UT_restore_slots:
 			defb 0
 			defw 0x3FFF
 			defb 0
+
+
+; Test cmd_set_breakpoints.
+; With long addresses (i.e. with banking).
+UT_14_cmd_set_breakpoints.UT_long_bps:
+	; Redirect
+	call redirect_uart
+	; Prepare
+	ld hl,2+2*3
+	ld (receive_buffer.length),hl
+
+	; Page in banks in ROM area
+	nextreg REG_MMU+0,73
+	nextreg REG_MMU+1,74
+	nextreg REG_MMU+SWAP_SLOT,72
+
+	; Test
+	ld a,9
+	ld (0x8200&0x1FFF),a
+	ld a,124
+	ld (0x3FFF&0x1FFF+0x2000),a
+	ld iy,.cmd_data
+	ld ix,test_memory_output
+	call cmd_set_breakpoints
+
+	; Check response
+	; Check length
+	TEST_MEMORY_WORD test_memory_output+1, 1+2
+	TEST_MEMORY_WORD test_memory_output+3, 0
+	; Check returned values
+	TEST_MEMORY_BYTE test_memory_output+6, 9
+	TEST_MEMORY_BYTE test_memory_output+7, 124
+
+	; Test memory (breakpoints)
+	TEST_MEMORY_BYTE 0x8200&0x1FFF, BP_INSTRUCTION
+	TEST_MEMORY_BYTE 0x3FFF&0x1FFF+0x2000, BP_INSTRUCTION
+
+ TC_END
+
+.cmd_data:	defw 0x8200
+			defb 73+1
+			defw 0x3FFF
+			defb 74+1
+
 
 
 ; Test cmd_restore_mem with no values.
@@ -1206,7 +1248,7 @@ UT_15_cmd_restore_mem.UT_restore_slots:
 	; Page in banks in ROM area
 	ld a,70
 	nextreg REG_MMU+0,a
-	ld (slot_backup.slot0),a
+	;ld (slot_backup.slot0),a
 	nextreg REG_MMU+1,71
 	nextreg REG_MMU+SWAP_SLOT,72
 
