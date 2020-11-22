@@ -159,7 +159,7 @@ test_get_response:
 	; Check length, should be greater than payload
 	ld hl,de
 	or a
-	ld de,5	; Header
+	ld de,4	; Header (just the length)
 	sbc hl,de
 	jp nc,.length_ok
 	; Length smaller than payload
@@ -233,17 +233,19 @@ UT_1_cmd_init:
 
 ; Test response of cmd_close.
 UT_2_cmd_close:
-	; Redirect
-	call redirect_uart
+	; Write test data to simulated UART buffer.
+	ld hl,0	; Doesn't matter, no data written
+	ld de,0	; Length
+	call test_prepare_command
 
 	; Test
-	ld iy,0	; not used
-	ld ix,test_memory_output
 	call cmd_close
 
-	; Test length
-	TEST_MEMORY_WORD test_memory_output+1, 1
-	TEST_MEMORY_WORD test_memory_output+3, 0
+	; Get response
+	call test_get_response
+
+	; Test is done already inside test_get_response
+
  TC_END
 
 ; cmd_close jumps here:
