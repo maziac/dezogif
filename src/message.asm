@@ -12,7 +12,7 @@
 ;===========================================================================
 
 
-    
+
 ;===========================================================================
 ; Constants
 ;===========================================================================
@@ -24,7 +24,7 @@ MESSAGE_START_BYTE:	equ 0xA5
 
 
 ;===========================================================================
-; Structs. 
+; Structs.
 ;===========================================================================
 
 ; CMD_SET_REG
@@ -88,6 +88,7 @@ cmd_loop:
 	jr cmd_loop
 
 
+/*
 ;===========================================================================
 ; Executes available commands and leaves the loop as soon as no commands
 ; are available anymore.
@@ -118,6 +119,8 @@ execute_cmds_loop:
 	or e
 	jr nz,.wait
 	ret
+*/
+
 
 ;===========================================================================
 ; Receives a number of bytes from the UART.
@@ -151,7 +154,7 @@ receive_bytes:
 ; The subroutine does not return before all bytes of the message have been
 ; received.
 ; Returns:
-;  receive_buffer contains the received message. The first 2 bytes of 
+;  receive_buffer contains the received message. The first 2 bytes of
 ;  receive_buffer contain the length.
 ; Changes:
 ;  A, HL, DE, BC
@@ -162,11 +165,11 @@ receive_message:
 	; Get first byte
 	call read_uart_byte
 	; Store
-	ldi (hl),a 
+	ldi (hl),a
 	; Get second byte
 	call read_uart_byte
 	; Store
-	ldi (hl),a 
+	ldi (hl),a
 
 	; Receive the rest
 	ld de,(receive_buffer.length)
@@ -178,7 +181,7 @@ receive_message:
 	; Get next byte
 	call read_uart_byte
 	; Store
-	ldi (hl),a 
+	ldi (hl),a
 	; Next
 	dec de
 	jr .loop
@@ -190,14 +193,14 @@ receive_message:
 ; The subroutine does not return before all bytes of the message have been
 ; received.
 ; Parameter:
-;  HL = Pointer to the message to send. The 2 fist bytes of the message are 
+;  HL = Pointer to the message to send. The 2 fist bytes of the message are
 ;  the length.
 ; Returns:
 ;  -
 ; Changes:
 ;  A, HL, BC
 ;===========================================================================
-send_message:  
+send_message:
 	; Get length
 	; First length byte
 	ldi a,(hl)
@@ -224,7 +227,7 @@ send_message:
 	dec de
 	jr .loop
 */
-  
+
 
 ;===========================================================================
 ; Sends the length and the sequence number.
@@ -237,7 +240,7 @@ send_message:
 ; Changes:
 ;  A, DE, BC, HL=0
 ;===========================================================================
-send_length_and_seqno: 
+send_length_and_seqno:
 	; Store Length MSB=0
 	ld hl,0
 	; jp send_4bytes_length_and_seqno
@@ -254,7 +257,7 @@ send_length_and_seqno:
 ; Changes:
 ;  A, DE, BC
 ;===========================================================================
-send_4bytes_length_and_seqno: 
+send_4bytes_length_and_seqno:
 	; Write first byte to recognize message
 	ld a,MESSAGE_START_BYTE
 	call write_uart_byte
@@ -286,7 +289,9 @@ send_4bytes_length_and_seqno:
 ;	  0 = no reason (e.g. a step-over)
 ;	  1 = manual break
 ;	  2 = breakpoint hit
-; HL = breakpoint address that was hit (if D!=0)
+; HL = breakpoint address that was hit (if D!=0).
+; Note: The breakpoint address is a 64k address. The routine will look up
+; the right bank by itself and send a long address.
 ; Returns:
 ;  -
 ; Changes:
@@ -321,6 +326,14 @@ send_ntf_pause:
 	call write_uart_byte
 	ld a,h
 	call write_uart_byte
+	; Bank
+	rlca : rlca : rlca ; Get slot
+	and 0111b
+	add REG_MMU
+	call read_tbblue_reg
+	inc a	; bank+1
+	call write_uart_byte
+	; Empty reason string
 	xor a
 	jp write_uart_byte
 

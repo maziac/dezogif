@@ -45,7 +45,7 @@ cmd_jump_table:
 .set_register:		defw cmd_set_register		; 4
 .write_bank:		defw cmd_write_bank			; 5
 .continue:			defw cmd_continue			; 6
-.pause:				defw cmd_pause				; 7
+.pause:				defw 0						; not supported on a ZX Next
 .read_mem:			defw cmd_read_mem			; 8
 .write_mem:			defw cmd_write_mem			; 9
 .get_slots:			defw cmd_get_slots			; 10
@@ -56,7 +56,7 @@ cmd_jump_table:
 .restore_mem:		defw cmd_restore_mem		; 15
 .loopback:			defw cmd_loopback			; 16
 .get_sprites_palette:	defw cmd_get_sprites_palette	; 17
-.get_sprites_clip_window_and_control:	defw cmd_get_sprites_clip_window_and_control	; 18spec
+.get_sprites_clip_window_and_control:	defw cmd_get_sprites_clip_window_and_control	; 18
 
 ;.get_sprites:			defw 0	; not supported on a ZX Next
 ;.get_sprite_patterns:	defw 0	; not supported on a ZX Next
@@ -387,29 +387,6 @@ cmd_continue:
 	; Continue
 	jp restore_registers
 
-
-;===========================================================================
-; CMD_PAUSE
-; Pauses execution of the debugged program execution.
-; The UART driver ends in the command loop waiting for further
-; commands.
-; Changes:
-;  NA
-;===========================================================================
-cmd_pause:
-	; LOGPOINT [CMD] cmd_pause
-	; Send response
-	ld de,1
-	call send_length_and_seqno
-
-	; Send pause notification
-	ld d,BREAK_REASON.MANUAL_BREAK
-	ld hl,0 ; bp address
-	call send_ntf_pause
-	; Stay in command loop
-.jump:	; Used by unit test to modify
-	ld sp,debug_stack.top
-	jp cmd_loop
 
 ;===========================================================================
 ; CMD_READ_MEM

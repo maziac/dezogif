@@ -574,37 +574,7 @@ UT_6_continue:
 
 ; Test cmd_pause
 UT_7_pause:
-	; Redirect
-	call redirect_uart
-	; Prepare
-	ld hl,2
-	ld (receive_buffer.length),hl
-
-	; Change jump into ret
-	ld a,0xC9	; RET
-	ld (cmd_pause.jump),a
-
-	; Test
-	ld iy,0		; Not used
-	ld ix,test_memory_output
-	call cmd_pause
-
-	; Test start byte
-	TEST_MEMORY_BYTE test_memory_output, 	MESSAGE_START_BYTE
-	; Test length
-	TEST_MEMORY_WORD test_memory_output+1, 	1
-	TEST_MEMORY_WORD test_memory_output+3, 	0
-
-	; Afterwards the notification is written
-	; Length
-	TEST_MEMORY_BYTE test_memory_output+6, 	MESSAGE_START_BYTE
-	TEST_MEMORY_WORD test_memory_output+7, 	6
-	TEST_MEMORY_WORD test_memory_output+9, 	0
-	TEST_MEMORY_BYTE test_memory_output+11, 	0
-	TEST_MEMORY_BYTE test_memory_output+12, 	1	; NTF_PAUSE
-	TEST_MEMORY_BYTE test_memory_output+13, BREAK_REASON.MANUAL_BREAK	; Break reason
-	TEST_MEMORY_WORD test_memory_output+14,	0	; BP address
-	TEST_MEMORY_BYTE test_memory_output+16, 0	; No error text
+	; This command is not implemented for ZXNext (use NMI button instead).
  TC_END
 
 
