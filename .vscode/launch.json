@@ -106,7 +106,7 @@
             "startAutomatically": true,
             "commandsAfterLaunch": [
                 //"-logpoint enable",
-                "-assert enable",
+                "-assertion enable",
                 "-md 0 0x100 0xc000 0x100",
                 //"-logpoint enable DEFAULT"
                 //"-md 0 100 0xc000 100 0x2000 100 0xe000 100"
@@ -149,7 +149,7 @@
             "startAutomatically": true,
             "commandsAfterLaunch": [
                 //"-logpoint enable",
-                //"-assert enable",
+                //"-assertion enable",
                 //"-logpoint enable DEFAULT"
                 //"-md 0 100 0xc000 100 0x2000 100 0xe000 100"
             ],
@@ -185,11 +185,11 @@
                 }
             },
             "resetOnLaunch": true,
-            "startAutomatically": true,
+            "startAutomatically": false,
             "unitTestTimeout": 2,
             "commandsAfterLaunch": [
                 "-wpmem enable",
-                "-assert enable",
+                "-assertion enable",
                 "-logpoint enable", // Enable all logpoints, especially [UNITTEST]
             ],
             "disassemblerArgs": {

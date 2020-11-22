@@ -106,6 +106,7 @@ receive_buffer:
 	defs 6	; maximum used count for CMD_CONTINUE structure
 
 ; Just for testing buffer overflow:
+	defb 0	; WPMEM
 	defb  0xff, 0xff
 
 payload_set_reg:	PAYLOAD_SET_REG = receive_buffer.payload

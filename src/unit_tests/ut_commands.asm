@@ -29,7 +29,11 @@ test_memory_write_mem:
 .end:
 	defb 0	; WPMEM
 
-test_memory_output:	defs 1024
+
+; TODO: REMOVE: test_memory_output
+test_memory_output:
+test_memory_payload:
+	defs 1024
 	defb 0 	; WPMEM
 
 
@@ -103,40 +107,122 @@ redirected_write_uart_byte:
 	ret
 
 
+; Writes test data to simulated UART buffer.
+; HL = pointer to data (payload)
+; DE = Length of data (payload)
+; Changes:
+; AF, BC, DE, HL
+; Notes:
+; - Port 0 is used to prepare the data that is later read through PORT_UART_RX.
+; - For the tests the length, the command and the seq no is not written to
+; the UART simulation. But all the rest.
+test_prepare_command:
+	;Reset error
+    xor a
+    ld (last_error),a
+	; Write length
+	add de,4+1+1	; Length + command + seq no
+	; Store length
+	ld (receive_buffer.length),de
+	ld (receive_buffer.length+2),a	; a = 0
+	ld (receive_buffer.length+3),a
+	; Store seq_no
+	ld a,100
+	ld (receive_buffer.seq_no),a
+	; Note: storing command information is not necessary
+	add de,-(4+1+1)	; Correct the length
+	; Store custom data
+	ld bc,0	; Port 0 is to prepare the data that is later read through PORT_UART_RX
+.loop:
+	ld a,d
+	or e
+	ret z
+	ldi a,(hl)
+	out (c),a
+	dec de
+	jr .loop
+
+
+; Reads the response from the simulated UART.
+; Note:
+; Reading port 0x0001 reads data that was prior written to the PORT_UART_TX.
+; Reading port 0x0002 reads the length of the remaining data in PORT_UART_TX.
+test_get_response:
+	; Length
+	ld bc,0x0002	; Port for length
+	in a,(c)	; Read length low byte
+	ld e,a
+	inc bc
+	in a,(c)	; Read length high byte
+	ld d,a
+	dec de		; Skip A5
+	; Check length, should be greater than payload
+	ld hl,de
+	or a
+	ld de,5	; Header
+	sbc hl,de
+	jp nc,.length_ok
+	; Length smaller than payload
+	TEST_FAIL
+.length_ok:
+	; Read A5
+	ld bc,0x0001	; Port 0x001 for reading the TX data
+	in a,(c)
+	TEST_A	MESSAGE_START_BYTE	; Is sent as start byte always
+	; Read length
+	in a,(c) : ld e,a
+	in a,(c) : ld d,a
+	or a
+	sbc hl,de
+	TEST_FLAG_Z		; Fail if lengths not equal
+	; The higher bytes of the length should be 0
+	in a,(c)
+	TEST_A 0
+	in a,(c)
+	TEST_A 0
+	; The seq_no is 100
+	in a,(c)
+	TEST_A 100
+
+	; Read payload data from TX buffer
+	ld hl,test_memory_payload
+.loop:
+	ld a,d
+	or e
+	ret z
+	in a,(c)
+	ldi (hl),a
+	dec de
+	jr .loop
+
+
+
 ; Test response of cmd_init.
 UT_1_cmd_init:
-	; Redirect
-	call redirect_uart
-
-	; Prepare
-	ld hl,5+.cmd_data_end-.cmd_data
-	ld (receive_buffer.length),hl
+	; Write test data to simulated UART buffer.
+	ld hl,.cmd_data
+	ld de,.cmd_data_end-.cmd_data	; Length
+	call test_prepare_command
 
 	; Test
-	ld iy,.cmd_data
-	ld ix,test_memory_output
 	call cmd_init.inner
 
-	; Test special first byte
-	TEST_MEMORY_BYTE test_memory_output, MESSAGE_START_BYTE
-
-	; Test length
-	TEST_MEMORY_WORD test_memory_output+1, 5+PROGRAM_NAME.end-PROGRAM_NAME
-	TEST_MEMORY_WORD test_memory_output+2, 0
+	; Read response
+	call test_get_response
 
 	; Test error
-	TEST_MEMORY_BYTE test_memory_output+6, 0	; no error
+	TEST_MEMORY_BYTE test_memory_payload, 0	; no error
 
 	; Test DZRP version
-	TEST_MEMORY_BYTE test_memory_output+7, DZRP_VERSION.MAJOR
-	TEST_MEMORY_BYTE test_memory_output+8, DZRP_VERSION.MINOR
-	TEST_MEMORY_BYTE test_memory_output+9, DZRP_VERSION.PATCH
+	TEST_MEMORY_BYTE test_memory_payload+1, DZRP_VERSION.MAJOR
+	TEST_MEMORY_BYTE test_memory_payload+2, DZRP_VERSION.MINOR
+	TEST_MEMORY_BYTE test_memory_payload+3, DZRP_VERSION.PATCH
 
 	; Test machine type: 4 = ZX Next
-	TEST_MEMORY_BYTE test_memory_output+10, 4
+	TEST_MEMORY_BYTE test_memory_output+4, 4
 
 	; Test program name
-	TEST_STRING_PTR test_memory_output+11, PROGRAM_NAME
+	TEST_STRING_PTR test_memory_output+5, PROGRAM_NAME
  TC_END
 
 .cmd_data:
