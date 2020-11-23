@@ -4,6 +4,8 @@
 ; Collects and executes all unit tests.
 ;========================================================
 
+    SLDOPT COMMENT WPMEM, LOGPOINT, ASSERTION
+
     DEVICE ZXSPECTRUMNEXT
 
     DEFINE UNIT_TEST

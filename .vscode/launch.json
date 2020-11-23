@@ -22,7 +22,7 @@
             "sjasmplus": [
                 {
                     "path": "out/dezogif.list",
-                    "asm": "sjasmplus",
+                    //"path": "out/dezogif.sld",
                     "srcDirs": [
                         "src"
                     ]
@@ -60,8 +60,8 @@
             },
             "sjasmplus": [
                 {
-                    "path": "out/dezogif.list",
-                    "asm": "sjasmplus",
+                    //"path": "out/dezogif.list",
+                    "path": "out/dezogif.sld",
                     "srcDirs": [
                         "src"
                     ]
@@ -95,8 +95,8 @@
             },
             "sjasmplus": [
                 {
-                    "path": "out/dezogif.list",
-                    "asm": "sjasmplus",
+                    //"path": "out/dezogif.list",
+                    "path": "out/dezogif.sld",
                     "srcDirs": [
                         "src"
                     ]
@@ -138,8 +138,8 @@
             },
             "sjasmplus": [
                 {
-                    "path": "out/dezogif.list",
-                    "asm": "sjasmplus",
+                    //"path": "out/dezogif.list",
+                    "path": "out/dezogif.sld",
                     "srcDirs": [
                         "src"
                     ]
@@ -198,7 +198,7 @@
             "sjasmplus": [
                 {
                     "path": "out/ut.list",
-                    "asm": "sjasmplus",
+                    //"path": "out/ut.sld",
                     "srcDirs": [
                         "src"
                     ]

@@ -18,6 +18,7 @@ ASM_FILES = $(wildcard $(SRC)/*.asm)
 UT_ASM = $(SRC)/unit_tests/unit_tests.asm
 UT_ASM_FILES = $(wildcard $(SRC)/unit_tests/*.asm) $(wildcard $(SRC)/unit_tests/*.inc) $(ASM_FILES)
 LIST_OUT = $(OUT)/$(PROJ).list
+SLD_OUT = $(OUT)/$(PROJ).sld
 
 
 all:	default unit_tests mf_rom
@@ -33,14 +34,14 @@ clean:
 main:	$(PRG_BIN)
 
 $(PRG_BIN):	$(ASM_FILES) Makefile $(OUT)/
-	$(ASM) --inc=$(SRC) --lstlab --lst=$(LIST_OUT) --fullpath -DBIN_FILE=\"$(PRG_BIN)\" -DBUILD_TIME=`date +%s` $(MAIN_ASM)
+	$(ASM) --inc=$(SRC) --sld=$(SLD_OUT) --lstlab --lst=$(LIST_OUT) --fullpath -DBIN_FILE=\"$(PRG_BIN)\" -DBUILD_TIME=`date +%s` $(MAIN_ASM)
 
 
 # Build the unit tests
 unit_tests:	$(UT_BIN)
 
 $(UT_BIN):	$(UT_ASM_FILES) Makefile $(OUT)/
-	$(ASM) --inc=$(SRC) --lstlab --lst=$(UT).list --fullpath -DBIN_FILE=\"$(UT_BIN)\" -DBUILD_TIME=`date +%s` $(UT_ASM)
+	$(ASM) --inc=$(SRC) --sld=$(UT).sld --lstlab --lst=$(UT).list --fullpath -DBIN_FILE=\"$(UT_BIN)\" -DBUILD_TIME=`date +%s` $(UT_ASM)
 
 
 # Build the MF rom

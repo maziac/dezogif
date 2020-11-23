@@ -34,7 +34,10 @@ test_memory_write_mem:
 test_memory_output:
 test_memory_payload:
 	defs 1024
+.end
 	defb 0 	; WPMEM
+.length:
+	defw 0
 
 
 ; Helper function that inits all backup values to 0xFF.
@@ -107,6 +110,11 @@ redirected_write_uart_byte:
 	ret
 
 
+; Simulates an empty command.
+test_empty_command:
+	ld de,0
+	; Flow through
+
 ; Writes test data to simulated UART buffer.
 ; HL = pointer to data (payload)
 ; DE = Length of data (payload)
@@ -148,6 +156,10 @@ test_prepare_command:
 ; Reading port 0x0001 reads data that was prior written to the PORT_UART_TX.
 ; Reading port 0x0002 reads the length of the remaining data in PORT_UART_TX.
 test_get_response:
+	; Clear mem
+	MEMFILL test_memory_payload, 0xFF, test_memory_payload.end-test_memory_payload
+	ld hl,0xFFFF
+	ld (test_memory_payload.length),hl
 	; Length
 	ld bc,0x0002	; Port for length
 	in a,(c)	; Read length low byte
@@ -166,15 +178,18 @@ test_get_response:
 	TEST_FAIL
 .length_ok:
 	; Read A5
-	ld bc,0x0001	; Port 0x001 for reading the TX data
+	ld bc,0x0001	; Port 0x0001 for reading the TX data
 	in a,(c)
 	TEST_A	MESSAGE_START_BYTE	; Is sent as start byte always
-	; Read length
+	; Read written length -> DE
 	in a,(c) : ld e,a
 	in a,(c) : ld d,a
+	; Store length
+	ld (test_memory_payload.length),de
 	or a
 	sbc hl,de
-	TEST_FLAG_Z		; Fail if lengths not equal
+	TEST_FLAG_Z		; Fail if lengths not equal. Inconsistency: more written than length.
+	; HL > 0: Too many bytes written to UART. HL < 0: Too less bytes written.
 	; The higher bytes of the length should be 0
 	in a,(c)
 	TEST_A 0
@@ -183,16 +198,16 @@ test_get_response:
 	; The seq_no is 100
 	in a,(c)
 	TEST_A 100
-
 	; Read payload data from TX buffer
 	ld hl,test_memory_payload
 .loop:
+	ldi (hl),a
+	; Decrement the sequence number
+	dec de
 	ld a,d
 	or e
 	ret z
 	in a,(c)
-	ldi (hl),a
-	dec de
 	jr .loop
 
 
@@ -210,19 +225,22 @@ UT_1_cmd_init:
 	; Read response
 	call test_get_response
 
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, PROGRAM_NAME.end-PROGRAM_NAME +1 +5
+
 	; Test error
-	TEST_MEMORY_BYTE test_memory_payload, 0	; no error
+	TEST_MEMORY_BYTE test_memory_payload+1, 0	; no error
 
 	; Test DZRP version
-	TEST_MEMORY_BYTE test_memory_payload+1, DZRP_VERSION.MAJOR
-	TEST_MEMORY_BYTE test_memory_payload+2, DZRP_VERSION.MINOR
+	TEST_MEMORY_BYTE test_memory_payload+2, DZRP_VERSION.MAJOR
+	TEST_MEMORY_BYTE test_memory_payload+3, DZRP_VERSION.MINOR
 	TEST_MEMORY_BYTE test_memory_payload+3, DZRP_VERSION.PATCH
 
 	; Test machine type: 4 = ZX Next
-	TEST_MEMORY_BYTE test_memory_output+4, 4
+	TEST_MEMORY_BYTE test_memory_output+5, 4
 
 	; Test program name
-	TEST_STRING_PTR test_memory_output+5, PROGRAM_NAME
+	TEST_STRING_PTR test_memory_output+6, PROGRAM_NAME
  TC_END
 
 .cmd_data:
@@ -234,15 +252,16 @@ UT_1_cmd_init:
 ; Test response of cmd_close.
 UT_2_cmd_close:
 	; Write test data to simulated UART buffer.
-	ld hl,0	; Doesn't matter, no data written
-	ld de,0	; Length
-	call test_prepare_command
+	call test_empty_command
 
 	; Test
 	call cmd_close
 
 	; Get response
 	call test_get_response
+
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 1
 
 	; Test is done already inside test_get_response
 
@@ -254,16 +273,11 @@ UT_2_cmd_close:
 
 ; Test cmd_get_registers.
 UT_3_cmd_get_registers:
-	; Redirect
-	call redirect_uart
-
-	; Prepare
-	ld hl,2
-	ld (receive_buffer.length),hl
+	; Write test data to simulated UART buffer.
+	call test_empty_command
 
 	; Save current slot configuration
-
-	; Send the first 7 slots
+	; Save the first 7 slots
 	ld d,REG_MMU
 	ld e,7
 	ld hl,.cmp_slots
@@ -282,31 +296,32 @@ UT_3_cmd_get_registers:
 
 	; Copy data
 	MEMCOPY backup, .cmd_data, .cmd_data_end-.cmd_data
+
 	; Test
-	ld iy,.cmd_data
-	ld ix,test_memory_output
 	call cmd_get_registers
 
-	; Test length
-	TEST_MEMORY_WORD test_memory_output+1, 37
-	TEST_MEMORY_WORD test_memory_output+3, 0
+	; Get response
+	call test_get_response
+
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 38
 
 	; Test returned data
-	TEST_MEM_CMP test_memory_output+6, .cmp_data, .cmp_data_end-.cmp_data
+	TEST_MEM_CMP test_memory_output+1, .cmp_data, .cmp_data_end-.cmp_data
 
 	; Test slots
-	TEST_MEMORY_BYTE test_memory_output+34, 8	; 8 slots
-	TEST_MEM_CMP test_memory_output+35, .cmp_slots, 8
+	TEST_MEMORY_BYTE test_memory_output+29, 8	; 8 slots
+	TEST_MEM_CMP test_memory_output+30, .cmp_slots, 8
 
  TC_END
 
-.cmd_data:	; WPMEM, 28, W
-	defw 1001, 1002, 1003, 1004, 1005, 1006, 1007
-	defw 2001, 2002, 2003, 2004, 2005, 2006, 2007
+.cmd_data:	; WPMEM, .cmd_data_end-.cmd_data, W
+	defw 0x1001, 0x1002, 0x1003, 0x1004, 0x1005, 0x1006, 0x1007
+	defw 0x2001, 0x2002, 0x2003, 0x2004, 0x2005, 0x2006, 0x2007
 .cmd_data_end
 .cmp_data:	; Order is vice versa
-	defw 2007, 2006, 2005, 2004, 2003, 2002, 2001
-	defw 1007, 1006, 1005, 1004, 1003, 1002, 1001
+	defw 0x2007, 0x2006, 0x2005, 0x2004, 0x2003, 0x2002, 0x2001
+	defw 0x1007, 0x1006, 0x1005, 0x1004, 0x1003, 0x1002, 0x1001
 .cmp_data_end
 .cmp_slots:	defs 8
 

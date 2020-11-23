@@ -177,7 +177,7 @@ cmd_close:
 cmd_get_registers:
 	; LOGPOINT [CMD] cmd_get_regs
 	; Send response
-	ld de,37
+	ld de,38
 	call send_length_and_seqno
 
 	; Loop all register values
