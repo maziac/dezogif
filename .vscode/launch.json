@@ -185,7 +185,7 @@
                 }
             },
             "resetOnLaunch": true,
-            "startAutomatically": false,
+            "startAutomatically": true,
             "unitTestTimeout": 2,
             "commandsAfterLaunch": [
                 "-wpmem enable",

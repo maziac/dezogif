@@ -319,7 +319,8 @@ cmd_write_bank:
 
 	; Read bytes from UART and put into bank
 	ld hl,SWAP_ADDR		;.slot<<13	; Start address
-	ld de,0x2000	; Bank size
+	ld de,(receive_buffer.length)	; Bank size
+	dec de
 	call receive_bytes
 
 	; Restore slot/bank (D)

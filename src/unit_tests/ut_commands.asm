@@ -110,11 +110,6 @@ redirected_write_uart_byte:
 	ret
 
 
-; Simulates an empty command.
-test_empty_command:
-	ld de,0
-	; Flow through
-
 ; Writes test data to simulated UART buffer.
 ; HL = pointer to data (payload)
 ; DE = Length of data (payload)
@@ -125,18 +120,7 @@ test_empty_command:
 ; - For the tests the length, the command and the seq no is not written to
 ; the UART simulation. But all the rest.
 test_prepare_command:
-	;Reset error
-    xor a
-    ld (last_error),a
-	; Write length
-	add de,4+1+1	; Length + command + seq no
-	; Store length
-	ld (receive_buffer.length),de
-	ld (receive_buffer.length+2),a	; a = 0
-	ld (receive_buffer.length+3),a
-	; Store seq_no
-	ld a,100
-	ld (receive_buffer.seq_no),a
+	call test_prepare_header
 	; Note: storing command information is not necessary
 	add de,-(4+1+1)	; Correct the length
 	; Store custom data
@@ -150,12 +134,29 @@ test_prepare_command:
 	dec de
 	jr .loop
 
+test_prepare_header:
+	;Reset error
+    xor a
+    ld (last_error),a
+	; Write length
+	add de,4+1+1	; Length + command + seq no
+	; Store length
+	ld (receive_buffer.length),de
+	ld (receive_buffer.length+2),a	; a = 0
+	ld (receive_buffer.length+3),a
+	; Store seq_no
+	ld a,100
+	ld (receive_buffer.seq_no),a
+	ret
+
 
 ; Reads the response from the simulated UART.
 ; Note:
 ; Reading port 0x0001 reads data that was prior written to the PORT_UART_TX.
 ; Reading port 0x0002 reads the length of the remaining data in PORT_UART_TX.
 test_get_response:
+	; First test for error
+    TEST_MEMORY_BYTE last_error, 0
 	; Clear mem
 	MEMFILL test_memory_payload, 0xFF, test_memory_payload.end-test_memory_payload
 	ld hl,0xFFFF
@@ -210,14 +211,26 @@ test_get_response:
 	in a,(c)
 	jr .loop
 
+; For easier calling:
+	MACRO TEST_PREPARE_COMMAND
+	ld hl,.cmd_data
+	ld de,.cmd_data_end-.cmd_data	; Length
+	call test_prepare_command
+	ENDM
 
+; Simulates an empty command.
+	MACRO TEST_EMPTY_COMMAND:
+	ld de,0
+	call test_prepare_command
+	ENDM
 
 ; Test response of cmd_init.
 UT_1_cmd_init:
 	; Write test data to simulated UART buffer.
-	ld hl,.cmd_data
-	ld de,.cmd_data_end-.cmd_data	; Length
-	call test_prepare_command
+	TEST_PREPARE_COMMAND
+;	ld hl,.cmd_data
+;	ld de,.cmd_data_end-.cmd_data	; Length
+;	call test_prepare_command
 
 	; Test
 	call cmd_init.inner
@@ -252,7 +265,7 @@ UT_1_cmd_init:
 ; Test response of cmd_close.
 UT_2_cmd_close:
 	; Write test data to simulated UART buffer.
-	call test_empty_command
+	TEST_EMPTY_COMMAND
 
 	; Test
 	call cmd_close
@@ -274,7 +287,7 @@ UT_2_cmd_close:
 ; Test cmd_get_registers.
 UT_3_cmd_get_registers:
 	; Write test data to simulated UART buffer.
-	call test_empty_command
+	TEST_EMPTY_COMMAND
 
 	; Save current slot configuration
 	; Save the first 7 slots
@@ -326,25 +339,85 @@ UT_3_cmd_get_registers:
 .cmp_slots:	defs 8
 
 
-; Test that register is set correctly.
+; Test that double register is set correctly.
 UT_4_cmd_set_register.UT_pc:
-	; Init values
-	call cmd_data_init
-    ; Init
-	ld hl,test_stack
-	ld (backup.sp),hl
-	ld hl,0x1112
-	ld (payload_set_reg.register_value),hl
-	ld a,0	; PC
-	ld (payload_set_reg.register_number),a
+	TEST_PREPARE_COMMAND
 
     ; Test
-    call cmd_set_register.inner
+    call cmd_set_register
 
+	; Get response
+	call test_get_response
+
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 1
+
+	; Test set value
 	ld hl,(backup.pc)
 	TEST_DREG hl, 0x1112
 
  TC_END
+
+.cmd_data:
+	defb 0	; PC
+	defw 0x1112	; Value
+.cmd_data_end
+
+
+; Test that single register low is set correctly.
+UT_4_cmd_set_register.UT_c:
+	TEST_PREPARE_COMMAND
+
+	ld bc,0xFEDE
+	ld (backup.bc),bc
+
+    ; Test
+    call cmd_set_register
+
+	; Get response
+	call test_get_response
+
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 1
+
+	; Test set value
+	ld bc,(backup.bc)
+	TEST_DREG bc, 0xFE22	; Only 0x22 is set
+
+ TC_END
+
+.cmd_data:
+	defb 16	; C
+	defw 0x2122	; Value
+.cmd_data_end
+
+
+; Test that single register high is set correctly.
+UT_4_cmd_set_register.UT_b:
+	TEST_PREPARE_COMMAND
+
+	ld bc,0xFEDE
+	ld (backup.bc),bc
+
+    ; Test
+    call cmd_set_register
+
+	; Get response
+	call test_get_response
+
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 1
+
+	; Test set value
+	ld bc,(backup.bc)
+	TEST_DREG bc, 0x32DE	; Only 0x32 is set
+
+ TC_END
+
+.cmd_data:
+	defb 17	; B
+	defw 0x3132	; Value
+.cmd_data_end
 
 
 ; Helper function to set a double register.
@@ -566,20 +639,13 @@ UT_5_cmd_write_bank:
 	call read_tbblue_reg	; Result in A
 	push af	; remember
 
-	; Redirect
-	call redirect_uart_write_bank
-
-	; Set bank to use
-	ld a,28
-	ld (redirected_read_uart_byte_bank.bank),a
-
-	; Set fill byte
-	ld a,0x55
-	ld (redirected_read_uart_byte_bank.fill_data),a
+	; Prepare fill data
+	ld l,0x55
+	call .prepare_uart_data
 
 	; Test A
-	ld ix,test_memory_output
 	call cmd_write_bank
+	call test_get_response
 
 	; Check that slot/bank has been restored
 	ld a,REG_MMU+SWAP_SLOT
@@ -594,21 +660,17 @@ UT_5_cmd_write_bank:
 	ld hl,SWAP_ADDR	; .slot<<13	; Start address
 	ld a,(hl)
 	TEST_A 0x55
-	add hl,0x2000-1
+	add hl,0x0100-1
 	ld a,(hl)
 	TEST_A 0x55
 
+	; Prepare fill data
+	ld l,0xAA
+	call .prepare_uart_data
 
-	; Redirect
-	call redirect_uart_write_bank
-
-	; Set fill byte
-	ld a,0xAA
-	ld (redirected_read_uart_byte_bank.fill_data),a
-
-	; Test A
-	ld ix,test_memory_output
+	; Test B
 	call cmd_write_bank
+	call test_get_response
 
 	; Page in the memory bank
 	nextreg REG_MMU+SWAP_SLOT,28
@@ -616,18 +678,17 @@ UT_5_cmd_write_bank:
 	ld hl,SWAP_ADDR	;.slot<<13	; Start address
 	ld a,(hl)
 	TEST_A 0xAA
-	add hl,0x2000-1
+	add hl,0x0100-1
 	ld a,(hl)
 	TEST_A 0xAA
 
-	; Test response
-	TEST_MEMORY_WORD test_memory_output+1, 3	; Length
-	TEST_MEMORY_WORD test_memory_output+3, 0
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 3
 
 	; No error
-	TEST_MEMORY_BYTE test_memory_output+6, 0
+	TEST_MEMORY_BYTE test_memory_payload+1, 0
 	; No error string
-	TEST_MEMORY_BYTE test_memory_output+7, 0
+	TEST_MEMORY_BYTE test_memory_payload+2, 0
 
 	; Restore slot/bank (D)
 	pop de
@@ -635,6 +696,31 @@ UT_5_cmd_write_bank:
 	;call write_tbblue_reg	; A=register, D=value
 	WRITE_TBBLUE_REG REG_MMU+SWAP_SLOT,d
  TC_END
+
+	; L=fill byte
+.prepare_uart_data:
+	ld de,0x101
+	push de
+	call test_prepare_header
+	pop de
+	dec de
+	; Prepare UART test data (command), 2x
+	ld bc,0x0000	; Port for test data
+	; Bank 28
+	ld a,28
+	out (c),a
+	; Write all bytes
+	ld de,0x100
+	inc de
+	ld (receive_buffer.length),de
+	dec de
+.loop:
+	out (c),l
+	dec de
+	ld a,e
+	or d
+	jr nz,.loop
+	ret
 
 
 ; Test cmd_continue
