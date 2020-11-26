@@ -13,16 +13,16 @@
 ; Baudrate:
 ; The baudrate maximum is 1958400. Which is approx. 200kBytes per second.
 ; That means download of a 64k Z80 program would take up to 0.25 seconds.
-; 
+;
 ; The minimum required time for reading 1 byte at max. clock speed is
 ; about 3us. Transmission time is 5us.
 ; Timeout is set to 393us.
 ;
-; 
+;
 ;
 ;===========================================================================
 
-    
+
 ;===========================================================================
 ; Constants
 ;===========================================================================
@@ -50,7 +50,7 @@ UART_TX_READY:      equ 1   ; 0=ready for next byte, 1=byte is being transmitted
 
 
 ;===========================================================================
-; Const data. 
+; Const data.
 ;===========================================================================
 
 ; Baudrate timing calculation table.
@@ -147,10 +147,10 @@ wait_for_uart_rx:
     ld a,(backup.layer_2_port)
 	and 11111010b	; Disable read/write only
     ld bc,LAYER_2_PORT
-    out (c),a 
+    out (c),a
     ret       ; RET if byte available
 
-.no_byte:   
+.no_byte:
     ; Decrement counter for changing the color
     dec e
     jr nz,.loop
@@ -191,7 +191,7 @@ read_uart_byte:
 .flash1:
     ld a,BLUE
     out (BORDER),a
-  
+
     ; Wait on byte
     ld e,0
 	ld bc,PORT_UART_TX
@@ -201,16 +201,16 @@ read_uart_byte:
     jr nz,.byte_received
     dec e
     jr nz,.wait_loop
-    
+
     ; "Timeout"
     ; Waited for 256*43 T-states=393us
     nop ; LOGPOINT read_uart_byte: ERROR=TIMEOUT
-    jp rx_timeout   ; ASSERT
+    jp rx_timeout   ; ASSERTION
 
 .byte_received:
     ; Change border
 .flash2:
-    ld a,YELLOW 
+    ld a,YELLOW
     out (BORDER),a
     ; At least 1 byte received, read it
     inc b	; The low byte stays the same
@@ -248,7 +248,7 @@ uart_flashing_border.enable:
     ld (read_uart_byte.flash1+1),a
     ld a,YELLOW
     ld (read_uart_byte.flash2+1),a
-    ret    
+    ret
 
 
 ;===========================================================================
@@ -262,7 +262,7 @@ uart_flashing_border.disable:
     ld (read_uart_byte.flash1+1),a
     ld (read_uart_byte.flash2+1),a
     ret
-    
+
 
 ;===========================================================================
 ; Waits until TX is ready on the UART and writes one byte to the UART.
@@ -273,7 +273,7 @@ uart_flashing_border.disable:
 ; Changes:
 ;  BC
 ;===========================================================================
-write_uart_byte: 
+write_uart_byte:
 	push de, af
     ; Wait for TX ready
     call wait_for_uart_tx
@@ -302,7 +302,7 @@ wait_for_uart_tx:
     jr nz,.wait_tx
 
     nop ; LOGPOINT write_uart_byte: ERROR=TIMEOUT
-    jp tx_timeout   ; ASSERT
+    jp tx_timeout   ; ASSERTION
 
 
 
@@ -343,7 +343,7 @@ set_uart_baudrate:
     ; Write 2nd byte of prescaler
     rlc l
     ld a,0x40
-    rla 
+    rla
  	out	(c),a		;set to upper bits
 
 	ret
@@ -388,7 +388,7 @@ set_uart_joystick:
     jr nz,.joy_2
     ; Check for joy 1
     bit 0,l
-    jr z,.no_joys  ; Neither 1 or 2  
+    jr z,.no_joys  ; Neither 1 or 2
     ; Joy 1
     ld a,10000000b  ; Left joystick (Joy 1)
 .joy_2:
@@ -408,15 +408,15 @@ set_uart_joystick:
 wait_scan_lines:
     ld bc,IO_NEXTREG_REG
     ld a,REG_ACTIVE_VIDEO_LINE_L
-    out (c),a     
-    inc b     
+    out (c),a
+    inc b
     ; Read first value
-    in a,(c)  
+    in a,(c)
     ld l,a
     ; Loop
 .loop:
     in a,(c)        ; read the raster line LSB
-    cp l    
+    cp l
     jr z,.loop
     ; Line changed
     ld l,a

@@ -63,8 +63,8 @@ PRG_END:
 
 ; Check to avoid that program is put in a memory area that is used
 ; in unit testing.
-    ;ASSERT PRG_START >= 0x7000
-    ASSERT PRG_END <= 0xBFFF
+    ;ASSERTION PRG_START >= 0x7000
+    ASSERTION PRG_END <= 0xBFFF
 
     ; Save NEX file
     SAVENEX OPEN BIN_FILE

@@ -1458,28 +1458,23 @@ UT_15_cmd_restore_mem.UT_long_addresses:
 ; Test cmd_loopback.
 ; Test looping back received data.
 UT_16_cmd_loopback:
-	; Redirect
-	call redirect_uart
-	; Prepare
-	ld hl,2+30
-	ld (receive_buffer.length),hl
+	TEST_PREPARE_COMMAND
 
 	; Test
 	nextreg REG_MMU+SWAP_SLOT, 69
-	ld iy,.cmd_data
-	ld ix,test_memory_output
 	call .wrap_cmd_loopback
+	; Check response
+ 	call test_get_response
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 31
 
 	; Test that slot was restored
 	ld a,REG_MMU+SWAP_SLOT
 	call read_tbblue_reg
 	TEST_A 69
 
-	; Check length
-	TEST_MEMORY_WORD test_memory_output+1, 	1+30
-	TEST_MEMORY_WORD test_memory_output+3,	0
 	; Check all value
-	TEST_MEM_CMP test_memory_output+6, .cmd_data, .cmd_data_end-.cmd_data
+	TEST_MEM_CMP test_memory_payload+1, .cmd_data, .cmd_data_end-.cmd_data
  TC_END
 
 .cmd_data:	defb 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
@@ -1490,7 +1485,7 @@ UT_16_cmd_loopback:
 .wrap_cmd_loopback
 	call cmd_loopback
 	; Does not return here:
-	; ASSERT
+	; ASSERTION
 
 ; Test cmd_get_sprites_palette.
 ; Test that 513 bytes are send for both palettes.

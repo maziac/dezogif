@@ -230,8 +230,8 @@ main_loop:
 
 
 main_end:
-    ASSERT main_end <= (MAIN_SLOT+1)*0x2000
-    ASSERT main_end <= MAIN_ADDR+0x1F00
+    ASSERTION main_end <= (MAIN_SLOT+1)*0x2000
+    ASSERTION main_end <= MAIN_ADDR+0x1F00
 
 
 

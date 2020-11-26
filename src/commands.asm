@@ -763,7 +763,6 @@ cmd_loopback:
 	nextreg REG_MMU+SWAP_SLOT,LOOPBACK_BANK
 	; Get length
 	ld de,(receive_buffer.length)
-	dec de : dec de
 
 	; Read all data in swap slot
 	ld hl,SWAP_ADDR
@@ -787,12 +786,11 @@ cmd_loopback:
 
 	; Send response
 	ld de,(receive_buffer.length)
-	dec de
+	inc de
 	call send_length_and_seqno
 
 	; Send all data
 	ld de,(receive_buffer.length)
-	dec de : dec de
 	ld hl,SWAP_ADDR
 	jr .send_check_end
 

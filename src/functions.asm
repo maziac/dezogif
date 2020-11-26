@@ -11,7 +11,7 @@
 ;===========================================================================
 
 ;===========================================================================
-; Called by enter_debugger to execute a user function. 
+; Called by enter_debugger to execute a user function.
 ; I.e. a function that was called by the debugged program.
 ; When entered (debugged_prgm_stack_copy):
 ; Stack for a function call from the debugged program
@@ -21,17 +21,17 @@
 ; - [SP]:	AF was put on the stack
 ;===========================================================================
 exec_user_function:
-	; Get the function number from the stack 
+	; Get the function number from the stack
 	ld a,(debugged_prgm_stack_copy.function_number)
 	; LOGPOINT function number = ${A}
 	dec a
 	; A = 1, unused
 	dec a
-	jp z,execute_init_slot0_bank	; A = 2 
+	jp z,execute_init_slot0_bank	; A = 2
 	; ERROR
 	ld a,ERROR_WRONG_FUNC_NUMBER
 	ld (last_error),a
-	; ASSERT 
+	; ASSERTION
 	jp main
 
 
@@ -49,7 +49,7 @@ execute_init_slot0_bank:
 
     ; Save slot
     call save_swap_slot
-	
+
 	; Get bank from high byte
 	ld a,(debugged_prgm_stack_copy.parameter)
     ; Switch in the bank at 0xC000
