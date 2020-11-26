@@ -1330,43 +1330,32 @@ UT_14_cmd_set_breakpoints.UT_long_bps:
 
 ; Test cmd_restore_mem with no values.
 UT_15_cmd_restore_mem.UT_no_values:
-	; Redirect
-	call redirect_uart
-	; Prepare
-	ld hl,2
-	ld (receive_buffer.length),hl
+	TEST_EMPTY_COMMAND
 
 	; Test
-	ld iy,0		; Not used
-	ld ix,test_memory_output
 	call cmd_restore_mem
+	; Check response
+ 	call test_get_response
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 1
 
-	; Check length
-	TEST_MEMORY_WORD test_memory_output+1,	1
-	TEST_MEMORY_WORD test_memory_output+3,	0
  TC_END
 
 
 ; Test cmd_restore_mem.
 ; 2 values.
 UT_15_cmd_restore_mem.UT_2_values:
-	; Redirect
-	call redirect_uart
-	; Prepare
-	ld hl,2+2*4
-	ld (receive_buffer.length),hl
+	TEST_PREPARE_COMMAND
 
 	; Test
 	ld a,0xFF
 	ld (0xC000),a
 	ld (0xC0FF),a
-	ld iy,.cmd_data
-	ld ix,test_memory_output
 	call cmd_restore_mem
-
-	; Check length
-	TEST_MEMORY_WORD test_memory_output+1, 	1
-	TEST_MEMORY_WORD test_memory_output+3,	0
+	; Check response
+ 	call test_get_response
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 1
 
 	; Test
 	TEST_MEMORY_BYTE 0xC000, 0xAA
@@ -1381,16 +1370,13 @@ UT_15_cmd_restore_mem.UT_2_values:
 	defw 0xC0FF	; Address
 	defb 0		; No bank
 	defb 0x55	; Value
+.cmd_data_end
 
 
 ; Test cmd_restore_mem.
 ; Restore slots.
 UT_15_cmd_restore_mem.UT_restore_slots:
-	; Redirect
-	call redirect_uart
-	; Prepare
-	ld hl,2+2*4
-	ld (receive_buffer.length),hl
+	TEST_PREPARE_COMMAND
 
 	; Page in banks in ROM area
 	nextreg REG_MMU+0,70
@@ -1401,13 +1387,11 @@ UT_15_cmd_restore_mem.UT_restore_slots:
 	ld a,0xFF
 	ld (0x0200),a
 	ld (0x3FFF),a
-	ld iy,.cmd_data
-	ld ix,test_memory_output
 	call cmd_restore_mem
-
-	; Check length
-	TEST_MEMORY_WORD test_memory_output+1, 	1
-	TEST_MEMORY_WORD test_memory_output+3,	0
+	; Check response
+ 	call test_get_response
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 1
 
 	; Test that slots are restored
 	ld a,REG_MMU
@@ -1432,16 +1416,13 @@ UT_15_cmd_restore_mem.UT_restore_slots:
 	defw 0x3FFF	; Address
 	defb 0		; No bank
 	defb 0x5A	; Value
+.cmd_data_end
 
 
 ; Test cmd_restore_mem.
 ; 2 values.
 UT_15_cmd_restore_mem.UT_long_addresses:
-	; Redirect
-	call redirect_uart
-	; Prepare
-	ld hl,2+2*4
-	ld (receive_buffer.length),hl
+	TEST_PREPARE_COMMAND
 
 	; Page in banks in ROM area
 	nextreg REG_MMU+0,73
@@ -1452,13 +1433,11 @@ UT_15_cmd_restore_mem.UT_long_addresses:
 	ld a,0xFF
 	ld (0xCF00&0x1FFF),a
 	ld ((0xC0FF&0x1FFF)+0x2000),a
-	ld iy,.cmd_data
-	ld ix,test_memory_output
 	call cmd_restore_mem
-
-	; Check length
-	TEST_MEMORY_WORD test_memory_output+1, 	1
-	TEST_MEMORY_WORD test_memory_output+3,	0
+	; Check response
+ 	call test_get_response
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 1
 
 	; Test
 	TEST_MEMORY_BYTE 0xCF00&0x1FFF, 0xAA
@@ -1473,6 +1452,7 @@ UT_15_cmd_restore_mem.UT_long_addresses:
 	defw 0xC0FF	; Address
 	defb 74+1	; Bank
 	defb 0x55	; Value
+.cmd_data_end
 
 
 ; Test cmd_loopback.

@@ -685,7 +685,6 @@ cmd_restore_mem:
 
 	; Calculate the count
 	ld de,(receive_buffer.length)	; Read only the lower bytes
-	add de,-2
 
 .loop:
 	; Check for end
