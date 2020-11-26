@@ -67,6 +67,12 @@ reserved	defb
 mem_start	defw
 	ENDS
 
+; CMD_SET_SLOT
+	STRUCT PAYLOAD_SET_SLOT
+slot	defb
+bank	defb
+	ENDS
+
 
 
 ;===========================================================================

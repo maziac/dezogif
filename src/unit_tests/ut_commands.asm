@@ -1016,8 +1016,7 @@ UT_9_cmd_write_mem.UT_banks:
 ; Note: This will also fail if some other test that changes the default
 ; slot/bank association fails.
 UT_10_cmd_get_slots:
-	; Redirect
-	call redirect_uart
+	TEST_EMPTY_COMMAND
 
 	; Set standard config
 	nextreg REG_MMU, ROM_BANK
@@ -1029,94 +1028,98 @@ UT_10_cmd_get_slots:
 	nextreg REG_MMU+6, 0
 	ld a,70
 	ld (slot_backup.slot7),a
-	; Redirect
-	call redirect_uart
 
 	; Test
-	ld ix,test_memory_output
 	call cmd_get_slots
 
-	; Check length
-	TEST_MEMORY_WORD test_memory_output+1, 	9
-	TEST_MEMORY_WORD test_memory_output+3,	0
+	; Check repsonse
+ 	call test_get_response
+
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 1+8
+
 	; Compare with standard slots
-	TEST_MEMORY_BYTE test_memory_output+6, 0xFF	; ROM
-	TEST_MEMORY_BYTE test_memory_output+7, 0xFF	; ROM
-	TEST_MEMORY_BYTE test_memory_output+8, 10
-	TEST_MEMORY_BYTE test_memory_output+9, 11
-	TEST_MEMORY_BYTE test_memory_output+10, 4
-	TEST_MEMORY_BYTE test_memory_output+11, 5
-	TEST_MEMORY_BYTE test_memory_output+12, 0
-	TEST_MEMORY_BYTE test_memory_output+13, 70
+	TEST_MEMORY_BYTE test_memory_payload+1, 0xFF	; ROM
+	TEST_MEMORY_BYTE test_memory_payload+2, 0xFF	; ROM
+	TEST_MEMORY_BYTE test_memory_payload+3, 10
+	TEST_MEMORY_BYTE test_memory_payload+4, 11
+	TEST_MEMORY_BYTE test_memory_payload+5, 4
+	TEST_MEMORY_BYTE test_memory_payload+6, 5
+	TEST_MEMORY_BYTE test_memory_payload+7, 0
+	TEST_MEMORY_BYTE test_memory_payload+8, 70
  TC_END
 
 
 ; Test cmd_set_slot
-UT_11_set_slot:
-	; Redirect
-	call redirect_uart
-	; Prepare
-	ld hl,4
-	ld (receive_buffer.length),hl
+UT_11_cmd_set_slot:
+	ld iy,.cmd_data
 
 	; Test
-	ld iy,.cmd_data
-	ld (iy),SWAP_SLOT
-	ld (iy+1),75
-	ld ix,test_memory_output
+	ld (iy+PAYLOAD_SET_SLOT.slot),SWAP_SLOT
+	ld (iy+PAYLOAD_SET_SLOT.bank),75
+	TEST_PREPARE_COMMAND
 	call cmd_set_slot
+	; Check repsonse
+ 	call test_get_response
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 2
+	; Test: no error
+	TEST_MEMORY_BYTE test_memory_payload+1, 0
 	; Check bank
 	ld a,REG_MMU+SWAP_SLOT
 	call read_tbblue_reg
 	TEST_A	75
-	; Check length
-	TEST_MEMORY_WORD test_memory_output+1, 	2
-	TEST_MEMORY_WORD test_memory_output+3,	0
 
 	; Test
-	ld iy,.cmd_data
-	ld (iy+1),76
-	ld ix,test_memory_output
+	ld (iy+PAYLOAD_SET_SLOT.slot),SWAP_SLOT
+	ld (iy+PAYLOAD_SET_SLOT.bank),76
+	TEST_PREPARE_COMMAND
 	call cmd_set_slot
+	; Check repsonse
+ 	call test_get_response
 	; Check bank
 	ld a,REG_MMU+SWAP_SLOT
 	call read_tbblue_reg
 	TEST_A	76
 
 	; Test
-	ld iy,.cmd_data
-	ld (iy),MAIN_SLOT
-	ld (iy+1),70
-	ld ix,test_memory_output
+	ld (iy+PAYLOAD_SET_SLOT.slot),MAIN_SLOT
+	ld (iy+PAYLOAD_SET_SLOT.bank),70
+	TEST_PREPARE_COMMAND
 	call cmd_set_slot
+	; Check repsonse
+ 	call test_get_response
 	; Check bank
 	TEST_MEMORY_BYTE slot_backup.slot7, 70
 
-	; Test ROM in slot 0
-	ld iy,.cmd_data
-	ld (iy),0
-	ld (iy+1),0xFE
-	ld ix,test_memory_output
+	; Test
+	ld (iy+PAYLOAD_SET_SLOT.slot),0
+	ld (iy+PAYLOAD_SET_SLOT.bank),0xFE
+	TEST_PREPARE_COMMAND
 	call cmd_set_slot
+	; Check repsonse
+ 	call test_get_response
 	; Check bank
 	ld a,REG_MMU+0
 	call read_tbblue_reg
 	TEST_A	ROM_BANK
 
-	; Test ROM in slot 0
-	ld iy,.cmd_data
-	ld (iy),0
-	ld (iy+1),0xFF
-	ld ix,test_memory_output
+	; Test
+	ld (iy+PAYLOAD_SET_SLOT.slot),0
+	ld (iy+PAYLOAD_SET_SLOT.bank),0xFF
+	TEST_PREPARE_COMMAND
 	call cmd_set_slot
+	; Check repsonse
+ 	call test_get_response
 	; Check bank
 	ld a,REG_MMU+0
 	call read_tbblue_reg
 	TEST_A	ROM_BANK
+
  TC_END
 
-.cmd_data:	defb 0
-.bank:		defb 0
+.cmd_data:	PAYLOAD_SET_SLOT	0, 0
+.cmd_data_end
 
 
 
