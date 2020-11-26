@@ -13,10 +13,6 @@ test_stack:		defw 0
 
 	defb 0	; WPMEM
 
-test_memory_dst:	defb 0, 0, 0, 0, 0, 0, 0, 0
-test_memory_dst_end:
-	defb 0	; WPMEM
-
 test_memory_write_mem:
 	defb 0	; Reserved
 .address:
@@ -119,7 +115,7 @@ redirected_write_uart_byte:
 test_prepare_command:
 	call test_prepare_header
 	; Note: storing command information is not necessary
-	add de,-(4+1+1)	; Correct the length
+	;add de,-(4+1+1)	; Correct the length
 	; Store custom data
 	ld bc,0	; Port 0 is to prepare the data that is later read through PORT_UART_RX
 .loop:
@@ -136,7 +132,7 @@ test_prepare_header:
     xor a
     ld (last_error),a
 	; Write length
-	add de,4+1+1	; Length + command + seq no
+;	add de,4+1+1	; Length + command + seq no
 	; Store length
 	ld (receive_buffer.length),de
 	ld (receive_buffer.length+2),a	; a = 0
@@ -844,7 +840,7 @@ UT_8_cmd_read_mem.UT_banks:
 	TEST_MEMORY_BYTE test_memory_payload+1,0xA5
 
 	; Location 0xC000
-	ld ix,test_memory_dst	; Pointer to write to
+;	ld ix,test_memory_dst	; Pointer to write to
 	ld hl,0xC000
 	ld (hl),0xA6
 	ld (.cmd_data.mem_start),hl
@@ -885,28 +881,30 @@ UT_8_cmd_read_mem.UT_banks:
 
 ; Test writing memory.
 UT_9_cmd_write_mem.UT_normal:
-	; Redirect
-	call redirect_uart
-
-	; Prepare
-	ld hl,5+3
-	ld (receive_buffer.length),hl
+	TEST_PREPARE_COMMAND
 
 	; Test
-	ld hl,test_memory_dst
-	ld (test_memory_write_mem.address),hl
-	ld iy,test_memory_write_mem.values
-	ld (iy),0xD1
-	ld (iy+1),0xD2
-	ld (iy+2),0xD3
-	ld iy,test_memory_write_mem
-	ld ix,test_memory_output
 	call cmd_write_mem
 
-	TEST_MEMORY_BYTE test_memory_dst,   0xD1
-	TEST_MEMORY_BYTE test_memory_dst+1, 0xD2
-	TEST_MEMORY_BYTE test_memory_dst+2, 0xD3
+	; Check response
+	call test_get_response
+
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 1
+
+	; Test data
+	TEST_MEMORY_BYTE .test_memory_dst,   0xD1
+	TEST_MEMORY_BYTE .test_memory_dst+1, 0xD2
+	TEST_MEMORY_BYTE .test_memory_dst+2, 0xD3
  TC_END
+
+.test_memory_dst:	defb 0, 0, 0, 0, 0, 0, 0, 0
+.test_memory_dst_end:
+	defb 0	; WPMEM
+
+.cmd_data: PAYLOAD_WRITE_MEM	0, .test_memory_dst
+	defb 0xD1, 0xD2, 0xD3	; Test data
+.cmd_data_end
 
 
 ; Test writing memory in each relevant bank.
@@ -917,97 +915,101 @@ UT_9_cmd_write_mem.UT_banks:
 	nextreg REG_MMU,81
 	nextreg REG_MMU+1,82
 
-	; Redirect
-	call redirect_uart
-
-	; Prepare
-	ld hl,5+1
-	ld (receive_buffer.length),hl
-
 	; Location 0x1FFF
-	ld hl,test_memory_write_mem.address
+	ld hl,.cmd_data.mem_start
 	ld de,0x1FFF
 	ldi (hl),de
-	ld hl,test_memory_write_mem.values
 	ld (hl),0xB1
-	ld iy,test_memory_write_mem
-	ld ix,test_memory_output
+	TEST_PREPARE_COMMAND
 	call cmd_write_mem
-	TEST_MEMORY_BYTE 0x1FFF,0xB1
+	; Check response
+	call test_get_response
+	; Test data
+	TEST_MEMORY_BYTE 0x1FFF, 0xB1
 
 	; Location 0x2000
-	ld hl,test_memory_write_mem.address
+	ld hl,.cmd_data.mem_start
 	ld de,0x2000
 	ldi (hl),de
-	ld hl,test_memory_write_mem.values
 	ld (hl),0xB2
-	ld iy,test_memory_write_mem
-	ld ix,test_memory_output
+	TEST_PREPARE_COMMAND
 	call cmd_write_mem
-	TEST_MEMORY_BYTE 0x2000,0xB2
+	; Check response
+	call test_get_response
+	; Test data
+	TEST_MEMORY_BYTE 0x2000, 0xB2
 
 	; Location 0x3FFF
-	ld hl,test_memory_write_mem.address
+	ld hl,.cmd_data.mem_start
 	ld de,0x3FFF
 	ldi (hl),de
-	ld hl,test_memory_write_mem.values
 	ld (hl),0xB3
-	ld iy,test_memory_write_mem
-	ld ix,test_memory_output
+	TEST_PREPARE_COMMAND
 	call cmd_write_mem
-	TEST_MEMORY_BYTE 0x3FFF,0xB3
+	; Check response
+	call test_get_response
+	; Test data
+	TEST_MEMORY_BYTE 0x3FFF, 0xB3
+
 
 	; Location 0x4000
-	ld hl,test_memory_write_mem.address
+	ld hl,.cmd_data.mem_start
 	ld de,0x4000
 	ldi (hl),de
-	ld hl,test_memory_write_mem.values
 	ld (hl),0xB4
-	ld iy,test_memory_write_mem
-	ld ix,test_memory_output
+	TEST_PREPARE_COMMAND
 	call cmd_write_mem
-	TEST_MEMORY_BYTE 0x4000,0xB4
+	; Check response
+	call test_get_response
+	; Test data
+	TEST_MEMORY_BYTE 0x4000, 0xB4
 
 	; Location 0x5123
-	ld hl,test_memory_write_mem.address
+	ld hl,.cmd_data.mem_start
 	ld de,0x5123
 	ldi (hl),de
-	ld hl,test_memory_write_mem.values
 	ld (hl),0xB5
-	ld iy,test_memory_write_mem
-	ld ix,test_memory_output
+	TEST_PREPARE_COMMAND
 	call cmd_write_mem
-	TEST_MEMORY_BYTE 0x5123,0xB5
+	; Check response
+	call test_get_response
+	; Test data
+	TEST_MEMORY_BYTE 0x5123, 0xB5
 
 	; Location 0xC000
-	ld hl,test_memory_write_mem.address
+	ld hl,.cmd_data.mem_start
 	ld de,0xC000
 	ldi (hl),de
-	ld hl,test_memory_write_mem.values
 	ld (hl),0xB6
-	ld iy,test_memory_write_mem
-	ld ix,test_memory_output
+	TEST_PREPARE_COMMAND
 	call cmd_write_mem
-	TEST_MEMORY_BYTE 0xC000,0xB6
+	; Check response
+	call test_get_response
+	; Test data
+	TEST_MEMORY_BYTE 0xC000, 0xB6
 
 	; Location 0xFFFF
-	ld hl,test_memory_write_mem.address
+	ld hl,.cmd_data.mem_start
 	ld de,0xFFFF
 	ldi (hl),de
-	ld hl,test_memory_write_mem.values
 	ld (hl),0xB7
-	ld iy,test_memory_write_mem
-	ld ix,test_memory_output
+	TEST_PREPARE_COMMAND
 	ld a,80
 	ld (slot_backup.slot7),a
 	call cmd_write_mem
-
+	; Check response
+	call test_get_response
+	; Test data
 	nextreg REG_MMU+MAIN_SLOT,80
 	TEST_MEMORY_BYTE 0xFFFF,0xB7
 
 	; Restore
 	nextreg REG_MMU+MAIN_SLOT,LOADED_BANK
  TC_END
+
+.cmd_data: PAYLOAD_WRITE_MEM	0, 0
+	defb 0	; test data
+.cmd_data_end
 
 
 ; Test retrieving the slot/bank association.

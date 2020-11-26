@@ -435,14 +435,14 @@ cmd_write_mem:
 	; LOGPOINT [CMD] cmd_write_mem
 	; Read address from message
 	ld hl,receive_buffer.payload
-	ld de,3
+	ld de,PAYLOAD_WRITE_MEM
 	call receive_bytes
 
 .inner:
 	call save_swap_slot
 	; Read length and subtract 5
 	ld hl,(receive_buffer.length)
-	ld de,-5
+	ld de,-PAYLOAD_WRITE_MEM
 	add hl,de
 	ex de,hl
 	; Read bytes from UART and put into memory
