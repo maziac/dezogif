@@ -595,8 +595,7 @@ cmd_set_breakpoints:
 	call save_swap_slot
 	; Calculate the count
 	ld hl,(receive_buffer.length)	; Read only the lower bytes
-	add hl,-2
-	; divide by 3
+	; Divide by 3
 	ld e,3
 	call div_hl_e	; hl = hl/3
 	; Send response
