@@ -1059,7 +1059,7 @@ UT_11_cmd_set_slot:
 	ld (iy+PAYLOAD_SET_SLOT.bank),75
 	TEST_PREPARE_COMMAND
 	call cmd_set_slot
-	; Check repsonse
+	; Check response
  	call test_get_response
 	; Test size
 	TEST_MEMORY_WORD test_memory_payload.length, 2
@@ -1075,7 +1075,7 @@ UT_11_cmd_set_slot:
 	ld (iy+PAYLOAD_SET_SLOT.bank),76
 	TEST_PREPARE_COMMAND
 	call cmd_set_slot
-	; Check repsonse
+	; Check response
  	call test_get_response
 	; Check bank
 	ld a,REG_MMU+SWAP_SLOT
@@ -1087,7 +1087,7 @@ UT_11_cmd_set_slot:
 	ld (iy+PAYLOAD_SET_SLOT.bank),70
 	TEST_PREPARE_COMMAND
 	call cmd_set_slot
-	; Check repsonse
+	; Check response
  	call test_get_response
 	; Check bank
 	TEST_MEMORY_BYTE slot_backup.slot7, 70
@@ -1097,7 +1097,7 @@ UT_11_cmd_set_slot:
 	ld (iy+PAYLOAD_SET_SLOT.bank),0xFE
 	TEST_PREPARE_COMMAND
 	call cmd_set_slot
-	; Check repsonse
+	; Check response
  	call test_get_response
 	; Check bank
 	ld a,REG_MMU+0
@@ -1109,7 +1109,7 @@ UT_11_cmd_set_slot:
 	ld (iy+PAYLOAD_SET_SLOT.bank),0xFF
 	TEST_PREPARE_COMMAND
 	call cmd_set_slot
-	; Check repsonse
+	; Check response
  	call test_get_response
 	; Check bank
 	ld a,REG_MMU+0
@@ -1126,36 +1126,36 @@ UT_11_cmd_set_slot:
 ; Test cmd_get_tbblue_reg.
 ; Check a set slot.
 UT_12_cmd_get_tbblue_reg:
-	; Redirect
-	call redirect_uart
-	; Prepare
-	ld hl,4
-	ld (receive_buffer.length),hl
 
 	; Test
+	TEST_PREPARE_COMMAND
 	nextreg REG_MMU+SWAP_SLOT, 74
-	ld iy,.cmd_data
-	ld ix,test_memory_output
 	call cmd_get_tbblue_reg
+	; Check response
+ 	call test_get_response
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 2
 
 	; Check result
-	TEST_MEMORY_WORD test_memory_output+1, 2
-	TEST_MEMORY_WORD test_memory_output+3, 0
-	TEST_MEMORY_BYTE test_memory_output+6, 74
+	TEST_MEMORY_BYTE test_memory_payload+1, 74
 
 	; Test
+	TEST_PREPARE_COMMAND
 	nextreg REG_MMU+SWAP_SLOT, 73
 	ld iy,.cmd_data
 	ld ix,test_memory_output
 	call cmd_get_tbblue_reg
+	; Check response
+ 	call test_get_response
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 2
 
 	; Check result
-	TEST_MEMORY_WORD test_memory_output+1, 2
-	TEST_MEMORY_WORD test_memory_output+3, 0
-	TEST_MEMORY_BYTE test_memory_output+6, 73
+	TEST_MEMORY_BYTE test_memory_payload+1, 73
  TC_END
 
 .cmd_data:	defb REG_MMU+SWAP_SLOT
+.cmd_data_end
 
 
 ; Test cmd_set_border. Test works only on zsim.
