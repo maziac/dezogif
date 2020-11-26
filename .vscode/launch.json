@@ -21,11 +21,12 @@
             },
             "sjasmplus": [
                 {
-                    "path": "out/dezogif.list",
-                    //"path": "out/dezogif.sld",
+                    //"path": "out/dezogif.list",
+                    "path": "out/dezogif.sld",
                     "srcDirs": [
                         "src"
-                    ]
+                    ],
+                    //"disableBanking": true
                 }
             ],
             "startAutomatically": false,

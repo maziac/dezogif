@@ -12,9 +12,6 @@
 test_stack:		defw 0
 
 	defb 0	; WPMEM
-test_memory_src:	defb 1, 2, 3, 4, 5, 6, 7, 8
-test_memory_src_end:
-	defb 0	; WPMEM
 
 test_memory_dst:	defb 0, 0, 0, 0, 0, 0, 0, 0
 test_memory_dst_end:
@@ -228,9 +225,6 @@ test_get_response:
 UT_1_cmd_init:
 	; Write test data to simulated UART buffer.
 	TEST_PREPARE_COMMAND
-;	ld hl,.cmd_data
-;	ld de,.cmd_data_end-.cmd_data	; Length
-;	call test_prepare_command
 
 	; Test
 	call cmd_init.inner
@@ -725,8 +719,9 @@ UT_5_cmd_write_bank:
 
 ; Test cmd_continue
 UT_6_continue:
-	; Redirect
-	call redirect_uart
+	; Write test data to simulated UART buffer.
+	TEST_PREPARE_COMMAND
+
 	; Redirect "return"
 	ld a,0xC3	; JP
 	ld (restore_registers.ret_jump1),a
@@ -734,8 +729,8 @@ UT_6_continue:
 	ld (restore_registers.ret_jump1+1),hl
 
 	; Prepare
-	ld hl,2+PAYLOAD_CONTINUE
-	ld (receive_buffer.length),hl
+	;ld hl,2+PAYLOAD_CONTINUE
+	;ld (receive_buffer.length),hl
 
 	; Return
     ld hl,.continue     ; The jump address
@@ -743,18 +738,19 @@ UT_6_continue:
     ld (backup.sp),sp
 
 	; Test
-	ld iy,.cmd_data
-	ld ix,test_memory_output
 	call cmd_continue
 .continue:
 
-	; Test length
-	TEST_MEMORY_WORD test_memory_output+1, 1
-	TEST_MEMORY_WORD test_memory_output+3, 0
+	; Check response
+	call test_get_response
+
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 1
 
  TC_END
 
-.cmd_data:	PAYLOAD_CONTINUE 0, 0, 0, 0
+.cmd_data:	PAYLOAD_CONTINUE 0, 0, 0, 0,	0, 0, 0
+.cmd_data_end
 
 .exit_code:
 	pop af
@@ -769,29 +765,30 @@ UT_7_pause:
 
 ; Test reading memory.
 UT_8_cmd_read_mem.UT_normal:
-	; Redirect
-	call redirect_uart
-
-	; Pointer to write to
-	ld ix,test_memory_dst
+	TEST_PREPARE_COMMAND
 
 	; Test
-	ld hl,test_memory_src
+	ld hl,.test_memory_src
 	ld (payload_read_mem.mem_start),hl
-	ld hl,test_memory_src_end-test_memory_src
+	ld hl,.test_memory_src_end-.test_memory_src
 	ld (payload_read_mem.mem_size),hl
-	call cmd_read_mem.inner
+	call cmd_read_mem
+
+	; Check response
+	call test_get_response
 
 	; Compare src against dst
-	ld hl,test_memory_src
-	ld de,test_memory_dst
-	ld b,test_memory_src_end-test_memory_src
-.loop:
-	ldi a,(de)
-	TEST_A (HL)
-	inc hl
-	djnz .loop
+	TEST_MEM_CMP .test_memory_src, test_memory_payload+1, .test_memory_src_end-.test_memory_src
+
  TC_END
+
+.test_memory_src:	defb 1, 2, 3, 4, 5, 6, 7, 8
+.test_memory_src_end:
+	defb 0	; WPMEM
+
+.cmd_data: PAYLOAD_READ_MEM	0, .test_memory_src, .test_memory_src_end-.test_memory_src
+.cmd_data_end
+
 
 
 ; Test reading memory in each relevant bank.
@@ -801,63 +798,62 @@ UT_8_cmd_read_mem.UT_banks:
 	nextreg REG_MMU,81
 	nextreg REG_MMU+1,82
 
-	; Redirect
-	call redirect_uart
-
-	; Test
-	ld hl,1
-	ld (payload_read_mem.mem_size),hl
-
 	; Location 0x1FFF
-	ld ix,test_memory_dst	; Pointer to write to
 	ld hl,0x1FFF
 	ld (hl),0xA1
-	ld (payload_read_mem.mem_start),hl
-	call cmd_read_mem.inner
-	TEST_MEMORY_BYTE test_memory_dst,0xA1
+	ld (.cmd_data.mem_start),hl
+	TEST_PREPARE_COMMAND
+	call cmd_read_mem
+	call test_get_response
+	TEST_MEMORY_BYTE test_memory_payload+1,0xA1
 
 	; Location 0x2000
-	ld ix,test_memory_dst	; Pointer to write to
 	ld hl,0x2000
 	ld (hl),0xA2
-	ld (payload_read_mem.mem_start),hl
-	call cmd_read_mem.inner
-	TEST_MEMORY_BYTE test_memory_dst,0xA2
+	ld (.cmd_data.mem_start),hl
+	TEST_PREPARE_COMMAND
+	call cmd_read_mem
+	call test_get_response
+	TEST_MEMORY_BYTE test_memory_payload+1,0xA2
 
 	; Location 0x3FFF
-	ld ix,test_memory_dst	; Pointer to write to
 	ld hl,0x3FFF
 	ld (hl),0xA3
-	ld (payload_read_mem.mem_start),hl
-	call cmd_read_mem.inner
-	TEST_MEMORY_BYTE test_memory_dst,0xA3
+	ld (.cmd_data.mem_start),hl
+	TEST_PREPARE_COMMAND
+	call cmd_read_mem
+	call test_get_response
+	TEST_MEMORY_BYTE test_memory_payload+1,0xA3
 
 	; Location 0x4000
-	ld ix,test_memory_dst	; Pointer to write to
 	ld hl,0x4000
 	ld (hl),0xA4
-	ld (payload_read_mem.mem_start),hl
-	call cmd_read_mem.inner
-	TEST_MEMORY_BYTE test_memory_dst,0xA4
+	ld (.cmd_data.mem_start),hl
+	TEST_PREPARE_COMMAND
+	call cmd_read_mem
+	call test_get_response
+	TEST_MEMORY_BYTE test_memory_payload+1,0xA4
 
 	; Location 0x5123
-	ld ix,test_memory_dst	; Pointer to write to
 	ld hl,0x5123
 	ld (hl),0xA5
-	ld (payload_read_mem.mem_start),hl
-	call cmd_read_mem.inner
-	TEST_MEMORY_BYTE test_memory_dst,0xA5
+	ld (.cmd_data.mem_start),hl
+	TEST_PREPARE_COMMAND
+	call cmd_read_mem
+	call test_get_response
+	TEST_MEMORY_BYTE test_memory_payload+1,0xA5
 
 	; Location 0xC000
 	ld ix,test_memory_dst	; Pointer to write to
 	ld hl,0xC000
 	ld (hl),0xA6
-	ld (payload_read_mem.mem_start),hl
-	call cmd_read_mem.inner
-	TEST_MEMORY_BYTE test_memory_dst,0xA6
+	ld (.cmd_data.mem_start),hl
+	TEST_PREPARE_COMMAND
+	call cmd_read_mem
+	call test_get_response
+	TEST_MEMORY_BYTE test_memory_payload+1,0xA6
 
 	; Location 0xFFFF
-	ld ix,test_memory_dst	; Pointer to write to
 	ld hl,0xFFFF
 	; Page in different bank in slot 7 area
 	ld a,80
@@ -868,9 +864,11 @@ UT_8_cmd_read_mem.UT_banks:
 	; Restore bank
 	nextreg REG_MMU+MAIN_SLOT,LOADED_BANK
 
-	ld (payload_read_mem.mem_start),hl
-	call cmd_read_mem.inner
-	TEST_MEMORY_BYTE test_memory_dst,0xA7
+	ld (.cmd_data.mem_start),hl
+	TEST_PREPARE_COMMAND
+	call cmd_read_mem
+	call test_get_response
+	TEST_MEMORY_BYTE test_memory_payload+1,0xA7
 
 	; Test that slots are restored
 	ld a,REG_MMU
@@ -880,6 +878,9 @@ UT_8_cmd_read_mem.UT_banks:
 	call read_tbblue_reg
 	TEST_A 82
  TC_END
+
+.cmd_data: PAYLOAD_READ_MEM	0, 0, 1
+.cmd_data_end
 
 
 ; Test writing memory.

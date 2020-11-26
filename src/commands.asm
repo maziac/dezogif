@@ -347,13 +347,6 @@ cmd_continue:
 	ld de,PAYLOAD_CONTINUE
 	call receive_bytes
 
-	; Read unused bytes
-	ld d,11-PAYLOAD_CONTINUE
-.loop_unused:
-	call read_uart_byte
-	dec d
-	jr nz,.loop_unused
-
 	; Send response
 	ld de,1
 	call send_length_and_seqno
@@ -402,7 +395,7 @@ cmd_read_mem:
 	; LOGPOINT [CMD] cmd_read_mem
 	; Read address and size from message
 	ld hl,receive_buffer.payload
-	ld de,5
+	ld de,PAYLOAD_READ_MEM
 	call receive_bytes
 
 	; Send response

@@ -49,6 +49,9 @@ bp1_enable	defb
 bp1_address	defw
 bp2_enable	defb
 bp2_address	defw
+alternate_command	defb
+range_start	defw
+range_end	defw
 	ENDS
 
 ; CMD_READ_MEM

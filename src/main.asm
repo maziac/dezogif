@@ -12,6 +12,34 @@
 
     include "constants.asm"
 
+; TODO: REMOVE
+	STRUCT SLOT_BACK
+slot0:		defb
+slot7:		defb
+tmp_slot:	defb
+	ENDS
+
+
+sl_back:   SLOT_BACK
+
+
+LAB4:
+LAB1:
+    nop
+.end:
+
+LAB2: defw .end
+    nop
+.end:
+
+
+   MODULE M1
+    MODULE M2
+@glob_label:
+
+not_glob_label:
+     ENDMODULE
+    ENDMODULE
 
 
     MMU MAIN_SLOT e, LOADED_BANK ; e -> Everything should fit into one page, error if not.
