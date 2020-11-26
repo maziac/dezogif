@@ -315,7 +315,7 @@ send_ntf_pause:
 	ld a,MESSAGE_START_BYTE
 	call write_uart_byte
 	; First length byte
-	ld a,6
+	ld a,7
 	call write_uart_byte
 	; Rest of length + seqno=0
 	xor a

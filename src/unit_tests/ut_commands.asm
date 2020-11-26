@@ -7,24 +7,6 @@
 
     MODULE ut_commands
 
-
-; Data area for testing
-test_stack:		defw 0
-
-	defb 0	; WPMEM
-
-test_memory_write_mem:
-	defb 0	; Reserved
-.address:
-	defw 0  ; Address
-.values:
-	defb 0, 0, 0	; Values
-.end:
-	defb 0	; WPMEM
-
-
-; TODO: REMOVE: test_memory_output
-test_memory_output:
 test_memory_payload:
 	defs 1024
 .end
@@ -42,65 +24,6 @@ cmd_data_init:
 	ldir
 	ret
 
-
-; Helper function to redirect the uart input/output.
-redirect_uart:
-	; Also redirect read_uart_byte function call
-	ld hl,read_uart_byte
-	ldi (hl),0xC3	; JP
-	ldi (hl),redirected_read_uart_byte&0xFF
-	ld (hl),redirected_read_uart_byte>>8
-.common:
-	; Redirect write_uart_byte function call
-	ld hl,write_uart_byte
-	ldi (hl),0xC3	; JP
-	ldi (hl),redirected_write_uart_byte&0xFF
-	ld (hl),redirected_write_uart_byte>>8
-	ret
-
-
-; Helper function to redirect the uart input/output.
-redirect_uart_write_bank:
-	; Also redirect read_uart_byte function call
-	ld hl,read_uart_byte
-	ldi (hl),0xC3	; JP
-	ldi (hl),redirected_read_uart_byte_bank&0xFF
-	ld (hl),redirected_read_uart_byte_bank>>8
-	jr redirect_uart.common
-
-
-; Return values read from (iy)
-redirected_read_uart_byte:
-	ld e,0
-	ld bc,PORT_UART_TX
-	ld a,(iy)
-	inc iy
-	ret
-
-
-; Return same values.
-redirected_read_uart_byte_bank:
-	ld e,0
-	ld bc,PORT_UART_TX
-.bank:	equ $+1
-	ld a,0	; is overwritten
-	ld bc,.second
-	ld (read_uart_byte+1),bc
-	ret
-.second:
-	ld e,0
-	ld bc,PORT_UART_TX
-.fill_data:	equ $+1
-	ld a,0	; is overwritten
-	ret
-
-
-; Simulated write_uart_byte.
-; Write at ix.
-redirected_write_uart_byte:
-	ld (ix),a
-	inc ix
-	ret
 
 
 ; Writes test data to simulated UART buffer.
@@ -131,8 +54,6 @@ test_prepare_header:
 	;Reset error
     xor a
     ld (last_error),a
-	; Write length
-;	add de,4+1+1	; Length + command + seq no
 	; Store length
 	ld (receive_buffer.length),de
 	ld (receive_buffer.length+2),a	; a = 0
@@ -191,7 +112,10 @@ test_get_response:
 	TEST_A 0
 	; The seq_no is 100
 	in a,(c)
-	TEST_A 100
+	ld l,a
+	ld a,(receive_buffer.seq_no)
+	sub l
+	TEST_A 0
 	; Read payload data from TX buffer
 	ld hl,test_memory_payload
 .loop:
@@ -240,10 +164,10 @@ UT_1_cmd_init:
 	TEST_MEMORY_BYTE test_memory_payload+3, DZRP_VERSION.PATCH
 
 	; Test machine type: 4 = ZX Next
-	TEST_MEMORY_BYTE test_memory_output+5, 4
+	TEST_MEMORY_BYTE test_memory_payload+5, 4
 
 	; Test program name
-	TEST_STRING_PTR test_memory_output+6, PROGRAM_NAME
+	TEST_STRING_PTR test_memory_payload+6, PROGRAM_NAME
  TC_END
 
 .cmd_data:
@@ -310,11 +234,11 @@ UT_3_cmd_get_registers:
 	TEST_MEMORY_WORD test_memory_payload.length, 38
 
 	; Test returned data
-	TEST_MEM_CMP test_memory_output+1, .cmp_data, .cmp_data_end-.cmp_data
+	TEST_MEM_CMP test_memory_payload+1, .cmp_data, .cmp_data_end-.cmp_data
 
 	; Test slots
-	TEST_MEMORY_BYTE test_memory_output+29, 8	; 8 slots
-	TEST_MEM_CMP test_memory_output+30, .cmp_slots, 8
+	TEST_MEMORY_BYTE test_memory_payload+29, 8	; 8 slots
+	TEST_MEM_CMP test_memory_payload+30, .cmp_slots, 8
 
  TC_END
 
@@ -1142,8 +1066,6 @@ UT_12_cmd_get_tbblue_reg:
 	; Test
 	TEST_PREPARE_COMMAND
 	nextreg REG_MMU+SWAP_SLOT, 73
-	ld iy,.cmd_data
-	ld ix,test_memory_output
 	call cmd_get_tbblue_reg
 	; Check response
  	call test_get_response
@@ -1487,52 +1409,41 @@ UT_16_cmd_loopback:
 	; Does not return here:
 	; ASSERTION
 
+
 ; Test cmd_get_sprites_palette.
 ; Test that 513 bytes are send for both palettes.
+; Note: teh values are not simulated in zsim.
 UT_17_cmd_get_sprites_palette:
-	; Redirect
-	call redirect_uart
-	; Prepare
-	ld hl,3
-	ld (receive_buffer.length),hl
-
 	; Test
+	TEST_PREPARE_COMMAND
 	xor a	; Palette 0
 	ld (.cmd_data),a
-	ld iy,.cmd_data
-	ld ix,test_memory_output
 	call cmd_get_sprites_palette
-
-	; Check length
-	TEST_MEMORY_WORD test_memory_output+1, 	513
-	TEST_MEMORY_WORD test_memory_output+3,	0
+	; Check response
+ 	call test_get_response
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 513
 	; Note: the values itself are not checked.
 
 	; Test
 	ld a,1	; Palette 1
 	ld (.cmd_data),a
-	ld iy,.cmd_data
-	ld ix,test_memory_output
-	call cmd_get_sprites_palette:
-
-	; Check length
-	TEST_MEMORY_WORD test_memory_output+1, 	513
-	TEST_MEMORY_WORD test_memory_output+3,	0
+	call cmd_get_sprites_palette
+	; Check response
+ 	call test_get_response
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 513
 	; Note: the values itself are not checked.
  TC_END
 
 .cmd_data:	defb 0	; palette index
+.cmd_data_end
 
 
 ; Test cmd_get_sprites_clip_window_and_control
 UT_18_cmd_get_sprites_clip_window_and_control:
-	; Redirect
-	call redirect_uart
-	; Prepare
-	ld hl,2
-	ld (receive_buffer.length),hl
 
-	/* No zsim support for nextreg
+	/* Clipwindow is not simulated in tests.
 	; Set clip window
     nextreg REG_CLIP_WINDOW_CONTROL, 2
 	nextreg REG_CLIP_WINDOW_SPRITES, 55		; xl
@@ -1552,13 +1463,12 @@ UT_18_cmd_get_sprites_clip_window_and_control:
 	*/
 
 	; Test
-	ld iy,0	; Not used
-	ld ix,test_memory_output
+	TEST_EMPTY_COMMAND
 	call cmd_get_sprites_clip_window_and_control
-
-	; Check length
-	TEST_MEMORY_WORD test_memory_output+1, 	6
-	TEST_MEMORY_WORD test_memory_output+3,	0
+	; Check response
+ 	call test_get_response
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 6
 
 	/*
 	; Check clipping values
