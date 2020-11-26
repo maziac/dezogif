@@ -1160,21 +1160,16 @@ UT_12_cmd_get_tbblue_reg:
 
 ; Test cmd_set_border. Test works only on zsim.
 UT_13_cmd_set_border:
-	; Redirect
-	call redirect_uart
-	; Prepare
-	ld hl,4
-	ld (receive_buffer.length),hl
+	ld iy,.cmd_data
 
 	; Test
-	ld iy,.cmd_data
 	ld (iy),CYAN
-	ld ix,test_memory_output
+	TEST_PREPARE_COMMAND
 	call cmd_set_border
-
-	; Check length
-	TEST_MEMORY_WORD test_memory_output+1, 1
-	TEST_MEMORY_WORD test_memory_output+3, 0
+	; Check response
+ 	call test_get_response
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 1
 
 	; Check result
 	ld a,(backup.border_color)
@@ -1182,10 +1177,14 @@ UT_13_cmd_set_border:
 	TEST_A CYAN
 
 	; Test
-	ld iy,.cmd_data
 	ld (iy),BLACK
-	ld ix,test_memory_output
+	TEST_PREPARE_COMMAND
 	call cmd_set_border
+	; Check response
+ 	call test_get_response
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 1
+
 
 	; Check result
 	ld a,(backup.border_color)
@@ -1194,6 +1193,7 @@ UT_13_cmd_set_border:
  TC_END
 
 .cmd_data:	defb 0
+.cmd_data_end
 
 
 ; Test cmd_set_breakpoints with no breakpoints.
