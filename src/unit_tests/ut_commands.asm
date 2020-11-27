@@ -95,7 +95,7 @@ test_get_response:
 	; Read A5
 	ld bc,0x0001	; Port 0x0001 for reading the TX data
 	in a,(c)
-	TEST_A	MESSAGE_START_BYTE	; Is sent as start byte always
+	; TEST ASSERTION A == MESSAGE_START_BYTE	; Is sent as start byte always
 	; Read written length -> DE
 	in a,(c) : ld e,a
 	in a,(c) : ld d,a
@@ -107,15 +107,15 @@ test_get_response:
 	; HL > 0: Too many bytes written to UART. HL < 0: Too less bytes written.
 	; The higher bytes of the length should be 0
 	in a,(c)
-	TEST_A 0
+	; TEST ASSERTION A == 0
 	in a,(c)
-	TEST_A 0
+	; TEST ASSERTION A == 0
 	; The seq_no is 100
 	in a,(c)
 	ld l,a
 	ld a,(receive_buffer.seq_no)
 	sub l
-	TEST_A 0
+	; TEST ASSERTION A == 0
 	; Read payload data from TX buffer
 	ld hl,test_memory_payload
 .loop:
@@ -268,7 +268,7 @@ UT_4_cmd_set_register.UT_pc:
 
 	; Test set value
 	ld hl,(backup.pc)
-	TEST_DREG hl, 0x1112
+	; TEST ASSERTION hl == 0x1112
 
  TC_END
 
@@ -296,7 +296,7 @@ UT_4_cmd_set_register.UT_c:
 
 	; Test set value
 	ld bc,(backup.bc)
-	TEST_DREG bc, 0xFE22	; Only 0x22 is set
+	; TEST ASSERTION bc == 0xFE22	; Only 0x22 is set
 
  TC_END
 
@@ -324,7 +324,7 @@ UT_4_cmd_set_register.UT_b:
 
 	; Test set value
 	ld bc,(backup.bc)
-	TEST_DREG bc, 0x32DE	; Only 0x32 is set
+	; TEST ASSERTION bc == 0x32DE	; Only 0x32 is set
 
  TC_END
 
@@ -566,17 +566,17 @@ UT_5_cmd_write_bank:
 	call read_tbblue_reg	; Result in A
 	pop de		; Get original bank in D
 	push de
-	TEST_A d
+	; TEST ASSERTION A == d
 
 	; Page in the memory bank
 	nextreg REG_MMU+SWAP_SLOT,28
 
 	ld hl,SWAP_ADDR	; .slot<<13	; Start address
 	ld a,(hl)
-	TEST_A 0x55
+	; TEST ASSERTION A == 0x55
 	add hl,0x0100-1
 	ld a,(hl)
-	TEST_A 0x55
+	; TEST ASSERTION A == 0x55
 
 	; Prepare fill data
 	ld l,0xAA
@@ -591,10 +591,10 @@ UT_5_cmd_write_bank:
 
 	ld hl,SWAP_ADDR	;.slot<<13	; Start address
 	ld a,(hl)
-	TEST_A 0xAA
+	; TEST ASSERTION A == 0xAA
 	add hl,0x0100-1
 	ld a,(hl)
-	TEST_A 0xAA
+	; TEST ASSERTION A == 0xAA
 
 	; Test size
 	TEST_MEMORY_WORD test_memory_payload.length, 3
@@ -793,10 +793,10 @@ UT_8_cmd_read_mem.UT_banks:
 	; Test that slots are restored
 	ld a,REG_MMU
 	call read_tbblue_reg
-	TEST_A 81
+	; TEST ASSERTION A == 81
 	ld a,REG_MMU+1
 	call read_tbblue_reg
-	TEST_A 82
+	; TEST ASSERTION A == 82
  TC_END
 
 .cmd_data: PAYLOAD_READ_MEM	0, 0, 1
@@ -992,7 +992,7 @@ UT_11_cmd_set_slot:
 	; Check bank
 	ld a,REG_MMU+SWAP_SLOT
 	call read_tbblue_reg
-	TEST_A	75
+	; TEST ASSERTION A == 75
 
 	; Test
 	ld (iy+PAYLOAD_SET_SLOT.slot),SWAP_SLOT
@@ -1004,7 +1004,7 @@ UT_11_cmd_set_slot:
 	; Check bank
 	ld a,REG_MMU+SWAP_SLOT
 	call read_tbblue_reg
-	TEST_A	76
+	; TEST ASSERTION A == 76
 
 	; Test
 	ld (iy+PAYLOAD_SET_SLOT.slot),MAIN_SLOT
@@ -1026,7 +1026,7 @@ UT_11_cmd_set_slot:
 	; Check bank
 	ld a,REG_MMU+0
 	call read_tbblue_reg
-	TEST_A	ROM_BANK
+	; TEST ASSERTION A == ROM_BANK
 
 	; Test
 	ld (iy+PAYLOAD_SET_SLOT.slot),0
@@ -1038,7 +1038,7 @@ UT_11_cmd_set_slot:
 	; Check bank
 	ld a,REG_MMU+0
 	call read_tbblue_reg
-	TEST_A	ROM_BANK
+	; TEST ASSERTION A == ROM_BANK
 
  TC_END
 
@@ -1096,7 +1096,7 @@ UT_13_cmd_set_border:
 	; Check result
 	ld a,(backup.border_color)
 	and 0x07
-	TEST_A CYAN
+	; TEST ASSERTION A == CYAN
 
 	; Test
 	ld (iy),BLACK
@@ -1111,7 +1111,7 @@ UT_13_cmd_set_border:
 	; Check result
 	ld a,(backup.border_color)
 	and 0x07
-	TEST_A BLACK
+	; TEST ASSERTION A == BLACK
  TC_END
 
 .cmd_data:	defb 0
@@ -1193,13 +1193,13 @@ UT_14_cmd_set_breakpoints.UT_restore_slots:
 	; Test that slots are restored
 	ld a,REG_MMU
 	call read_tbblue_reg
-	TEST_A 70
+	; TEST ASSERTION A == 70
 	ld a,REG_MMU+1
 	call read_tbblue_reg
-	TEST_A 71
+	; TEST ASSERTION A == 71
 	ld a,REG_MMU+SWAP_SLOT
 	call read_tbblue_reg
-	TEST_A 72
+	; TEST ASSERTION A == 72
 
 	TEST_MEMORY_BYTE 0x0200, BP_INSTRUCTION
 	TEST_MEMORY_BYTE 0x3FFF, BP_INSTRUCTION
@@ -1318,13 +1318,13 @@ UT_15_cmd_restore_mem.UT_restore_slots:
 	; Test that slots are restored
 	ld a,REG_MMU
 	call read_tbblue_reg
-	TEST_A 70
+	; TEST ASSERTION A == 70
 	ld a,REG_MMU+1
 	call read_tbblue_reg
-	TEST_A 71
+	; TEST ASSERTION A == 71
 	ld a,REG_MMU+SWAP_SLOT
 	call read_tbblue_reg
-	TEST_A 72
+	; TEST ASSERTION A == 72
 
 	TEST_MEMORY_BYTE 0x0200, 0xA5
 	TEST_MEMORY_BYTE 0x3FFF, 0x5A
@@ -1393,7 +1393,7 @@ UT_16_cmd_loopback:
 	; Test that slot was restored
 	ld a,REG_MMU+SWAP_SLOT
 	call read_tbblue_reg
-	TEST_A 69
+	; TEST ASSERTION A == 69
 
 	; Check all value
 	TEST_MEM_CMP test_memory_payload+1, .cmd_data, .cmd_data_end-.cmd_data

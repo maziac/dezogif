@@ -27,7 +27,7 @@ UT_write_read_slot:
 	; Read
 	ld a,.free_slot+REG_MMU
 	call read_tbblue_reg
-	TEST_REGISTER A, 29
+	; TEST ASSERTION A == 29
 
 	; Restore previous used bank
 	pop de
@@ -43,37 +43,37 @@ UT_div_hl_e:
 	ld hl,0
 	ld e,7
 	call div_hl_e
-	TEST_REGISTER HL, 0
+	nop ; TEST ASSERTION HL == 0
 
 	ld hl,2*3
 	ld e,3
 	call div_hl_e
-	TEST_REGISTER HL, 2
+	nop ; TEST ASSERTION HL == 2
 
 	ld hl,2*3+1
 	ld e,3
 	call div_hl_e
-	TEST_REGISTER HL, 2
+	nop ; TEST ASSERTION HL == 2
 
 	ld hl,2*3+2
 	ld e,3
 	call div_hl_e
-	TEST_REGISTER HL, 2
+	nop ; TEST ASSERTION HL == 2
 
 	ld hl,7*89
 	ld e,89
 	call div_hl_e
-	TEST_REGISTER HL, 7
+	nop ; TEST ASSERTION HL == 7
 
 	ld hl,65535
 	ld e,1
 	call div_hl_e
-	TEST_REGISTER HL, 65535
+	nop ; TEST ASSERTION HL == 65535
 
 	ld hl,65535
 	ld e,2
 	call div_hl_e
-	TEST_REGISTER HL, 32767
+	nop ; TEST ASSERTION HL == 32767
 
  TC_END
 

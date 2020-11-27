@@ -62,7 +62,7 @@ UT_save_registers.UT_save:
 .return:
     ld sp,(sp_backup)
 
-    TEST_MEMORY_BYTE backup.af, 0x1A+1
+    TEST_MEMORY_BYTE backup.af+1, 0x1A
     TEST_MEMORY_WORD backup.bc, 0x1B1C
     TEST_MEMORY_WORD backup.de, 0x1D1E
     TEST_MEMORY_WORD backup.hl, 0x1112
@@ -135,23 +135,23 @@ UT_save_registers.UT_restore:
 
     ; But go on here
 .continue:
-    TEST_DREG bc, 0x1B1C
-    TEST_DREG de, 0x1D1E
-    TEST_DREG hl, 0x1112
-    TEST_DREG ix, 0x1314
-    TEST_DREG iy, 0x1516
+    ; TEST ASSERTION bc == 0x1B1C
+    ; TEST ASSERTION de == 0x1D1E
+    ; TEST ASSERTION hl == 0x1112
+    ; TEST ASSERTION ix == 0x1314
+    ; TEST ASSERTION iy == 0x1516
 
     exx
     ex af,af'
-    TEST_REGISTER a, 0x2A
-    TEST_DREG bc, 0x2B2C
-    TEST_DREG de, 0x2D2E
-    TEST_DREG hl, 0x2122
+    ; TEST ASSERTION a == 0x2A
+    ; TEST ASSERTION bc == 0x2B2C
+    ; TEST ASSERTION de == 0x2D2E
+    ; TEST ASSERTION hl == 0x2122
     ex af,af'
     exx
 
     ld a,i
-    TEST_REGISTER a, 0x81
+    ; TEST ASSERTION a == 0x81
     ;TEST_MEMORY_BYTE backup.r, 0x82   Useless to test
 
     TEST_MEMORY_WORD debugged_prgm_stack_copy.return1, 0x1234   ; PC
@@ -162,7 +162,7 @@ UT_save_registers.UT_restore:
     add hl,-4
     ld (sp_backup),sp
     ld de,(sp_backup)
-    TEST_DREG hl, de
+    ; TEST ASSERTION hl == de
 
     ld sp,(sp_backup)
  TC_END
@@ -184,7 +184,7 @@ UT_save_registers.UT_restore_interrupts:
     ; Test
     call .test_intrpt
 
-    TEST_REGISTER a, 1   ; Interrupts enabled
+    ; TEST ASSERTION a == 1   ; Interrupts enabled
 
     ; Disable interrupts
     ld a,00000000b
@@ -193,7 +193,7 @@ UT_save_registers.UT_restore_interrupts:
     ; Test
     call .test_intrpt
 
-    TEST_REGISTER a, 0   ; Interrupts enabled
+    ; TEST ASSERTION a == 0   ; Interrupts enabled
  TC_END
 
 .test_intrpt:

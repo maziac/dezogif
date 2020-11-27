@@ -90,110 +90,9 @@
 
     ; Creates a failure when reached.
     MACRO TEST_FAIL
-        call UNITTEST_TEST_READY_FAILURE
+        nop ; ASSERTION false
     ENDM
 
-    ; Tests A for a specific value.
-    MACRO TEST_A value?
-        cp value?
-        call nz,UNITTEST_TEST_READY_FAILURE
-        nop
-    ENDM
-
-    ; Tests that A is not equal to a specific value.
-    MACRO TEST_A_UNEQUAL value?
-        cp value?
-        call z,UNITTEST_TEST_READY_FAILURE
-        nop
-    ENDM
-
-
-    ; Tests a single or double register for a specific value.
-    ; E.g. "TEST_REGISTER A, 5" or "TEST_REGISTER HL, 0x1FFFF"
-    MACRO TEST_REGISTER reg?, value?
-        push de
-        push hl
-        push hl
-        ld hl,UNITTEST_SAVE_REG+1
-        ld (hl),0  ; Make sure the high byte is 0
-        pop hl
-        ld (UNITTEST_SAVE_REG),reg? ; Using a memory entry it allows to use reg for single or double registers
-        ld hl,(UNITTEST_SAVE_REG)
-        ld de,value?
-        nop ; ASSERTION HL == DE
-        pop hl
-        pop de
-    ENDM
-
-
-    ; Tests a double register for a specific value.
-    ; E.g. TEST_REG hl, label1 ; Tests if register hl == label1
-    MACRO TEST_DREG dreg?, value?
-        push de
-        push hl
-        push dreg?
-        pop hl
-        ld de,value?
-        or a
-        sbc hl,de
-        pop hl
-        pop de
-        call nz,UNITTEST_TEST_READY_FAILURE ; de = (addr)
-        nop
-    ENDM
-
-
-     ; Tests a double register for a specific value.
-    ; E.g. TEST_REG hl, label1 ; Tests if register hl == label1
-    MACRO TEST_DREG_UNEQUAL dreg?, value?
-        push de
-        push hl
-        push dreg?
-        pop hl
-        ld de,value?
-        or a
-        sbc hl,de
-        pop hl
-        pop de
-        call z,UNITTEST_TEST_READY_FAILURE ; de = (addr)
-        nop
-    ENDM
-
-
-    ; Test two registers for equality.
-    ; Testcase fails if registers are not equal.
-    MACRO TEST_DREGS dreg1?, dreg2?
-        push de
-        push hl
-        push dreg1?
-        push dreg2?
-        pop de
-        pop hl
-        or a
-        sbc hl,de
-        pop hl
-        pop de
-        call nz,UNITTEST_TEST_READY_FAILURE
-        nop
-    ENDM
-
-
-    ; Test two registers for unequality.
-    ; Testcase fails if registers are equal.
-    MACRO TEST_DREGS_UNEQUAL dreg1?, dreg2?
-        push de
-        push hl
-        push dreg1?
-        push dreg2?
-        pop de
-        pop hl
-        or a
-        sbc hl,de
-        pop hl
-        pop de
-        call z,UNITTEST_TEST_READY_FAILURE
-        nop
-    ENDM
 
 
     ; Compares 2 memory areas containing null terminated strings.
@@ -316,7 +215,6 @@
 .end:
     ENDM
 
-
     ; Initializes the registers with default values.
     ; Use before the tested function is called.
     ; After the call the TEST_UNCHANGED_XX tests can be used
@@ -329,34 +227,15 @@
     ENDM
 
     MACRO TEST_UNCHANGED_BC
-        push hl
-        ld hl,0xBBCC
-        or a
-        sbc hl,bc
-        pop hl
-        call nz,UNITTEST_TEST_READY_FAILURE
-        nop
+        nop ; ASSERTION BC == 0xBBCC
     ENDM
 
     MACRO TEST_UNCHANGED_DE
-        push hl
-        ld hl,0xDDEE
-        or a
-        sbc hl,de
-        pop hl
-        call nz,UNITTEST_TEST_READY_FAILURE
-        nop
+        nop ; ASSERTION DE == 0xDDEE
     ENDM
 
     MACRO TEST_UNCHANGED_HL
-        push de
-        ld de,0x8899
-        or a
-        sbc hl,de
-        add hl,de   ; restore hl without affecting the flags
-        pop de
-        call nz,UNITTEST_TEST_READY_FAILURE
-        nop
+        nop ; ASSERTION HL == 0x8899
     ENDM
 
     MACRO TEST_UNCHANGED_BC_DE
@@ -370,47 +249,45 @@
     ENDM
 
     MACRO TEST_UNCHANGED_A
-        TEST_A 0xAA
+        nop ; TEST ASSERTION A == 0xAA
     ENDM
 
     MACRO TEST_UNCHANGED_B
-        TEST_REGISTER b, 0xBB
+        nop ; TEST ASSERTION B == 0xBB
     ENDM
 
     MACRO TEST_UNCHANGED_C
-        TEST_REGISTER c, 0xCC
+        nop ; TEST ASSERTION C == 0xCC
     ENDM
 
     MACRO TEST_UNCHANGED_D
-        TEST_REGISTER d, 0xDD
+        nop ; TEST ASSERTION D == 0xDD
     ENDM
 
     MACRO TEST_UNCHANGED_E
-        TEST_REGISTER e, 0xEE
+        nop ; TEST ASSERTION E == 0xEE
     ENDM
 
     MACRO TEST_UNCHANGED_H
-        TEST_REGISTER h, 0x88
+        nop ; TEST ASSERTION H == 0x88
     ENDM
 
     MACRO TEST_UNCHANGED_L
-        TEST_REGISTER l, 0x99
+        nop ; TEST ASSERTION L == 0x99
     ENDM
 
 
     ; Macro to test flags for Z.
     ; Testcase fails for NZ.
     MACRO TEST_FLAG_Z
-        call nz,UNITTEST_TEST_READY_FAILURE
-        nop
+        nop ; TEST ASSERTION F & 0x40
     ENDM
 
 
     ; Macro to test flags for NZ.
     ; Testcase fails for Z.
     MACRO TEST_FLAG_NZ
-        call z,UNITTEST_TEST_READY_FAILURE
-        nop
+        nop ; TEST ASSERTION (F & 0x40) == 0
     ENDM
 
 
@@ -786,7 +663,7 @@ TEST_UNCHANGED_BC_DE_HL:    MACRO
     ENDM
 
 TEST_UNCHANGED_A:    MACRO
-        TEST_A 0xAA
+        ; TEST ASSERTION A == 0xAA
     ENDM
 
 TEST_UNCHANGED_B:    MACRO
