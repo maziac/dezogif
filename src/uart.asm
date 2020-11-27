@@ -204,6 +204,7 @@ read_uart_byte:
 
     ; "Timeout"
     ; Waited for 256*43 T-states=393us
+.timeout:
     nop ; LOGPOINT read_uart_byte: ERROR=TIMEOUT
     jp rx_timeout   ; ASSERTION
 

@@ -188,11 +188,6 @@
             "resetOnLaunch": true,
             "startAutomatically": true,
             "unitTestTimeout": 2,
-            "commandsAfterLaunch": [
-                "-wpmem enable",
-                "-assertion enable",
-                "-logpoint enable", // Enable all logpoints, especially [UNITTEST]
-            ],
             "disassemblerArgs": {
                 "esxdosRst": true
             },

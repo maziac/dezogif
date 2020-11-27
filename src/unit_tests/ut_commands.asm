@@ -1407,7 +1407,8 @@ UT_16_cmd_loopback:
 .wrap_cmd_loopback
 	call cmd_loopback
 	; Does not return here:
-	; ASSERTION
+	nop ; ASSERTION
+
 
 
 ; Test cmd_get_sprites_palette.
@@ -1415,9 +1416,9 @@ UT_16_cmd_loopback:
 ; Note: teh values are not simulated in zsim.
 UT_17_cmd_get_sprites_palette:
 	; Test
-	TEST_PREPARE_COMMAND
 	xor a	; Palette 0
 	ld (.cmd_data),a
+	TEST_PREPARE_COMMAND
 	call cmd_get_sprites_palette
 	; Check response
  	call test_get_response
@@ -1428,6 +1429,7 @@ UT_17_cmd_get_sprites_palette:
 	; Test
 	ld a,1	; Palette 1
 	ld (.cmd_data),a
+	TEST_PREPARE_COMMAND
 	call cmd_get_sprites_palette
 	; Check response
  	call test_get_response
