@@ -17,7 +17,7 @@ sp_backup:  defw    0
 UT_read_uart_byte_timeout:
 	ld (sp_backup),sp
 	; Redirect timeout jump
-	ld hl,rx_timeout
+	ld hl,read_uart_byte.timeout
 	ldi (hl),0xC3	; JP
 	ldi (hl),.timeout&0xFF
 	ld (hl),.timeout>>8
@@ -34,4 +34,3 @@ UT_read_uart_byte_timeout:
 
 
     ENDMODULE
-    
