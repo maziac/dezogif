@@ -61,31 +61,25 @@
 
     ; Tests a memory address for a specific byte value.
     MACRO TEST_MEMORY_BYTE addr?, value?
-        push de
-        ld (UNITTEST_SAVE_REG),a
-        ld a,(addr?)
-        ld e,value?
-        cp e
-        jr z,.ok
-        ;call nz,UNITTEST_TEST_READY_FAILURE
-        nop ; ASSERTION A == E
-.ok:
-        ld a,(UNITTEST_SAVE_REG)
-        pop de
+        push hl
+        ld hl,addr?
+        ld l,(hl)
+        ld h,value?
+        nop ; ASSERTION L == H
+        pop hl
     ENDM
 
     ; Tests a memory address for a specific word value.
     ; If the test fails the '(addr)' can be found in DE.
     MACRO TEST_MEMORY_WORD addr?, value?
-        push de
-        push hl
+        push hl, de
+        ld hl,addr?
+        ld e,(hl)
+        inc hl
+        ld d,(hl)
         ld hl,value?
-        ld de,(addr?)
-        or a
-        sbc hl,de
-        pop hl
-        call nz,UNITTEST_TEST_READY_FAILURE ; de = (addr)
-        pop de
+        nop ; ASSERTION DE == HL
+        pop de, hl
     ENDM
 
     ; Creates a failure when reached.
@@ -120,7 +114,7 @@
         pop de
         pop hl
         pop af
-        call UNITTEST_TEST_READY_FAILURE
+        nop ; ASSERTION false
         jr .end
 
 .null_found:
@@ -156,7 +150,7 @@
         pop de
         pop hl
         pop af
-        call UNITTEST_TEST_READY_FAILURE
+        nop ; ASSERTION false
         jr .end
 
 .comp_string:
@@ -177,7 +171,7 @@
     ENDM
 
 
-    ; Tests a memory address for a specific string.
+    ; Tests a memory area on equality.
     ; addr1 = the tested memory area
     ; addr2 = the memory area to compare to
     ; count = the number of elements to compare
@@ -210,7 +204,7 @@
         pop de
         pop hl
         pop af
-        call UNITTEST_TEST_READY_FAILURE
+        nop ; ASSERTION false
         jr .end
 .end:
     ENDM
