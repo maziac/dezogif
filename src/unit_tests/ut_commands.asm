@@ -95,7 +95,7 @@ test_get_response:
 	; Read A5
 	ld bc,0x0001	; Port 0x0001 for reading the TX data
 	in a,(c)
-	; TEST ASSERTION A == MESSAGE_START_BYTE	; Is sent as start byte always
+	nop ; TEST ASSERTION A == MESSAGE_START_BYTE	; Is sent as start byte always
 	; Read written length -> DE
 	in a,(c) : ld e,a
 	in a,(c) : ld d,a
@@ -242,7 +242,7 @@ UT_3_cmd_get_registers:
 
  TC_END
 
-.cmd_data:	; WPMEM, .cmd_data_end-.cmd_data, W
+.cmd_data:	; WPMEM, ut_commands.UT_3_cmd_get_registers.cmd_data_end - ut_commands.UT_3_cmd_get_registers.cmd_data, W
 	defw 0x1001, 0x1002, 0x1003, 0x1004, 0x1005, 0x1006, 0x1007
 	defw 0x2001, 0x2002, 0x2003, 0x2004, 0x2005, 0x2006, 0x2007
 .cmd_data_end

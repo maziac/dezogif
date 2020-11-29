@@ -9,6 +9,7 @@
 
 ; Data area for testing
 
+	nop
 
 ; Test that register is set correctly.
 UT_write_read_slot:
@@ -27,7 +28,7 @@ UT_write_read_slot:
 	; Read
 	ld a,.free_slot+REG_MMU
 	call read_tbblue_reg
-	; TEST ASSERTION A == 29
+	nop ; TEST ASSERTION A == 29
 
 	; Restore previous used bank
 	pop de
