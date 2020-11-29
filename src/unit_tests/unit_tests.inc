@@ -15,12 +15,13 @@
         di
         ld sp,UNITTEST_STACK
 @UNITTEST_CALL_ADDR:
-        call 0x0000 ; Set by unit tests
+        call 0x0000 ; Will be changed by the z80 unit tests.
         nop
 
 @UNITTEST_TEST_READY_SUCCESS:
         jr UNITTEST_TEST_READY_SUCCESS	; A breakpoint will be set here.
 
+; Stack
         defw 0	; WPMEM ,2
         defs 2*50	; Stack depth of 50 should be enough
 @UNITTEST_STACK:

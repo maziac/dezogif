@@ -936,46 +936,8 @@ UT_9_cmd_write_mem.UT_banks:
 .cmd_data_end
 
 
-; Test retrieving the slot/bank association.
-; Note: This will also fail if some other test that changes the default
-; slot/bank association fails.
-UT_10_cmd_get_slots:
-	TEST_EMPTY_COMMAND
-
-	; Set standard config
-	nextreg REG_MMU, ROM_BANK
-	nextreg REG_MMU+1, ROM_BANK
-	nextreg REG_MMU+2, 10
-	nextreg REG_MMU+3, 11
-	nextreg REG_MMU+4, 4
-	nextreg REG_MMU+5, 5
-	nextreg REG_MMU+6, 0
-	ld a,70
-	ld (slot_backup.slot7),a
-
-	; Test
-	call cmd_get_slots
-
-	; Check repsonse
- 	call test_get_response
-
-	; Test size
-	TEST_MEMORY_WORD test_memory_payload.length, 1+8
-
-	; Compare with standard slots
-	TEST_MEMORY_BYTE test_memory_payload+1, 0xFF	; ROM
-	TEST_MEMORY_BYTE test_memory_payload+2, 0xFF	; ROM
-	TEST_MEMORY_BYTE test_memory_payload+3, 10
-	TEST_MEMORY_BYTE test_memory_payload+4, 11
-	TEST_MEMORY_BYTE test_memory_payload+5, 4
-	TEST_MEMORY_BYTE test_memory_payload+6, 5
-	TEST_MEMORY_BYTE test_memory_payload+7, 0
-	TEST_MEMORY_BYTE test_memory_payload+8, 70
- TC_END
-
-
 ; Test cmd_set_slot
-UT_11_cmd_set_slot:
+UT_10_cmd_set_slot:
 	ld iy,.cmd_data
 
 	; Test
@@ -1049,7 +1011,7 @@ UT_11_cmd_set_slot:
 
 ; Test cmd_get_tbblue_reg.
 ; Check a set slot.
-UT_12_cmd_get_tbblue_reg:
+UT_11_cmd_get_tbblue_reg:
 
 	; Test
 	TEST_PREPARE_COMMAND
@@ -1081,7 +1043,7 @@ UT_12_cmd_get_tbblue_reg:
 
 
 ; Test cmd_set_border. Test works only on zsim.
-UT_13_cmd_set_border:
+UT_12_cmd_set_border:
 	ld iy,.cmd_data
 
 	; Test
@@ -1119,7 +1081,7 @@ UT_13_cmd_set_border:
 
 
 ; Test cmd_set_breakpoints with no breakpoints.
-UT_14_cmd_set_breakpoints.UT_no_bp:
+UT_13_cmd_set_breakpoints.UT_no_bp:
 	TEST_EMPTY_COMMAND
 
 	; Test
@@ -1134,7 +1096,7 @@ UT_14_cmd_set_breakpoints.UT_no_bp:
 
 ; Test cmd_set_breakpoints.
 ; 2 breakpoints.
-UT_14_cmd_set_breakpoints.UT_2_bps:
+UT_13_cmd_set_breakpoints.UT_2_bps:
 	TEST_PREPARE_COMMAND
 
 	; Test
@@ -1168,7 +1130,7 @@ UT_14_cmd_set_breakpoints.UT_2_bps:
 
 ; Test cmd_set_breakpoints.
 ; Restore slots.
-UT_14_cmd_set_breakpoints.UT_restore_slots:
+UT_13_cmd_set_breakpoints.UT_restore_slots:
 	TEST_PREPARE_COMMAND
 
 	; Page in banks in ROM area
@@ -1214,7 +1176,7 @@ UT_14_cmd_set_breakpoints.UT_restore_slots:
 
 ; Test cmd_set_breakpoints.
 ; With long addresses (i.e. with banking).
-UT_14_cmd_set_breakpoints.UT_long_bps:
+UT_13_cmd_set_breakpoints.UT_long_bps:
 	TEST_PREPARE_COMMAND
 
 	; Page in banks in ROM area
@@ -1251,7 +1213,7 @@ UT_14_cmd_set_breakpoints.UT_long_bps:
 
 
 ; Test cmd_restore_mem with no values.
-UT_15_cmd_restore_mem.UT_no_values:
+UT_14_cmd_restore_mem.UT_no_values:
 	TEST_EMPTY_COMMAND
 
 	; Test
@@ -1266,7 +1228,7 @@ UT_15_cmd_restore_mem.UT_no_values:
 
 ; Test cmd_restore_mem.
 ; 2 values.
-UT_15_cmd_restore_mem.UT_2_values:
+UT_14_cmd_restore_mem.UT_2_values:
 	TEST_PREPARE_COMMAND
 
 	; Test
@@ -1297,7 +1259,7 @@ UT_15_cmd_restore_mem.UT_2_values:
 
 ; Test cmd_restore_mem.
 ; Restore slots.
-UT_15_cmd_restore_mem.UT_restore_slots:
+UT_14_cmd_restore_mem.UT_restore_slots:
 	TEST_PREPARE_COMMAND
 
 	; Page in banks in ROM area
@@ -1343,7 +1305,7 @@ UT_15_cmd_restore_mem.UT_restore_slots:
 
 ; Test cmd_restore_mem.
 ; 2 values.
-UT_15_cmd_restore_mem.UT_long_addresses:
+UT_14_cmd_restore_mem.UT_long_addresses:
 	TEST_PREPARE_COMMAND
 
 	; Page in banks in ROM area
@@ -1379,7 +1341,7 @@ UT_15_cmd_restore_mem.UT_long_addresses:
 
 ; Test cmd_loopback.
 ; Test looping back received data.
-UT_16_cmd_loopback:
+UT_15_cmd_loopback:
 	TEST_PREPARE_COMMAND
 
 	; Test
@@ -1414,7 +1376,7 @@ UT_16_cmd_loopback:
 ; Test cmd_get_sprites_palette.
 ; Test that 513 bytes are send for both palettes.
 ; Note: teh values are not simulated in zsim.
-UT_17_cmd_get_sprites_palette:
+UT_16_cmd_get_sprites_palette:
 	; Test
 	xor a	; Palette 0
 	ld (.cmd_data),a
@@ -1443,7 +1405,7 @@ UT_17_cmd_get_sprites_palette:
 
 
 ; Test cmd_get_sprites_clip_window_and_control
-UT_18_cmd_get_sprites_clip_window_and_control:
+UT_17_cmd_get_sprites_clip_window_and_control:
 
 	/* Clipwindow is not simulated in tests.
 	; Set clip window

@@ -48,15 +48,14 @@ cmd_jump_table:
 .pause:				defw 0						; not supported on a ZX Next
 .read_mem:			defw cmd_read_mem			; 8
 .write_mem:			defw cmd_write_mem			; 9
-.get_slots:			defw cmd_get_slots			; 10
-.set_slot:			defw cmd_set_slot			; 11
-.get_tbblue_reg:	defw cmd_get_tbblue_reg		; 12
-.set_border:		defw cmd_set_border			; 13
-.set_breakpoints:	defw cmd_set_breakpoints	; 14
-.restore_mem:		defw cmd_restore_mem		; 15
-.loopback:			defw cmd_loopback			; 16
-.get_sprites_palette:	defw cmd_get_sprites_palette	; 17
-.get_sprites_clip_window_and_control:	defw cmd_get_sprites_clip_window_and_control	; 18
+.set_slot:			defw cmd_set_slot			; 10
+.get_tbblue_reg:	defw cmd_get_tbblue_reg		; 11
+.set_border:		defw cmd_set_border			; 12
+.set_breakpoints:	defw cmd_set_breakpoints	; 13
+.restore_mem:		defw cmd_restore_mem		; 14
+.loopback:			defw cmd_loopback			; 15
+.get_sprites_palette:	defw cmd_get_sprites_palette	; 16
+.get_sprites_clip_window_and_control:	defw cmd_get_sprites_clip_window_and_control	; 17
 
 ;.get_sprites:			defw 0	; not supported on a ZX Next
 ;.get_sprite_patterns:	defw 0	; not supported on a ZX Next
@@ -198,7 +197,23 @@ cmd_get_registers:
 	; Now the slot values
 	ld a,8	; 8 slots
 	call write_uart_byte
-	jp send_slots
+
+	; Send the first 7 slots
+	ld de,256*REG_MMU+7	; Load D and E at the same time
+.slot_loop:
+	; Get bank for slot
+	ld a,d
+	call read_tbblue_reg	; Result in A
+	; Send
+	call write_uart_byte
+	inc d
+	dec e
+	jr nz,.slot_loop
+
+	; Get and send slot 7
+	ld a,(slot_backup.slot7)
+	; LOGPOINT cmd_get_slots slot0: ${A}
+	jp write_uart_byte
 
 
 ;===========================================================================
@@ -464,37 +479,6 @@ cmd_write_mem:
 	; Write
 	ld (hl),a
 	ret
-
-
-;===========================================================================
-; CMD_GET_SLOTS
-; Returns the 8k-banks/slot association.
-; Changes:
-;  NA
-;===========================================================================
-cmd_get_slots:
-	; LOGPOINT [CMD] cmd_get_slots
-	; Send response
-	ld de,9
-	call send_length_and_seqno
-
-send_slots:	; Note: is also used by get_registers
-	; Send the first 7 slots
-	ld de,256*REG_MMU+7	; Load D and E at the same time
-.loop:
-	; Get bank for slot
-	ld a,d
-	call read_tbblue_reg	; Result in A
-	; Send
-	call write_uart_byte
-	inc d
-	dec e
-	jr nz,.loop
-
-	; Get and send slot 7
-	ld a,(slot_backup.slot7)
-	; LOGPOINT cmd_get_slots slot0: ${A}
-	jp write_uart_byte
 
 
 ;===========================================================================
