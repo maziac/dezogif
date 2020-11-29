@@ -193,8 +193,8 @@
             },
             "sjasmplus": [
                 {
-                    "path": "out/ut.list",
-                    //"path": "out/ut.sld",
+                    //"path": "out/ut.list",
+                    "path": "out/ut.sld",
                     "srcDirs": [
                         "src"
                     ]
