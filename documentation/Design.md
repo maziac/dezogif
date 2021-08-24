@@ -4,18 +4,18 @@ For implementing the ZX Next Remote in [DeZog](https://github.com/maziac/DeZog) 
 
 For debugging there is no specific support on the ZX Next so everything, breakpoints, stepping, etc. is done in SW.
 
-The protocol used is the [DZRP](https://github.com/maziac/DeZog/blob/master/design/DeZogProtocol.md). Not all commands care working on the Next. Especially the commands to readout the sprites data are not available. 
+The protocol used is the [DZRP](https://github.com/maziac/DeZog/blob/master/design/DeZogProtocol.md). Not all commands are working on the Next. Especially the commands to readout the sprites data are not available.
 It is also not possible to get any coverage or history information from the Next.
 
-Furthermore one of the main problems is that the dezogif program itself has to be present in the Z80/ZX Spectrum program area. Getting in the way we the debugged program. Therefore dezogif has to be paged in/out when ever necessary.
+Furthermore one of the main problems is that the dezogif program itself has to be present in the Z80/ZX Spectrum program area. Getting in the way with the debugged program. Therefore dezogif has to be paged in/out when ever necessary.
 
 This document deals with the main problems/solutions and design decisions.
 
 
 # Communication
 
-The ZX Next has a UART, e.g. to connect to Wifi.
-It is available at the WIFI connector CN9.
+The ZX Next has a UART, e.g. to connect to WiFi.
+It is available at the WiFi connector CN9.
 
 It is possible to connect a serial/USB adapter cable to it.
 The UART can be programmed via port registers 0x133B and 0x143B.
@@ -27,7 +27,7 @@ It is also possible to put the UART on pins 7 (Tx) and 9 (Rx) of one of the joys
 When a joy port is used for UART the problem is the conflict with the joystick.
 A game would usually initialize the use for a joystick, i.e. cutting off the communication with the PC.
 When this happens the ZX Next transmits endless zeroes to the PC.
-Therefore the DZRP protocal was extended by one byte which is sent as first byte of a message (only in direction from ZX Next to PC).
+Therefore the DZRP protocol was extended by one byte which is sent as first byte of a message (only in direction from ZX Next to PC).
 This is the MESSAGE_START_BYTE (0xA5). DeZog will wait on this byte before it recognizes messages coming from the Next.
 
 
@@ -61,7 +61,7 @@ The SW has the following main tasks:
 
 When a breakpoint is set the opcode at the breakpoint address is saved and instead a one byte opcode RST is added.
 
-So, at the RST position there is code located which jumps into the ddezogif-program and informs DeZog via UART, then waits on input from DeZog.
+So, at the RST position there is code located which jumps into the dezogif-program and informs DeZog via UART, then waits on input from DeZog.
 
 This is the easy part.
 
@@ -179,7 +179,7 @@ Conditions like
 ```(A > 3) AND (PEEKW(SP) != PC)```
 should be allowed.
 
-I don't need to take care inside the dezogif program. DeZog taked care of the conditions without help of the Remote.
+I don't need to take care inside the dezogif program. DeZog takes care of the conditions without help of the Remote.
 
 I.e. if a breakpoint with a condition is hit for dezogif it is like a normal, unconditional breakpoint. So it pauses.
 DeZog will then check the condition. If not true it will simply continue the execution.
@@ -254,7 +254,7 @@ MAIN = The main debugger program
 SWAP = Temporary swap space for the debugger program. Used e.g. to page in a different bank to read/Write the memory.
 L2 RW = Layer 2 read/write enable.
 PC = Slot used for program execution. (Also bold)
-M1 enabled = 1 if the M1 key is enabled. I.e. the NMI is only allowed during debugged program execution. While the debugger is runnign it is disabled.
+M1 enabled = 1 if the M1 key is enabled. I.e. the NMI is only allowed during debugged program execution. While the debugger is running it is disabled.
 
 States:
 Running = The debugged program being run.
@@ -267,7 +267,7 @@ Exit = The debugger is left.
 Notes:
 - The SP of the debugged program can only be used in the code running in M. The SP might be placed inside M so it is not safe to access it while MAIN is paged in slot 0. It can also not be accessed from MAIN being paged in to slot 7 as SP might be in slot 7.
 - The data of MAIN can be accessed from either slot: slot 0 or slot 7. If accessed from slot 0 than the addresses need to be subtracted by 0xE000.
-- It's not posisble to directly switch from M into Main/slot 7 because the subroutine would become too large by a few bytes. The code would reach into area 0x0074 which (for the ROM) is occupied by used ROM code.
+- It's not possible to directly switch from M into Main/slot 7 because the subroutine would become too large by a few bytes. The code would reach into area 0x0074 which (for the ROM) is occupied by used ROM code.
 
 
 
@@ -356,7 +356,7 @@ NMI--> pushes the PC onto the stack
 ~~~
 In the example above the pushed BC value is lost and exchanged with the PC value.
 
-This is true for the debugged program aswell: If an NMI occurs during stack manipulation the program might malfunction. Here there is nothing that can be done about it in the debugger.
+This is true for the debugged program as well: If an NMI occurs during stack manipulation the program might malfunction. Here there is nothing that can be done about it in the debugger.
 
 For the debugged program this also applies
 - for maskable interrupts if the interrupts are not disabled (but this is a general failure of the program)
