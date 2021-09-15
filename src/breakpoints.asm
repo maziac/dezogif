@@ -15,7 +15,7 @@
 ;===========================================================================
 
 ; The breakpoint reasons.
-BREAK_REASON:	
+BREAK_REASON:
 .NO_REASON			EQU 0
 .MANUAL_BREAK		EQU 1
 .BREAKPOINT_HIT		EQU 2
@@ -29,14 +29,14 @@ BP_INSTRUCTION:		EQU 0xC7		; RST 0
 	STRUCT BREAKPOINT
 instruction_length	defb	; The length of the 'breaked' instruction. 0 indicates a free location.
 address				defw	; The location of the breakpoint
-;branch_address		defw	; The optional branch address of the instruction	
+;branch_address		defw	; The optional branch address of the instruction
 opcode				defb	; The substituted opcode
 	ENDS
 
 ; The temporary breakpoint structure.
 	STRUCT TMP_BREAKPOINT
 opcode				defb	; The substituted opcode
-bp_address			defw	; The location of the temporary breakpoint 
+bp_address			defw	; The location of the temporary breakpoint
 	ENDS
 
 
@@ -65,10 +65,10 @@ exit_code_di:
 	; Restore slot 7
 	nextreg REG_MMU+MAIN_SLOT,a
 	; Restore
-	pop af	
+	pop af
 	; Jump to the address on the stack, i.e. the PC
-    ret 
-	ENT 
+    ret
+	ENT
 copy_rom_start_0000h_code_end
 
 	ORG MAIN_ADDR+0x0066
@@ -126,7 +126,7 @@ copy_rom_start_0066h_code_end
 	in a,(c)
 	; Save IO_NEXTREG_REG
     ld (backup.io_next_reg-MAIN_ADDR),a
-	
+
 	; Now backup main slot.
 	ld bc,IO_NEXTREG_REG
 	ld a,REG_MMU+MAIN_SLOT
@@ -229,12 +229,12 @@ enter_debugger:
 	ld (backup.bc),hl
 	ld hl,(debugged_prgm_stack_copy.af)
 	ld (backup.af),hl
-	
+
 	; Determine if breakpoint or coop code
 	ld hl,(debugged_prgm_stack_copy.return1)	; Get value from "stack"
 	; Check for 0
 	ld a,l
-	or h 
+	or h
 	jp nz,enter_breakpoint
 	jp exec_user_function
 
@@ -343,7 +343,7 @@ clear_tmp_breakpoint:
 
 ;===========================================================================
 ; Sets one of the two temporary breakpoints.
-; Temporary breakpoints are not enable if they point to location 0x0000.
+; Temporary breakpoints are not set if they point to location 0x0000.
 ; Stores the opcode at the bp address and set bp address to RST.
 ; Sets a temporary breakpoint only if no "real" breakpoint is set.
 ; Parameters:
@@ -402,14 +402,14 @@ set_tmp_breakpoint:
 .store:
 	; Store to 'opcode'
 	ex de,hl
-	ldi (hl),a	
+	ldi (hl),a
 	; Store address
 	ldi (hl),de
-	ret 
-	
+	ret
+
 
 ;===========================================================================
-; Checks if one of the 2 temporary breakpoints matches the given breakpoint 
+; Checks if one of the 2 temporary breakpoints matches the given breakpoint
 ; address.
 ; Parameters:
 ;   DE = breakpoint address
@@ -425,14 +425,14 @@ check_tmp_breakpoints:
 	cp e
 	jr nz,.no_bp1
 	ld a,(hl)
-	cp d 
+	cp d
 	ret z	; Return if found
 .no_bp1:
 	inc hl : inc hl	; skip high byte and opcode
 	ldi a,(hl)
 	cp e
-	ret nz	; Return if not found 
-	ld a,(hl) 
-	cp d 
+	ret nz	; Return if not found
+	ld a,(hl)
+	cp d
 	ret 	; Return with Z or NZ
 
