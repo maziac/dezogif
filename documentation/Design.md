@@ -41,7 +41,7 @@ When the debugged program is stopped the dezogif takes over and configures the j
 This implies that it is not possible to stop the debugged program from DeZog.
 to stop it you need to press the yellow NMI button.
 
-When the NMI button was pressed dezogif send a DZRP pause notification to DeZog to notify about the state change. Then dezogif will wait for further requests from DeZog, e.g. to read register values etc.
+When the NMI button was pressed the dezogif sends a DZRP pause notification to DeZog to notify about the state change. Then dezogif will wait for further requests from DeZog, e.g. to read register values etc.
 
 The program is started when DeZog sends a DZRP continue request.
 
@@ -55,6 +55,16 @@ The SW has the following main tasks:
 - read/write registers
 - break the execution
 - set SW breakpoints
+
+
+## Basic operation - Pressing the NMI button
+When the yellow NMI button is pressed depending on the current state one of 4 cases can happen:
+
+- If pressed for the first time (after boot) the dezogif program is initializing itself. It copies itself into a bank 94. "Returns"/RETN from the NMI to enable maskable interrupts (It not really returns, it stays in a loop).
+It shows the dezogif GUI and stays in a loop, waiting for UART commands from DeZog.
+- If pressed while the dezogif GUI is shown it immediately returns from the NMI interrupt.
+- If pressed while holding the Symbol Shift (or CTRL) key down it re-initializes itself just if pressed for the first time.
+- If pressed while the debugged program is running it sends a notification via UART to DeZog and jumps into loop waiting for further commands from DeZog. (Use this to manually break the debugged program.)
 
 
 ## SW Breakpoints
@@ -218,7 +228,7 @@ The MF M1 button has to be reactivated before the NMI ISR is left by paging out 
 
 So the plan is:
 1. Put NMI and all dezog debugger code in enNextMf.rom
-2. To activate user has to press NMI button
+2. To activate, the user has to press NMI button
 3. The SW will copy itself from MF ROM to a memory bank
 4. The SW is continued in the memory bank and can accept a debugged program through UART
 5. From here normal execution
@@ -226,7 +236,7 @@ So the plan is:
 6.a If the debugged program is running: the NMI code will branch into the bank memory and send a pause notification.
 6.b If the debugged program is not running: the NMI code will return without action.
 
-If the "Symbol Shift" (or CTRL) key is pressed during the user presses the NMI execution continues at step 3.
+If the "Symbol Shift" (or CTRL) key is pressed while the user presses the NMI execution continues at step 3. I.e. this can re-initialize the dezogif SW.
 
 MF ROM is 0x0000-0x1FFF. MF RAM is 0x2000-0x3FFF.
 
@@ -265,7 +275,7 @@ Dbg exec = The debugger executes a command from DeZog.
 Exit = The debugger is left.
 
 Notes:
-- The SP of the debugged program can only be used in the code running in M. The SP might be placed inside M so it is not safe to access it while MAIN is paged in slot 0. It can also not be accessed from MAIN being paged in to slot 7 as SP might be in slot 7.
+- The SP of the debugged program can only be used in the code running in M. The SP might be placed inside M so it is not safe to access it while MAIN is paged in slot 0. It can also not be accessed from MAIN being paged into slot 7 as SP might be in slot 7.
 - The data of MAIN can be accessed from either slot: slot 0 or slot 7. If accessed from slot 0 than the addresses need to be subtracted by 0xE000.
 - It's not possible to directly switch from M into Main/slot 7 because the subroutine would become too large by a few bytes. The code would reach into area 0x0074 which (for the ROM) is occupied by used ROM code.
 
@@ -293,7 +303,7 @@ When entering the debugger the SP can point to any memory location.
 E.g. even slot7 or slot 0.
 If the SP points to memory in the same area as the debugger code is running the wrong values could be pushed/popped.
 
-So, to access the debugged programs stack it is necessary to map the memory area around SP into an unused bank and get/set the values there.
+So, to access the debugged program's stack it is necessary to map the memory area around SP into an unused bank and get/set the values there.
 
 Actually 2 banks/slots are required as the stack could reach over 2 slots. Even one SP address could be on the border so that the low byte is in slot X and the high byte is in slot x+1.
 
