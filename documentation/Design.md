@@ -58,6 +58,7 @@ The SW has the following main tasks:
 
 
 ## Basic operation - Pressing the NMI button
+
 When the yellow NMI button is pressed depending on the current state one of 4 cases can happen:
 
 - If pressed for the first time (after boot) the dezogif program is initializing itself. It copies itself into a bank 94. "Returns"/RETN from the NMI to enable maskable interrupts (It not really returns, it stays in a loop).
@@ -93,8 +94,6 @@ The debug-program then jumps to the breakpoint location and after the instructio
 Now dezogif removes the temporary breakpoints and restores the original breakpoints and then continues.
 
 Complicated but working.
-
-
 
 
 ## SW Breakpoints - Even More Complex
@@ -180,7 +179,6 @@ dezog <-- zxnext
 ~~~
 
 
-
 ## Breakpoint conditions
 
 After a breakpoint is hit it needs to be checked if the condition is true.
@@ -207,7 +205,6 @@ But still the lite history will work in DeZog.
 Is not possible or would be far to slow in SW.
 
 So code coverage is not available.
-
 
 
 ## Multiface
@@ -239,7 +236,6 @@ So the plan is:
 If the "Symbol Shift" (or CTRL) key is pressed while the user presses the NMI execution continues at step 3. I.e. this can re-initialize the dezogif SW.
 
 MF ROM is 0x0000-0x1FFF. MF RAM is 0x2000-0x3FFF.
-
 
 
 # Memory Bank Switching - Multiface
@@ -388,4 +384,67 @@ BP->	dec sp
 Placing a BP at any of the above locations will destroy the pushed BC value if the BP is hit.
 
 The user has to take care not to place breakpoints at these locations.
+
+TODO: Change description for NMI and 3.01.10: no stack corruption.
+
+# Stackless NMI - NextZxOS 3.01.10
+
+With 3.01.10 the "default" is that stackless NMI is enabled.
+I.e. the NMI return address is not written to the stack but in 2 ZX Next registers.
+
+See https://gitlab.com/SpectrumNext/ZX_Spectrum_Next_FPGA/-/blob/master/cores/zxnext/nextreg.txt#L1004
+
+~~~
+// INTERRUPTS
+
+0xC0 (192) => Interrupt Control
+(R/W) (soft reset = 0)
+  bits 7:5 = Programmable portion of im2 vector*
+  bit 4 = Reserved must be 0
+  bit 3 = Enable stackless nmi response**
+  bits 2:1 = Reserved must be 0
+  bit 0 = Maskable interrupt mode: pulse (0) or im2 (1)
+* In im2 mode the interrupt vector generated is:
+  bits 7:5 = nextreg 0xC0 bits 7:5
+  bits 4:1 = 0  line interrupt (highest priority)
+    = 1  uart0 Rx
+    = 2  uart1 Rx
+    = 3-10  ctc channels 0-7
+    = 11 ula
+    = 12 uart0 Tx
+    = 13 uart1 Tx (lowest priority)
+  bit 0 = 0
+* In im2 mode the expansion bus is the lowest priority interrupter
+  and if no vector is supplied externally then 0xFF is generated.
+** The return address pushed during an nmi acknowledge cycle will
+  be written to nextreg instead of memory (the stack pointer will
+  be decremented) and the first RETN after the acknowledge will
+  take its return address from nextreg instead of memory (the stack
+  pointer will be incremented).  If bit 3 = 0 and in other
+  circumstances, RETN functions normally.
+
+0xC2 (194) => NMI Return Address LSB
+(R/W) (soft reset = 0)
+
+0xC3 (195) => NMI Return Address MSB
+(R/W) (soft reset = 0)
+
+The return address written during an nmi acknowledge cycle is
+always stored in these registers.
+~~~
+
+For the 'dezogif' this requires several changes.
+The changes are done such that 'dezogif' can work with or without stackless NMI and adapts dynamically.
+
+Changes:
+- mf_nmi_button_pressed_immediate_return: Immediately returns, e.g. if the program is already stopped. Here the RETN is used regularly. No change required.
+- mf_nmi_button_pressed: The NMI button has been pressed. The debugged program should be stopped.
+	- The debugged program return address (= the NMI return address) is saved to ```debugged_prgm_stack_copy.return1```. This needs to be handled differently for stackless.
+	- It uses ```call nmi_return``` to re-enable NMIs. Here a different behavior is required for normal and stackless mode.
+-
+
+
+# TODO
+
+To be checked: Can a program be debugged that changes the NMI behavior?
 

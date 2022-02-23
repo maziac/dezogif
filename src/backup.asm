@@ -5,11 +5,11 @@
 ; and for restoration.
 ;===========================================================================
 
-    
+
 ;===========================================================================
 ; Constants
 ;===========================================================================
-    
+
 
 
 ;===========================================================================
@@ -36,7 +36,7 @@ save_registers:
 	ld a,i
 	ld h,a
 	push hl
-	
+
 	; Save IM, note: IM cannot be saved
 	ld hl,0xFF	; 0xFF = undefined
 	push hl
@@ -47,7 +47,7 @@ save_registers:
 	; End of register saving through pushing
 
 .ret_jump:
-	jp 0x0000	; Self-modified	
+	jp 0x0000	; Self-modified
 
 
 ;===========================================================================
@@ -73,7 +73,7 @@ restore_registers:
 	ld r,a
 	ld a,h
 	ld i,a
-	
+
 	; Switch registers
 	exx
 	ex af,af'
@@ -94,12 +94,12 @@ restore_registers:
 	pop bc
 
 	; Restore clock speed
-	ld a,(backup.speed) 
+	ld a,(backup.speed)
 	nextreg REG_TURBO_MODE,a
 
 	; Restore AF
 	pop hl	; AF
-	ld (debugged_prgm_stack_copy.af),hl 
+	ld (debugged_prgm_stack_copy.af),hl
 
 	; Load SP, so that it is possible to call subroutines.
 	ld sp,debug_stack.top
@@ -115,7 +115,7 @@ restore_registers:
 	ld de,4
 	ld bc,debugged_prgm_stack_copy.af
 	call write_debugged_prgm_mem
-	
+
 	; Restore layer 2 reading/writing
 	call restore_layer2_rw
 	; It's still possible to read/write in slot 7
@@ -126,9 +126,9 @@ restore_registers:
 	out (c),a
 
 	; Restore DE value
-	ld de,(backup.de)	
+	ld de,(backup.de)
 	; Restore BC value
-	ld bc,(backup.bc)	
+	ld bc,(backup.bc)
 	; Load correct value of HL
 	ld hl,(backup.hl)
 	; Get debugged program stack
@@ -156,28 +156,29 @@ restore_registers:
 ;===========================================================================
 ; Adjusts the stack of the debugged program by 4 bytes.
 ; Before (debugged_prgm_stack_copy):
-; - [SP+6]:	The return address 
+; - [SP+6]:	The return address
 ; - [SP+4]:	AF was put on the stack
 ; - [SP+2]:	    AF (Interrupt flags) was put on the stack
 ; - [SP]:	    BC
 ; ===========================================================================
 adjust_debugged_program_stack_for_bp:
-	ld de,(debugged_prgm_stack_copy.return1)	
+	ld de,(debugged_prgm_stack_copy.return1)
 	dec de
 	ld (backup.pc),de
 
 	; Adjust debugged program SP
-	ld hl,(backup.sp)	
+	ld hl,(backup.sp)
 	add hl,4*2	; Skip complete stack
-	ld (backup.sp),hl	
+	ld (backup.sp),hl
 
 .af:
 	; Backup AF
-	ld hl,(debugged_prgm_stack_copy.af)	
+	ld hl,(debugged_prgm_stack_copy.af)
 	ld (backup.af),hl
 	ret
 
 
+; TODO: Is this used at all? :
 ;===========================================================================
 ; Adjusts the stack of the debugged program by 6 bytes.
 ; Before (debugged_prgm_stack_copy):
@@ -190,13 +191,13 @@ adjust_debugged_program_stack_for_bp:
 ; - [SP]:	BC
 ; ===========================================================================
 adjust_debugged_program_stack_for_function:
-	ld de,(debugged_prgm_stack_copy.return2)	
+	ld de,(debugged_prgm_stack_copy.return2)
 	ld (backup.pc),de
 
 	; Adjust debugged program SP
-	ld hl,(backup.sp)	
+	ld hl,(backup.sp)
 	add hl,6*2	; Skip complete stack
-	ld (backup.sp),hl	
+	ld (backup.sp),hl
 
 	; Rest
 	jr adjust_debugged_program_stack_for_bp.af
@@ -207,13 +208,13 @@ adjust_debugged_program_stack_for_function:
 ; Adjusts the stack of the debugged program by 2 bytes.
 ; I.e. skips the return address.
 ; Before (debugged_prgm_stack_copy):
-; - [SP]:	The return address 
+; - [SP]:	The return address
 ; ===========================================================================
-adjust_debugged_program_stack_for_nmi: 
+adjust_debugged_program_stack_for_nmi:
 	; Adjust debugged program SP
-	ld hl,(backup.sp)	
+	ld hl,(backup.sp)
 	inc hl : inc hl	; Skip complete stack
-	ld (backup.sp),hl	
+	ld (backup.sp),hl
 	ret
 
 
@@ -222,7 +223,7 @@ adjust_debugged_program_stack_for_nmi:
 ; Changes:
 ;   A, BC
 ; ===========================================================================
-save_layer2_rw:	
+save_layer2_rw:
 	; Save layer 2 reading/writing
     ld bc,LAYER_2_PORT
     in a,(c)
@@ -286,7 +287,7 @@ restore_slot:	; Restore the slot in A
 ; Returns:
 ;   The data copied to BC...
 ; Changes:
-;   
+;
 ; ===========================================================================
 read_debugged_prgm_mem:
 	push bc
@@ -302,7 +303,7 @@ read_debugged_prgm_mem:
 	ld a,(hl)
 	; Write byte
 	ldi (bc),a
-	ret 
+	ret
 
 
 ;===========================================================================
@@ -314,7 +315,7 @@ read_debugged_prgm_mem:
 ; Returns:
 ;   The data copied to HL...
 ; Changes:
-;   
+;
 ; ===========================================================================
 write_debugged_prgm_mem:
 	push bc
@@ -330,7 +331,7 @@ write_debugged_prgm_mem:
 	ldi a,(bc)
 	; Write byte
 	ld (hl),a
-	ret 
+	ret
 
 
 ; ===========================================================================
@@ -343,7 +344,7 @@ write_debugged_prgm_mem:
 ; Parameters:
 ;   HL = memory to read
 ;   DE = size
-;   BC = contains a function pointer to the inner call. When called (HL) 
+;   BC = contains a function pointer to the inner call. When called (HL)
 ;        contains the memory at the location. DE and HL should not be changed.
 ; ===========================================================================
 memory_loop:
@@ -360,7 +361,7 @@ memory_loop:
 	add HIGH SWAP_ADDR	; 0xC0
 	ld h,a
 
-.phase1:	
+.phase1:
 	; Page in slot 7 area to swap slot
 	ld a,(slot_backup.slot7)
 	nextreg REG_MMU+SWAP_SLOT,a
@@ -406,10 +407,10 @@ memory_loop:
 	ld a,h
 	cp 0x20*(SWAP_SLOT+1)	; Compare with end of slot memory area
 	jr nz,.inner_loop
-	
-	; End of bank(s) reached	
+
+	; End of bank(s) reached
 	; Check DE once again
 	ld a,e
 	or d
-	ret 
-	
+	ret
+

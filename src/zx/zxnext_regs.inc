@@ -362,5 +362,49 @@ SLOT_C000_DFFF:	equ 6
 SLOT_E000_FFFF:	equ 7
 
 
-; 8k Memory banks 
+; 8k Memory banks
 MMU_BANK:	equ 0 ; Start bank
+
+
+
+;-----------------------------------------------------------------------------
+; Interrupt Control Register.
+; For NMI Stackless Mode
+;
+; 0xC0 (192) => Interrupt Control
+; (R/W) (soft reset = 0)
+;   bits 7:5 = Programmable portion of im2 vector*
+;   bit 4 = Reserved must be 0
+;   bit 3 = Enable stackless nmi response**
+;   bits 2:1 = Reserved must be 0
+;   bit 0 = Maskable interrupt mode: pulse (0) or im2 (1)
+; * In im2 mode the interrupt vector generated is:
+;   bits 7:5 = nextreg 0xC0 bits 7:5
+;   bits 4:1 = 0  line interrupt (highest priority)
+;     = 1  uart0 Rx
+;     = 2  uart1 Rx
+;     = 3-10  ctc channels 0-7
+;     = 11 ula
+;     = 12 uart0 Tx
+;     = 13 uart1 Tx (lowest priority)
+;   bit 0 = 0
+; * In im2 mode the expansion bus is the lowest priority interrupter
+;   and if no vector is supplied externally then 0xFF is generated.
+; ** The return address pushed during an nmi acknowledge cycle will
+;   be written to nextreg instead of memory (the stack pointer will
+;   be decremented) and the first RETN after the acknowledge will
+;   take its return address from nextreg instead of memory (the stack
+;   pointer will be incremented).  If bit 3 = 0 and in other
+;   circumstances, RETN functions normally.
+;
+; 0xC2 (194) => NMI Return Address LSB
+; (R/W) (soft reset = 0)
+;
+; 0xC3 (195) => NMI Return Address MSB
+; (R/W) (soft reset = 0)
+;-----------------------------------------------------------------------------
+REG_INTERRUPT_CONTROL:	equ 192	; 0xC0
+NMI_STACKLESS_MODE_BIT:		equ 3	; bit 3
+
+REG_NMI_RETURN_ADDRESS_LSB:	equ 194	; 0xC2
+REG_NMI_RETURN_ADDRESS_MSB:	equ 195	; 0xC3

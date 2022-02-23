@@ -21,7 +21,7 @@ MF_DIFF_TO_RAM:  equ MF_ORIGIN_ROM+0x2000-MF.main_prg_copy ; At 0x2000
 ;===========================================================================
 ; ROM for Multiface.
 ;===========================================================================
-    MODULE MF 
+    MODULE MF
 
     ORG MF_ORIGIN_ROM
 
@@ -30,7 +30,7 @@ MF_DIFF_TO_RAM:  equ MF_ORIGIN_ROM+0x2000-MF.main_prg_copy ; At 0x2000
     ret
 
     defs MF_ORIGIN_ROM+0x66-$
- 
+
 ;===========================================================================
 ; NMI: 0x0066
 ; Is executed if the M1 (yellow) button is pressed for the Multiface.
@@ -41,8 +41,8 @@ MF_DIFF_TO_RAM:  equ MF_ORIGIN_ROM+0x2000-MF.main_prg_copy ; At 0x2000
 nmi66h:
     ; Save the SP
     ld (MF.backup_sp),sp
-    ; Change SP to be sure that it inside RAM, so change it to MF RAM for now.
-    ld sp,MF.stack.top 
+    ; Change SP to be sure that it is inside RAM, so change it to MF RAM for now.
+    ld sp,MF.stack.top
 
     ; Save to MF stack
     push af, bc
@@ -71,12 +71,12 @@ nmi66h:
 	; Page in slot 7
 	nextreg REG_MMU+MAIN_SLOT,MAIN_BANK
 	; Save previous bank
-	ld (slot_backup.slot7),a   
+	ld (slot_backup.slot7),a
 
     ; Save IO_NEXTREG_REG
     pop af
     ld (backup.io_next_reg),a
-	
+
     ; Save clock
 	ld a,REG_TURBO_MODE
 	dec b   ; IO_NEXTREG_REG
@@ -132,7 +132,7 @@ nmi66h:
     jp nz,mf_nmi_button_pressed_immediate_return
 
     ; Restore registers from MF stack
-    pop af 
+    pop af
 
     jp mf_nmi_button_pressed
 
@@ -140,7 +140,7 @@ nmi66h:
 ;===========================================================================
 ; Initializes the main bank. I.e. copies the code from MF to MAIN_BANK.
 ;===========================================================================
-init_main_bank:   
+init_main_bank:
     di
     ; Switch clock
     nextreg REG_TURBO_MODE,RTM_3MHZ
@@ -151,7 +151,7 @@ init_main_bank:
     srl a : srl a : srl a
     and 0x07
     out (BORDER),a
-    dec bc 
+    dec bc
     ld a,c
     or b
     jr nz,.wait
@@ -168,16 +168,16 @@ init_main_bank:
 
     ; The main program needs to be copied to MAIN_BANK
     ; Page in MAIN_BANK
-    nextreg REG_MMU+MAIN_SLOT,MAIN_BANK 
-    MEMCOPY MAIN_ADDR, main_prg_copy, MF_ORIGIN_ROM+0x2000-main_prg_copy-MF_DIFF_TO_RAM 
+    nextreg REG_MMU+MAIN_SLOT,MAIN_BANK
+    MEMCOPY MAIN_ADDR, main_prg_copy, MF_ORIGIN_ROM+0x2000-main_prg_copy-MF_DIFF_TO_RAM
 
     ; Jump to main bank
     jp main_bank_entry
-    
+
 
 ; Align to 16 bytes.
     ALIGN 16, 0
-    
+
  IFNDEF UNIT_TEST
     OUTEND
  ENDIF
@@ -186,29 +186,29 @@ init_main_bank:
 ;===========================================================================
 ; This here contains a copy of the main debug program.
 ; It will be copied from here into the MAIN_BANK/MAIN_SLOT.
-;===========================================================================   
+;===========================================================================
 
 main_prg_copy:
     ; The actual code is copied in the make file target mf_rom.
     ; ...
 
- 
+
 
 ;===========================================================================
 ; The MF RAM area.
-;===========================================================================   
+;===========================================================================
     defs MF_DIFF_TO_RAM
 
 
 ; The Multiface stack. Used only for a very short timeframe.
-stack:  
+stack:
     defs 2*20
 .top:
-    
+
 ; Used to backup the debugged program's SP.
 backup_sp:      defw 0
 
-; Border color: TODO: Remove 
+; Border color: TODO: Remove
 border_color:   defb 0
 
     ENDMODULE

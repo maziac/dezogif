@@ -4,11 +4,11 @@
 ; Routines for handling the Multiface and NMI.
 ;===========================================================================
 
-    
+
 ;===========================================================================
 ; Constants
 ;===========================================================================
-    
+
 
 
 
@@ -22,7 +22,7 @@ mf_nmi_enable:
 	call read_tbblue_reg
 	or 00001000b	; Enable MF NMI
 	nextreg REG_PERIPHERAL_2,a
-	ret 
+	ret
 
 
 ;===========================================================================
@@ -38,7 +38,7 @@ mf_nmi_disable:
 	nextreg REG_PERIPHERAL_2,a
 	; And save value for exiting
 	ld (restore_registers.enable_nmi),a
-	ret 
+	ret
 */
 
 
@@ -49,12 +49,21 @@ mf_nmi_disable:
 ; ===========================================================================
 nmi_return:
 	retn
+/* New pseudo code:
+1. IF NEW_NMI enabled
+2.    disable NEW_NMI
+3.    CALL RETN
+4.    enable NEW_NMI
+5. ELSE
+6.    CALL ETN
+7. ENDIF
+*/
 
 /*
 mf_hide:
 	out (0x3F),a
 	in a,(0xbf)
-	ret 
+	ret
 */
 
 
@@ -62,7 +71,7 @@ mf_hide:
 ; Macro to page out the Multiface ROM/RAM.
 ; ===========================================================================
  	MACRO MF_PAGE_OUT
-	in a,(0xbf) 
+	in a,(0xbf)
 	ENDM
 
 
@@ -90,7 +99,10 @@ mf_nmi_button_pressed:
     ; Change SP to main slot
     ld sp,debug_stack.top
 
-	; Get the return address from the debugged program
+	; Save the return address from the debugged program to debugged_prgm_stack_copy.return1 and backup.pc
+	call save_nmi_return_address
+
+ if 0
 	; Read debugged program stack
 	ld hl,(MF.backup_sp)
 	ld de,2	; Just the return address
@@ -99,13 +111,14 @@ mf_nmi_button_pressed:
 
 	; Save PC
 	ld hl,(debugged_prgm_stack_copy.return1)
-	ld (backup.pc),hl	
-	
+	ld (backup.pc),hl
+ endif
+
 	; Save also the interrupt state.
 	; Note: during NMI no maskable interrupt can happen.
 	; The IFF2 state can simply be read with a 1-time read through LD A,I.
 	ld a,i		; Read IFF2
-	push af 
+	push af
 	pop hl
 	ld a,l	; Bit 2 contains the interrupt state.
 	ld (backup.interrupt_state),a
@@ -124,7 +137,7 @@ mf_nmi_button_pressed:
 	; L2 backup
 	call save_layer2_rw
 
-	; Debugged program stack ändern
+	; adjust debugged program stack
 	call adjust_debugged_program_stack_for_nmi
 
     ; Return from NMI (Interrupts are disabled)
@@ -132,10 +145,49 @@ mf_nmi_button_pressed:
     call nmi_return
 
 	; Disable MF
-	 MF_PAGE_OUT
+	MF_PAGE_OUT
 
 	; Enter debugging loop
 	jp cmd_loop
+
+
+;===========================================================================
+; Writes the NMI return address to debugged_prgm_stack_copy.return1.
+; If NMI stackless mode is used the address is taken from the Next NMI return registers.
+; Otherwise they are taken from the SP.
+; Changes:
+;   BC, F, A, HL, DE
+;===========================================================================
+save_nmi_return_address:
+	; Check for stackless mode
+	ld a,REG_INTERRUPT_CONTROL
+	call read_tbblue_reg	; Result in A
+	bit NMI_STACKLESS_MODE_BIT,a
+;	jr nz,.stackless_mode
+
+	; Normal mode: return address on stack.
+	; Read debugged program stack (= NMI return address)
+	ld hl,(MF.backup_sp)
+	ld de,2	; Just the return address
+	ld bc,debugged_prgm_stack_copy.return1
+	call read_debugged_prgm_mem
+	ld hl,(debugged_prgm_stack_copy.return1)
+	jr .save
+
+.stackless_mode:
+	; Return address in ZXNext registers
+	ld a,REG_NMI_RETURN_ADDRESS_LSB
+	call read_tbblue_reg	; Result in A
+	ld l,a
+	ld a,REG_NMI_RETURN_ADDRESS_MSB
+	call read_tbblue_reg	; Result in A
+	ld h,a
+	ld (debugged_prgm_stack_copy.return1),hl
+
+.save:
+	; Save PC
+	ld (backup.pc),hl
+	ret
 
 
 ;===========================================================================
@@ -162,19 +214,19 @@ mf_nmi_button_pressed_immediate_return:
 	ld a,RED
     out (BORDER),a
 	ENDIF
-	
+
 	; Restore speed
 	ld a,(backup.speed)
     nextreg REG_TURBO_MODE,a
 	; Pop from MF stack
-	pop af 
+	pop af
 	; Save stack pointer
 	ld sp,(MF.backup_sp)
 	ld (nmp_sp_backup),sp
 	; Load some stack
 	ld sp,nmi_small_stack.top
 	; Page out MF ROM/RAM
-	push af	
+	push af
 	in a,(0xbf)
 	pop af
 	; Restore SP

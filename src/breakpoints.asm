@@ -160,6 +160,7 @@ copy_rom_start_code_end
 ; Called by RST 0 or JP 0.
 ; This point is reached when the program e.g. runs into a RST 0.
 ; This indicates that either a breakpoint was hit (RST 0)
+; TODO: Remove "coop" code.
 ; or the coop code has called it because the debugged program wants to
 ; check for data on the UART (JP 0).
 ; The cases are distinguished by the stack contents:
