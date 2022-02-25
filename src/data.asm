@@ -172,8 +172,19 @@ prgm_state:	defb PRGM_IDLE
 ;===========================================================================
 ; Used by: ui.asm
 text_one_char:
-    defb AT, 14*8, 3*8
+    defb AT, 14*8, 4*8
 .char:
 	defb 0, 0
 
+text_core_version:
+    defb AT, 14*8, 2*8
+.major:
+	defb '00'
+	defb '.'
+.minor:
+	defb '00'
+	defb '.'
+.subminor:
+	defb '00'
+	defb 0
 

@@ -383,6 +383,24 @@ set_uart_joystick:
     ; Write to reg 0x05
     nextreg REG_PERIPHERAL_1,a
 
+; Enable IO on joystick ports
+
+    ; Core 3.01.10
+    ld a,10110000b  ; Right joystick (Joy 2)
+    bit 1,l
+    jr nz,.joy_12
+    ; Check for joy 1
+    bit 0,l
+    ld a,10100000b  ; Left joystick (Joy 1)
+    jr nz,.joy_12  ; Neither 1 or 2
+    ; No joystick port
+    ld a,0  ; Disable joystick IO mode
+.joy_12:
+    nextreg REG_JOYSTICK_IO_MODE,a
+    ret
+
+ if 0
+    ; Core 3.01.05 implementation:
     ; Write to 0x37
     ld a,10010000b  ; Right joystick (Joy 2)
     bit 1,l
@@ -395,7 +413,9 @@ set_uart_joystick:
 .joy_2:
     out (KEMPSTON_JOY_2),a
 .no_joys:
+    ; I think I forgot to set "no joystick port"
     ret
+ endif
 
 
 ;===========================================================================

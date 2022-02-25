@@ -443,8 +443,46 @@ Changes:
 	- It uses ```call nmi_return``` to re-enable NMIs. Here a different behavior is required for normal and stackless mode.
 -
 
+Answers (from AA):
+
+- For all version 3 cores, nextreg will read back 0 if unimplemented.  So you can depend on nextreg 0xc0 being zero prior to 3.01.10.
+
+- Nextreg 0xc2 and 0xc3 operate independently of everything else.  They will always store the nmi return address during an nmi ack cycle no matter what is going on and the value will not change until another nmi ack occurs or unless you write a different value there.  Another nmi will not be allowed to occur while the multiface or divmmc is already active and that also means no further nmi ack cycles during that time.
+
+- Yes if you clear bit 3 of nextreg 0xc0, the hardware exits stackless nmi mode and even if a stackless nmi was pending that's cancelled.  If you then turn bit 3 on, it is still cancelled as the hardware needs to see an nmi ack cycle to mark the proper response to RETN as stackless.  So the next RETN will take the return address from the stack.  If the initial cause was stackless nmi then the SP will have two garbage values on the stack for return address.  You will need to fix that with the intended return address POP / PUSH maybe.
+
+- A RETN by itself without something that initiates an nmi ack cycle will behave like a normal RETN using the stack for return address.  The key is the hardware needs to see an nmi acknowledge cycle to enter into stackless behaviour for RETN and from your questions you know you can cancel that impending behaviour by clearing bit 3 in nextreg 0xc0.  This has been tested with the Frogger arcade game in RAMS; RAMS calls the Frogger NMI routine which terminates in RETN without a previous nmi being generated.
+
+
 
 # TODO
 
-To be checked: Can a program be debugged that changes the NMI behavior?
+## Test other joystick
+
+Test that other jostick (other than the one used for UART) is still working.
+## nextreg 0x02
+
+When NMI occurs this can also because of others reasons. I need to check that at start of ISR.
+
+## To be checked: Can a program be debugged that changes the NMI behavior?
+
+## UART NMI
+
+According AA it should be possible to use the NMI also for the uart:
+
+"In 3.01.10, the program can generate either multiface or divmmc nmi by writing to nextreg 0x02.  These are equivalent to a button push so can be disabled in the same way as buttons are.  One intention is to provide an easy means for a program to re-enter the debugger.  The debugger can identify the nmi cause by reading nextreg 0x02.
+
+Also in 3.01.10, io can be trapped.  The first io being trapped are the +3 FDC ports ( https://gitlab.com/SpectrumNext/ZX_Spectrum_Next_FPGA/-/blob/master/cores/zxnext/nextreg.txt#L1155 ).  If enabled, io access to these ports will also cause an nmi interrupt.  I mention it because NextZXOS is currently trapping this io.
+
+3.01.10 has one bug in the user generated nmis (via nextreg 0x02 and io trap) -- the nmi is seen too late by the hardware so that they are only acknowledged after the following instruction executes.  If you have:
+
+~~~
+nextreg 0x02,?  ;; generate mf nmi
+nop
+~~~
+
+then the nmi occurs at the end of the nop.  This was fixed pretty quickly but the fix is in 3.01.11.  I can give you that or you can wait a little while until gitlab gets updated with a new core."
+
+So I could get rid of "pressing-the-button-to-stop".
+Must try.
 

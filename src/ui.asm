@@ -27,7 +27,7 @@ check_key_reset:
     ld bc,PORT_KEYB_TREWQ
     in a,(c)
     bit 3,a ; "R"
-    ret nz 
+    ret nz
     ; Wait on key release
 .wait_on_release:
     call wait_on_key_release
@@ -47,7 +47,7 @@ check_key_border:
     ld bc,PORT_KEYB_BNMSHIFTSPACE
     in a,(c)
     bit 4,a ; "B"
-    ret nz 
+    ret nz
     ; Wait on key release
     call wait_on_key_release
     ; Toggle
@@ -96,7 +96,7 @@ read_key_joyport:
 
 ;===========================================================================
 ; Waits on key release.
-; Parameters: 
+; Parameters:
 ;   BC = the port to usefor the keys.
 ; Changes:
 ;   AF
@@ -113,21 +113,44 @@ wait_on_key_release:
 ; Switches to ULA mode and shows the intro text.
 ; Displaying which keys can be used to change the joy port.
 ;===========================================================================
-show_ui:    
+show_ui:
     ; Switch to ULA
     nextreg REG_ULA_X_OFFSET,0
     nextreg REG_ULA_Y_OFFSET,0
     nextreg REG_ULA_CONTROL,0
     nextreg REG_DISPLAY_CONTROL,0
     nextreg REG_SPRITE_LAYER_SYSTEM,00010000b   ; USL
-    
+
     ; Clear the screen
     MEMCLEAR SCREEN, SCREEN_SIZE
     ; Black on white
     MEMFILL COLOR_SCREEN, WHITE+(BLACK<<3), COLOR_SCREEN_SIZE
 
-    ; Print text 
+    ; Print text
     ld de,INTRO_TEXT
+	call text.ula.print_string
+
+    ; Show core version
+    ld a,REG_VERSION
+    call read_tbblue_reg
+    ld e,a  ; Save minor number
+    ; Shift major number
+    rra : rra : rra : rra
+    and 0x0F
+    ld hl,text_core_version.major
+    call itoa_2digits
+    ; Minor version
+    ld a,e
+    and 0x0F
+    ld hl,text_core_version.minor
+    call itoa_2digits
+    ; Subminor
+    ld a,REG_SUB_VERSION
+    call read_tbblue_reg
+    ld hl,text_core_version.subminor
+    call itoa_2digits
+    ; Print
+    ld de,text_core_version
 	call text.ula.print_string
 
     ; Get display timing
@@ -176,5 +199,4 @@ show_ui:
     ld de,(hl)
 	pop hl	; Restore pointer to screen
 	jp text.ula.print_string
-
 

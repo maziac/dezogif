@@ -10,7 +10,7 @@
 
 ; The dezogif program version:
  MACRO PRG_VERSION
- 	defb "v2.1.0"
+ 	defb "v2.1.0-a"
  ENDM
 
 
@@ -42,31 +42,33 @@ INTRO_TEXT:
     defb DZRP_VERSION.MAJOR+'0', '.', DZRP_VERSION.MINOR+'0', '.', DZRP_VERSION.PATCH+'0'
     defb ")"
     defb AT, 0, 2*8
+    defb "Core version: "
+    defb AT, 0, 3*8
     defb "ESP UART Baudrate: "
     STRINGIFY BAUDRATE
-    defb AT, 0, 3*8
+    defb AT, 0, 4*8
     defb "Video timing:"
 
-    defb AT, 0, 6*8
-    defb "Keys:"
-    defb AT, 0, 7*8
-    defb "1 = Joy 1"
     defb AT, 0, 8*8
-    defb "2 = Joy 2"
+    defb "Keys:"
     defb AT, 0, 9*8
-    defb "3 = No joystick port"
+    defb "1 = Joy 1"
     defb AT, 0, 10*8
-    defb "R = Reset"
+    defb "2 = Joy 2"
     defb AT, 0, 11*8
+    defb "3 = No joystick port"
+    defb AT, 0, 12*8
+    defb "R = Reset"
+    defb AT, 0, 13*8
     defb "B = Border"
     defb 0
 
 JOY1_SELECTED_TEXT:
-    defb AT, 0, 4*8, "Using Joy 1 (left)", 0
+    defb AT, 0, 6*8, "Using Joy 1 (left)", 0
 JOY2_SELECTED_TEXT:
-    defb AT, 0, 4*8, "Using Joy 2 (right)", 0
+    defb AT, 0, 6*8, "Using Joy 2 (right)", 0
 NOJOY_SELECTED_TEXT:
-    defb AT, 0, 4*8, "No joystick port used.", 0
+    defb AT, 0, 6*8, "No joystick port used.", 0
 
 SELECTED_TEXT_TABLE:
     defw NOJOY_SELECTED_TEXT
@@ -75,9 +77,9 @@ SELECTED_TEXT_TABLE:
 
 
 BORDER_OFF_TEXT:
-    defb AT, 11*8, 11*8, "off", 0
+    defb AT, 11*8, 13*8, "off", 0
 BORDER_ON_TEXT:
-    defb AT, 11*8, 11*8, "on", 0
+    defb AT, 11*8, 13*8, "on", 0
 
 
 ; Error texts
