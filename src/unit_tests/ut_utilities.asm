@@ -79,5 +79,64 @@ UT_div_hl_e:
  TC_END
 
 
+; Test integet to ascii routine.
+UT_itoa_2digits:
+	ld hl,.output
+	ld a,7
+	call itoa_2digits
+	nop ; TEST ASSERTION HL == ut_utilities.UT_itoa_2digits.output
+	TEST_MEMORY_BYTE .output, '0'
+	TEST_MEMORY_BYTE .output+1, '7'
+	TEST_MEMORY_BYTE .output+2, 0
+
+	ld a,0
+	call itoa_2digits
+	nop ; TEST ASSERTION HL == ut_utilities.UT_itoa_2digits.output
+	TEST_MEMORY_BYTE .output, '0'
+	TEST_MEMORY_BYTE .output+1, '0'
+	TEST_MEMORY_BYTE .output+2, 0
+
+	ld a,10
+	call itoa_2digits
+	nop ; TEST ASSERTION HL == ut_utilities.UT_itoa_2digits.output
+	TEST_MEMORY_BYTE .output, '1'
+	TEST_MEMORY_BYTE .output+1, '0'
+	TEST_MEMORY_BYTE .output+2, 0
+
+	ld a,21
+	call itoa_2digits
+	nop ; TEST ASSERTION HL == ut_utilities.UT_itoa_2digits.output
+	TEST_MEMORY_BYTE .output, '2'
+	TEST_MEMORY_BYTE .output+1, '1'
+	TEST_MEMORY_BYTE .output+2, 0
+
+	ld a,21
+	call itoa_2digits
+	nop ; TEST ASSERTION HL == ut_utilities.UT_itoa_2digits.output
+	TEST_MEMORY_BYTE .output, '2'
+	TEST_MEMORY_BYTE .output+1, '1'
+	TEST_MEMORY_BYTE .output+2, 0
+
+	ld a,99
+	call itoa_2digits
+	nop ; TEST ASSERTION HL == ut_utilities.UT_itoa_2digits.output
+	TEST_MEMORY_BYTE .output, '9'
+	TEST_MEMORY_BYTE .output+1, '9'
+	TEST_MEMORY_BYTE .output+2, 0
+
+	; Invalid input: check that only 2 bytes are written
+	ld a,100
+	call itoa_2digits
+	nop ; TEST ASSERTION HL == ut_utilities.UT_itoa_2digits.output
+	TEST_MEMORY_BYTE .output+2, 0
+
+	; Invalid input: check that only 2 bytes are written
+	ld a,255
+	call itoa_2digits
+	nop ; TEST ASSERTION HL == ut_utilities.UT_itoa_2digits.output
+	TEST_MEMORY_BYTE .output+2, 0
+ TC_END
+.output:	defb 0,0,0
+
 
     ENDMODULE

@@ -158,3 +158,36 @@ div_hl_e:
 .skip:
 	djnz .loop
 	ret
+
+
+;===========================================================================
+; Converts an integer into a string.
+; Does only work for numbers < 100 and always
+; uses 2 digits.
+; If number is >= 100 other characters (other than digits)
+; will appear.
+; Is used to convert the core version into a string.
+; Input:
+; - A: The number to convert (<100)
+; - HL: The pointer to write to.
+; Changes:
+; - A, F, B, C
+; Note: HL is unchanged
+;===========================================================================
+itoa_2digits:
+    ld c,10
+    ld b,-1
+.loop10:
+    inc b
+    sub c
+    jr nc,.loop10
+    ; Print lower digit
+    add c
+    inc hl
+    add a,'0'
+    ldd (hl),a
+    ; Print higher digit
+    ld a,b
+    add a,'0'
+    ld (hl),a
+    ret
