@@ -226,7 +226,7 @@ mf_nmi_button_pressed_immediate_return:
 	out (c),a
 	pop bc
 
-	IF 0
+	IF 01
 	; Change border to red
 	ld a,RED
     out (BORDER),a
@@ -237,6 +237,7 @@ mf_nmi_button_pressed_immediate_return:
     nextreg REG_TURBO_MODE,a
 	; Pop from MF stack
 	pop af
+mf_nmi_immediate_return:
 	; Save stack pointer
 	ld sp,(MF.backup_sp)
 	ld (nmp_sp_backup),sp
