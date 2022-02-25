@@ -1,6 +1,9 @@
 
 var unitTestData = [];
 var portUartTxData = [];
+var portRegReset = 0;
+var whichNextReg = 0;
+
 
 /**
  * Returns 0 for the UART port.
@@ -48,6 +51,13 @@ API.readPort = (port) => {
 		}
 		return value;
 	}
+
+	// Simulate reading REG_RESET
+	if (port == 0x253B /*IO_NEXTREG_DAT*/) {
+		if (whichNextReg == 2 /*REG_RESET*/)
+			return portRegReset;
+	}
+
 	// Otherwise do nothing
 	return undefined;
 }
@@ -64,10 +74,19 @@ API.writePort = (port, value) => {
 		unitTestData.push(value);
 	}
 	// Check for PORT_UART_TX=0x133B
-	if (port == 0x133B) {
+	else if (port == 0x133B) {
 		// Store the written byte.
 		portUartTxData.push(value);
 	}
+	// Check for port 2 = REG_RESET data that will be read on reading a next register.
+	else if (port == 0x0002) {
+		// Store test data
+		API.log("RESET_REG: " + value);
+		portRegReset = value;
+	}
+	else if (port == 0x253B /*IO_NEXTREG_REG*/) {
+		// Select next reg
+		whichNextReg = value;
+	}
 	// Otherwise do nothing
-	return undefined;
 }
