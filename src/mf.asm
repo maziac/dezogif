@@ -45,19 +45,35 @@ mf_nmi_disable:
 ;===========================================================================
 ; Function to return from the NMI and to enable maskable interrupts (if they
 ; were enabled before entering the NMI).
-; I.e. executes a RETN.
+; I.e. it executes a RETN.
+; Note: it must be able to be used from an NMI interrupt but also in case
+; no NMI has happened.
+; Changes:
+;  - BC, A, F
 ; ===========================================================================
 nmi_return:
+	; Check for stackless mode
+	ld a,REG_INTERRUPT_CONTROL
+	call read_tbblue_reg	; Result in A
+	bit NMI_STACKLESS_MODE_BIT,a
+	jr z,.retn	; Normal mode, just return (RETN)
+
+	; Handle stackless mode.
+	; Cancel any pending nmi stackless cycle by clearing the stackless mode bit.
+	; Note: a following RETN will take the address from the stack even if the bit
+	; is turned on again.
+
+	; Disable stackless mode
+	res NMI_STACKLESS_MODE_BIT,a
+	nextreg REG_INTERRUPT_CONTROL,a
+
+	; Enable stackless mode
+	set NMI_STACKLESS_MODE_BIT,a
+	nextreg REG_INTERRUPT_CONTROL,a
+
+.retn:
 	retn
-/* New pseudo code:
-1. IF NEW_NMI enabled
-2.    disable NEW_NMI
-3.    CALL RETN
-4.    enable NEW_NMI
-5. ELSE
-6.    CALL ETN
-7. ENDIF
-*/
+
 
 /*
 mf_hide:
@@ -102,6 +118,7 @@ mf_nmi_button_pressed:
 	; Save the return address from the debugged program to debugged_prgm_stack_copy.return1 and backup.pc
 	call save_nmi_return_address
 
+// TODO: REMOVE:
  if 0
 	; Read debugged program stack
 	ld hl,(MF.backup_sp)
@@ -163,7 +180,7 @@ save_nmi_return_address:
 	ld a,REG_INTERRUPT_CONTROL
 	call read_tbblue_reg	; Result in A
 	bit NMI_STACKLESS_MODE_BIT,a
-;	jr nz,.stackless_mode
+	jr nz,.stackless_mode
 
 	; Normal mode: return address on stack.
 	; Read debugged program stack (= NMI return address)

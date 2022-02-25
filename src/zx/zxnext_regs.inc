@@ -28,7 +28,7 @@ NEXT_MEMORY_BANK_SELECT:	equ 0xDFFD
 SPECDRUM_DAC_OUTPUT:    equ 0x00DF  ; High byte does not matter.
 
 ; Kempston Joystick 2 and UART
-KEMPSTON_JOY_2:		equ	0x37
+//KEMPSTON_JOY_2:		equ	0x37  // TODO: REMOVE
 
 
 REG_MACHINE_ID:	equ	0
@@ -124,6 +124,7 @@ RP4_SCANLINES_75:     equ	0x01
 RP4_SCANLINES_50:     equ	0x10
 RP4_SCANLINES_25:     equ	0x11
 
+REG_JOYSTICK_IO_MODE:	equ 11	; 0x0B
 
 REG_SUB_VERSION:	equ	14
 
