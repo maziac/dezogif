@@ -459,12 +459,19 @@ Answers (from AA):
 
 ## Test other joystick
 
-Test that other jostick (other than the one used for UART) is still working.
+Test that other joystick (other than the one used for UART) is still working.
+-> In normal mode everything behaves the same.
+If UART is configured on joy port 2 it is not possible to read the button state of 'A' and'Start' of the MD joystick.
+Open: wait on answer.
+
 ## nextreg 0x02
 
 When NMI occurs this can also because of others reasons. I need to check that at start of ISR.
+-> Open: wait on AA
 
 ## To be checked: Can a program be debugged that changes the NMI behavior?
+
+No problem. Even toggling. Stepping, etc. All is working.
 
 ## UART NMI
 
