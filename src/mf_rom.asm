@@ -49,14 +49,14 @@ nmi66h:
 
     ; Core 03.01.10: Check for the cause of the NMI and return if not a bbutton press
     ld a,REG_RESET
-	dec b   ; IO_NEXTREG_REG
+	ld bc,IO_NEXTREG_REG
 	out (c),a
 	; Read register
     inc b
 	in a,(c)
     and 0b00011100
-    and 0
-    or 1
+;    and 0
+;    or 1
     jr z,.is_button_cause
 
     IF 01
@@ -69,7 +69,6 @@ nmi66h:
     pop bc, af
     ld sp,(MF.backup_sp)
     retn
-
 .is_button_cause:
 
     IF 0
@@ -110,23 +109,6 @@ nmi66h:
     inc b
 	in a,(c)
 	ld (backup.speed),a
-
- if 0
-    ; Core 03.01.10: Check for the cause of the NMI and allow only button press.
-    ld a,REG_RESET
-	dec b   ; IO_NEXTREG_REG
-	out (c),a
-	; Read register
-    inc b
-	in a,(c)
-    and 0b00011100
-    and 0
-    jr z,.is_button_cause
-    ; Immediately return if there is some other reason than a button press
-    pop bc
-    jp mf_nmi_button_pressed_immediate_return
-.is_button_cause:
- endif
 
     ; Check for Symbol Shift being pressed the same time -> Init
     ld bc,PORT_KEYB_BNMSHIFTSPACE

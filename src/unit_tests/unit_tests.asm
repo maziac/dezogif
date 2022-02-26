@@ -10,6 +10,8 @@
 
     DEFINE UNIT_TEST
 
+    DEFINE MF_FAKE  ; For some tests of the NMI
+
 ; Required labels:
 main_bank_entry:    equ 0x0000  ; Not used
 main_end:    equ 0xE100  ; Not used
@@ -49,6 +51,7 @@ PRG_START:
     include "unit_tests/ut_commands.asm"
     include "unit_tests/ut_message.asm"
     include "unit_tests/ut_breakpoints.asm"
+    include "unit_tests/ut_nmi.asm"
 
 ; Required labels:
 main_loop.continue:     ret
