@@ -444,7 +444,7 @@ Changes:
 -
 
 Answers (from AA):
-
+"
 - For all version 3 cores, nextreg will read back 0 if unimplemented.  So you can depend on nextreg 0xc0 being zero prior to 3.01.10.
 
 - Nextreg 0xc2 and 0xc3 operate independently of everything else.  They will always store the nmi return address during an nmi ack cycle no matter what is going on and the value will not change until another nmi ack occurs or unless you write a different value there.  Another nmi will not be allowed to occur while the multiface or divmmc is already active and that also means no further nmi ack cycles during that time.
@@ -452,10 +452,19 @@ Answers (from AA):
 - Yes if you clear bit 3 of nextreg 0xc0, the hardware exits stackless nmi mode and even if a stackless nmi was pending that's cancelled.  If you then turn bit 3 on, it is still cancelled as the hardware needs to see an nmi ack cycle to mark the proper response to RETN as stackless.  So the next RETN will take the return address from the stack.  If the initial cause was stackless nmi then the SP will have two garbage values on the stack for return address.  You will need to fix that with the intended return address POP / PUSH maybe.
 
 - A RETN by itself without something that initiates an nmi ack cycle will behave like a normal RETN using the stack for return address.  The key is the hardware needs to see an nmi acknowledge cycle to enter into stackless behaviour for RETN and from your questions you know you can cancel that impending behaviour by clearing bit 3 in nextreg 0xc0.  This has been tested with the Frogger arcade game in RAMS; RAMS calls the Frogger NMI routine which terminates in RETN without a previous nmi being generated.
+"
 
 
 
 # TODO
+
+## Stack corruption
+
+Check that there is no stack corruption for NMI.
+Also, dass ich nicht zusätzlich etwas auf dem stack ablege.
+
+## Stackless anzeigen
+Vielleicht sollte ich den Stackless mode anzeigen.
 
 ## Test other joystick
 
