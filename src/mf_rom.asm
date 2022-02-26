@@ -59,9 +59,9 @@ nmi66h:
 ;    or 1
     jr z,.is_button_cause
 
-    IF 01
-	; Change border to red
-	ld a,GREEN
+    IF 01   ; TODO: Disable
+	; Change border to blue
+	ld a,BLUE
     out (BORDER),a
 	ENDIF
 

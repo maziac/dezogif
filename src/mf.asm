@@ -226,7 +226,7 @@ mf_nmi_button_pressed_immediate_return:
 	out (c),a
 	pop bc
 
-	IF 01
+	IF 01   ; TODO: Disable
 	; Change border to red
 	ld a,RED
     out (BORDER),a
