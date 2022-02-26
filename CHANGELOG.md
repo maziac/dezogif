@@ -1,5 +1,13 @@
 # Changelog
 
+# 2.1.0
+- Support for Core 03.01.10.
+- No support for Core 03.01.05, use 2.0.0 instead.
+- Removed superfluous code for calling functions from the debugged program though RST 0.
+- NMI stackless mode (and non stackless mode) supported.
+- Use of next register 11 to set the IO mode for the joyports.
+- Display of Core version.
+
 ## 2.0.0
 - Changed to DZRP 2.0.0.
 
