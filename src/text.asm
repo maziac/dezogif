@@ -10,7 +10,7 @@ AT:             equ 0x16
 ; Routines that draw text on the ULA or layer2 screen.
 ; Can be used as substitute for the original ZX Spectrum
 ; text drawing routines.
-    MODULE text 
+    MODULE text
 
 
 ; Note: The loader copies the original spectrum font to the ROM_FONT address.
@@ -40,7 +40,7 @@ init:
 set_font:
     ; Store the used font address.
     ld (font_address),hl
-    ret 
+    ret
 
 
 ; -----------------------------------------------------------------------
@@ -66,7 +66,7 @@ ula.calc_address:
     ld b,a
     ; Calculate screen address
     PIXELAD
-    ret 
+    ret
 
 ; Prints a single character at ULA screen address in HL.
 ; IN:
@@ -86,10 +86,10 @@ ula.print_char:
     mul d,e
     ; Add to font start address
     ld hl,(font_address)
-    add hl,de 
+    add hl,de
     ld ix,hl    ; ix points to character in font
     ; Now copy the character to the screen
-    pop hl 
+    pop hl
 
     ld c,8  ; 8 byte per character
 .loop:
@@ -99,24 +99,24 @@ ula.print_char:
     ; XOR screen with character (1)
     ld a,(hl)
     xor d
-    ld (hl),a 
-    ; Next address on screen 
+    ld (hl),a
+    ; Next address on screen
     inc l
     ; XOR screen with character (2)
     ld a,(hl)
     xor e
-    ld (hl),a 
+    ld (hl),a
     ; Correct x-position
     dec l
     ; Next line
     PIXELDN
     ; Next
-    dec c 
+    dec c
     jr nz,.loop
 
     ; Restore screen address
     pop hl  ; Restore screen address
-    ret 
+    ret
 
 
 ; Prints a complete string (until 0) at ULA screen address in HL.
@@ -135,19 +135,19 @@ ula.print_string:
     ret z   ; Return on 0
 
     ; Check for AT
-    cp AT 
+    cp AT
     jr z,.at
-    
+
     ; print one character
     push de
-    call ula.print_char 
+    call ula.print_char
     pop de
 
     ; Next
     inc de
     inc l   ; Increase x-position
     jr .loop
-    ret 
+    ret
 
 .at:
     ; AT x, y (pixels)

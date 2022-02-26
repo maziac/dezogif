@@ -10,7 +10,7 @@
 
 ; The dezogif program version:
  MACRO PRG_VERSION
- 	defb "v2.1.0-a"
+ 	defb "v2.1.0-rc1b"
  ENDM
 
 
@@ -42,7 +42,7 @@ INTRO_TEXT:
     defb DZRP_VERSION.MAJOR+'0', '.', DZRP_VERSION.MINOR+'0', '.', DZRP_VERSION.PATCH+'0'
     defb ")"
     defb AT, 0, 2*8
-    defb "Core version: "
+    defb "Core: "
     defb AT, 0, 3*8
     defb "ESP UART Baudrate: "
     STRINGIFY BAUDRATE
@@ -83,8 +83,11 @@ BORDER_ON_TEXT:
 
 
 ; Error texts
+TEXT_NOT_SUPPORTED: ; Core not supported, in red
+    defb AT, 14*8, 2*8, "=NOT SUPPORTED", 0
+
 TEXT_LAST_ERROR:
-    defb AT, 0, 13*8, "Last Error:", AT, 0, 14*8, 0
+    defb AT, 0, 15*8, "Last Error:", AT, 0, 16*8, 0
 
 TEXT_ERROR_RX_TIMEOUT: defb "RX Timeout", 0
 TEXT_ERROR_TX_TIMEOUT: defb "TX Timeout", 0

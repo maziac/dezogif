@@ -52,9 +52,19 @@ API.readPort = (port) => {
 		return value;
 	}
 
-	// Simulate reading REG_RESET
+	// Simulate reading REG_RESET, REG_SUB_VERSION and REG_VERSION
 	if (port == 0x253B /*IO_NEXTREG_DAT*/) {
 		API.log("  Reading from port IO_NEXTREG_DAT=0x253B.");
+		if (whichNextReg == 1 /*REG_VERSION*/) {
+			const majMin = 0x2B;
+			API.log("    Reading register REG_VERSION=1: " + majMin.toString(16) + "h");
+			return majMin;
+		}
+		if (whichNextReg == 14 /*REG_SUB_VERSION*/) {
+			const subminor = 99;
+			API.log("    Reading register REG_VERSION=14: " + subminor);
+			return subminor;
+		}
 		if (whichNextReg == 2 /*REG_RESET*/) {
 			API.log("    Reading register REG_RESET=2: " + portRegReset);
 			return portRegReset;

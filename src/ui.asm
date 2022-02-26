@@ -125,6 +125,9 @@ show_ui:
     MEMCLEAR SCREEN, SCREEN_SIZE
     ; Black on white
     MEMFILL COLOR_SCREEN, WHITE+(BLACK<<3), COLOR_SCREEN_SIZE
+    ; Prepare red ink for area which is used for core version if it is not supported.
+    ; I.e. the "NOT SUPPORTED" text would be shown in red.
+    MEMFILL COLOR_SCREEN+2*COLOR_SCREEN_WIDTH+14, RED+BRIGHT, 18
 
     ; Print text
     ld de,INTRO_TEXT
@@ -133,22 +136,35 @@ show_ui:
     ; Show core version
     ld a,REG_VERSION
     call read_tbblue_reg
-    ld e,a  ; Save minor number
+    ld d,a  ; Save major and minor number
     ; Shift major number
     rra : rra : rra : rra
     and 0x0F
     ld hl,text_core_version.major
     call itoa_2digits
     ; Minor version
-    ld a,e
+    ld a,d
     and 0x0F
     ld hl,text_core_version.minor
     call itoa_2digits
     ; Subminor
     ld a,REG_SUB_VERSION
     call read_tbblue_reg
+    ld e,a    ; save subminor
     ld hl,text_core_version.subminor
     call itoa_2digits
+
+    ; Check version against core version 3.01.10 (minimum version)
+    ex de,hl    ; -> hl = current version
+    ld de,(3 << 12) + (1 << 8) + (10)
+    sbc hl,de   ; current version - 3.01.10
+    jp p,.core_version_ok
+
+    ; Core version not supported
+    ld de,TEXT_NOT_SUPPORTED
+	call text.ula.print_string
+
+.core_version_ok:
     ; Print
     ld de,text_core_version
 	call text.ula.print_string

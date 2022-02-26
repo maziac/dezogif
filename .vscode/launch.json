@@ -28,7 +28,7 @@
                     "disableBanking": true
                 }
             ],
-            "startAutomatically": false,
+            "startAutomatically": true,
             "commandsAfterLaunch": [
             ],
             "disassemblerArgs": {
