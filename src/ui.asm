@@ -16,6 +16,7 @@ ERROR_RX_TIMEOUT:			equ 1
 ERROR_TX_TIMEOUT:			equ 2
 ERROR_WRONG_FUNC_NUMBER:	equ 3
 ERROR_WRITE_MAIN_BANK:	    equ 4
+ERROR_CORE_VERSION_NOT_SUPPORTED:  equ 5
 
 
 ;===========================================================================
@@ -124,10 +125,9 @@ show_ui:
     ; Clear the screen
     MEMCLEAR SCREEN, SCREEN_SIZE
     ; Black on white
-    MEMFILL COLOR_SCREEN, WHITE+(BLACK<<3), COLOR_SCREEN_SIZE
-    ; Prepare red ink for area which is used for core version if it is not supported.
-    ; I.e. the "NOT SUPPORTED" text would be shown in red.
-    MEMFILL COLOR_SCREEN+2*COLOR_SCREEN_WIDTH+14, RED+BRIGHT, 18
+    MEMFILL COLOR_SCREEN, WHITE+(BLACK<<3), COLOR_SCREEN_SIZE+15*COLOR_SCREEN_WIDTH
+    ; Red on black for a probable error report
+    MEMFILL COLOR_SCREEN+15*COLOR_SCREEN_WIDTH, RED+BRIGHT, 9*COLOR_SCREEN_WIDTH
 
     ; Print text
     ld de,INTRO_TEXT
@@ -158,13 +158,18 @@ show_ui:
     ex de,hl    ; -> hl = current version
     ld de,(3 << 12) + (1 << 8) + (10)
     sbc hl,de   ; current version - 3.01.10
-    jp p,.core_version_ok
+    jp p,.core_version_continue
 
     ; Core version not supported
-    ld de,TEXT_NOT_SUPPORTED
-	call text.ula.print_string
+	ld a,(last_error)
+	or a
+	jr nz,.core_version_continue	; There is already an error
 
-.core_version_ok:
+    ; Report "core version not supported" error
+    ld a,ERROR_CORE_VERSION_NOT_SUPPORTED
+    ld (last_error),a
+
+.core_version_continue:
     ; Print
     ld de,text_core_version
 	call text.ula.print_string

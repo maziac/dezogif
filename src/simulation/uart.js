@@ -56,12 +56,12 @@ API.readPort = (port) => {
 	if (port == 0x253B /*IO_NEXTREG_DAT*/) {
 		API.log("  Reading from port IO_NEXTREG_DAT=0x253B.");
 		if (whichNextReg == 1 /*REG_VERSION*/) {
-			const majMin = 0x2B;
+			const majMin = 0x31;
 			API.log("    Reading register REG_VERSION=1: " + majMin.toString(16) + "h");
 			return majMin;
 		}
 		if (whichNextReg == 14 /*REG_SUB_VERSION*/) {
-			const subminor = 99;
+			const subminor = 5;
 			API.log("    Reading register REG_VERSION=14: " + subminor);
 			return subminor;
 		}

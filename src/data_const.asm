@@ -83,9 +83,6 @@ BORDER_ON_TEXT:
 
 
 ; Error texts
-TEXT_NOT_SUPPORTED: ; Core not supported, in red
-    defb AT, 14*8, 2*8, "=NOT SUPPORTED", 0
-
 TEXT_LAST_ERROR:
     defb AT, 0, 15*8, "Last Error:", AT, 0, 16*8, 0
 
@@ -95,11 +92,14 @@ TEXT_ERROR_WRONG_FUNC_NUMBER: defb "Wrong function number", 0
 TEXT_ERROR_WRITE_MAIN_BANK: defb "CMD_WRITE_BANK: Can't write to  bank "
     STRINGIFY MAIN_BANK
     defb ". Bank is used by DeZog.", 0
+TEXT_ERROR_CORE_VERSION_NOT_SUPPORTED: ; Core not supported
+    defb "Core Version not supported,     should be >= 03.01.10", 0
 
 ERROR_TEXT_TABLE:
     defw TEXT_ERROR_RX_TIMEOUT
     defw TEXT_ERROR_TX_TIMEOUT
     defw TEXT_ERROR_WRONG_FUNC_NUMBER
     defw TEXT_ERROR_WRITE_MAIN_BANK
+    defw TEXT_ERROR_CORE_VERSION_NOT_SUPPORTED
 
 
