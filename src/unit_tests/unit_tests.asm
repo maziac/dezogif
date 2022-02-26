@@ -27,7 +27,6 @@ main_end:    equ 0xE100  ; Not used
     include "zx/zxnext_regs.inc"
     include "breakpoints.asm"
     include "data_const.asm"
-    include "functions.asm"
     include "mf.asm"
     include "utilities.asm"
     include "uart.asm"

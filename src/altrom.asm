@@ -1,13 +1,13 @@
 ;===========================================================================
 ; altrom.asm
-; 
+;
 ; Code to modify the alternative ROM.
 ;===========================================================================
 
 
 
 ;===========================================================================
-; Copies the ROM to AltROM and modifies 
+; Copies the ROM to AltROM and modifies
 ; 8 bytes at address 0 and 14 bytes at address 66h.
 ; As the ROM banks (0xFF) can't be paged to other slots than 0 and 1
 ; the contents is first copied to SWAP_SLOT/B, then the altrom is paged in
@@ -19,7 +19,7 @@ copy_altrom:
 
 
 ;===========================================================================
-; Copies the ROM to AltROM and modifies 
+; Copies the ROM to AltROM and modifies
 ; 8 bytes at address 0 and 14 bytes at address 66h.
 ; Multiface is not allowed to be enabled here.
 ;===========================================================================
@@ -53,4 +53,20 @@ copy_modify_altrom:
     nextreg REG_ALTROM,10000000b
     ret
 
+;===========================================================================
+; Modifies the
+; 8 bytes at address 0 and 14 bytes at address 66h
+; of the bank at 0xC000.
+; Parameters:
+;   A = bank number to write into the bank.
+; Changes:
+;  HL, DE, BC
+;===========================================================================
+modify_bank:
+     ; Overwrite the address 0 and 66h with code
+    MEMCOPY SWAP_ADDR, copy_rom_start_0000h_code, copy_rom_start_0000h_code_end-copy_rom_start_0000h_code
+    MEMCOPY SWAP_ADDR+copy_rom_start_0066h_code, MAIN_ADDR+copy_rom_start_0066h_code, copy_rom_start_0066h_code_end-copy_rom_start_0066h_code
+    ; Save the bank number inside the bank (self modifying code)
+    ld (SWAP_ADDR+dbg_enter.bank),a
+	ret
 

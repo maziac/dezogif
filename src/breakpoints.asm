@@ -231,18 +231,9 @@ enter_debugger:
 	ld hl,(debugged_prgm_stack_copy.af)
 	ld (backup.af),hl
 
-	; Determine if breakpoint or coop code
-	ld hl,(debugged_prgm_stack_copy.return1)	; Get value from "stack"
-	; Check for 0
-	ld a,l
-	or h
-	jp nz,enter_breakpoint
-	jp exec_user_function
+	; Flow through
 
-
-;===========================================================================
-; Called by enter_debugger.
-; I.e. this point is reached when the program runs into a RST 0.
+; This point is reached when the program runs into a RST 0.
 ; I.e. this indicates that a breakpoint was hit.
 ; The location just after the breakpoint can be found from the SP.
 ; I.e. it was pushed on stack because of the RST.
@@ -253,9 +244,6 @@ enter_debugger:
 ; - [SP+2]:	    AF (Interrupt flags) was put on the stack
 ; - [SP]:	    BC
 ; Note: The SP will be corrected to point to SP+4.
-;===========================================================================
-enter_breakpoint:
-	; LOGPOINT [DEFAULT] enter_breakpoint
 
    	; Maximize clock speed
 	nextreg REG_TURBO_MODE,RTM_28MHZ
