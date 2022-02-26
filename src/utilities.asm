@@ -175,6 +175,17 @@ div_hl_e:
 ; Note: HL is unchanged
 ;===========================================================================
 itoa_2digits:
+    inc hl
+	cp 100
+	jr c,.below100
+	
+	; A >= 100, print just "??"
+	ld a,'?'
+	ldd (hl),a
+    ld (hl),a
+    ret
+
+.below100:
     ld c,10
     ld b,-1
 .loop10:
@@ -183,7 +194,6 @@ itoa_2digits:
     jr nc,.loop10
     ; Print lower digit
     add c
-    inc hl
     add a,'0'
     ldd (hl),a
     ; Print higher digit
