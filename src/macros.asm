@@ -3,8 +3,8 @@
 ;
 ; Macro definitions.
 ;===========================================================================
- 
- 
+
+
 ;===========================================================================
 ; Macro to write a Z80 register to a specific next register.
 ; E.g. use:  WRITE_TBBLUE_REG 0x13,d
@@ -16,7 +16,7 @@
 ; Changes:
 ;   A
 ;===========================================================================
-	MACRO WRITE_TBBLUE_REG tbblue_reg?, z80_reg? 
+	MACRO WRITE_TBBLUE_REG tbblue_reg?, z80_reg?
 	ld a,z80_reg?
 	nextreg tbblue_reg?,a
 	ENDM
@@ -85,6 +85,34 @@
 	ENDM
 
 
+;===========================================================================
+; Macro to set a byte value in a memory location.
+; Parameters:
+;	dest = Pointer to destination
+;   value = The byte value to set
+; Changes:
+;   A
+;===========================================================================
+	MACRO MEMSETBYTE dest?, value?
+	ld a,value?
+	ld (dest?),a
+	ENDM
+
+
+;===========================================================================
+; Macro to set a word value in a memory location.
+; Parameters:
+;	dest = Pointer to destination
+;   value = The byte value to set
+; Changes:
+;   HL
+;===========================================================================
+	MACRO MEMSETWORD dest?, value?
+	ld a,value? & 0xFF
+	ld (dest?),a
+	ld a,value? >> 8
+	ld (dest?+1),a
+	ENDM
 
 ;===========================================================================
 ; Creates text data from a number.

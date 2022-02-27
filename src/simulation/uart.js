@@ -3,6 +3,7 @@ var unitTestData = [];
 var portUartTxData = [];
 var portRegReset = 0;
 var whichNextReg = 0;
+var nextRegContents = new Map();	// Any values written to a next reg will be stored here as well.
 
 
 /**
@@ -29,6 +30,10 @@ API.readPort = (port) => {
 	if (port == 0x0003) {
 		// Port 0 (on reading) returns the data in the portUartTxData buffer
 		return (portUartTxData.length>>>8)&0xFF;	// HIGH byte
+	}
+	if (port == 0x0004) {
+		// Return the last write to the nextreg register
+		return nextRegContents.get(whichNextReg);
 	}
 
 	// Check for PORT_UART_TX=0x133B
@@ -99,8 +104,13 @@ API.writePort = (port, value) => {
 	}
 	else if (port == 0x243B /*IO_NEXTREG_REG*/) {
 		// Select next reg
-		API.log("  Selct nextreg register: " + value);
+		API.log("  Select nextreg register: " + value);
 		whichNextReg = value;
+	}
+	else if (port == 0x253B /*IO_NEXTREG_DAT*/) {
+		// Select next reg
+		API.log("  Writing to nextreg register" + whichNextReg + ": " + value);
+		nextRegContents.set(whichNextReg, value);
 	}
 	// Otherwise do nothing
 }

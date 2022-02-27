@@ -365,6 +365,27 @@ set_uart_baudrate:
 ;  AF, BC, HL
 ;===========================================================================
 set_uart_joystick:
+    ; Core 3.01.10
+    ld a,(uart_joyport_selection)
+    dec a
+    jr nz,.joy_port_cont
+    ; Joy port 1 selected
+    nextreg REG_JOYSTICK_IO_MODE,10100000b  ; Left joy port
+    ret
+.joy_port_cont:
+    dec a
+    jr nz,.joy_port_none
+    ; Joy port 2 selected
+    nextreg REG_JOYSTICK_IO_MODE,10110000b  ; Right joy port
+    ret
+.joy_port_none:
+    ; No joy port selected
+    nextreg REG_JOYSTICK_IO_MODE,0  ; Disable joy IO mode
+    ret
+
+; TODO: REMOVE
+ if 0
+    ; Core 3.01.05 implementation:
     ld a,(uart_joyport_selection)
     ld l,a
     ; Read reg 0x05 to preserve the 50/60 Hz setting and scandoubler
@@ -383,24 +404,6 @@ set_uart_joystick:
     ; Write to reg 0x05
     nextreg REG_PERIPHERAL_1,a
 
-; Enable IO on joystick ports
-
-    ; Core 3.01.10
-    ld a,10110000b  ; Right joystick (Joy 2)
-    bit 1,l
-    jr nz,.joy_12
-    ; Check for joy 1
-    bit 0,l
-    ld a,10100000b  ; Left joystick (Joy 1)
-    jr nz,.joy_12  ; Neither 1 or 2
-    ; No joystick port
-    ld a,0  ; Disable joystick IO mode
-.joy_12:
-    nextreg REG_JOYSTICK_IO_MODE,a
-    ret
-
- if 0
-    ; Core 3.01.05 implementation:
     ; Write to 0x37
     ld a,10010000b  ; Right joystick (Joy 2)
     bit 1,l

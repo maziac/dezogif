@@ -387,7 +387,8 @@ The user has to take care not to place breakpoints at these locations.
 
 TODO: Change description for NMI and 3.01.10: no stack corruption.
 
-# Stackless NMI - NextZxOS 3.01.10
+# Changes in NextZxOS 3.01.10
+## Stackless NMI
 
 With 3.01.10 the "default" is that stackless NMI is enabled.
 I.e. the NMI return address is not written to the stack but in 2 ZX Next registers.
@@ -443,8 +444,7 @@ Changes:
 	- It uses ```call nmi_return``` to re-enable NMIs. Here a different behavior is required for normal and stackless mode.
 -
 
-Answers (from AA):
-"
+Answers from AA:
 - For all version 3 cores, nextreg will read back 0 if unimplemented.  So you can depend on nextreg 0xc0 being zero prior to 3.01.10.
 
 - Nextreg 0xc2 and 0xc3 operate independently of everything else.  They will always store the nmi return address during an nmi ack cycle no matter what is going on and the value will not change until another nmi ack occurs or unless you write a different value there.  Another nmi will not be allowed to occur while the multiface or divmmc is already active and that also means no further nmi ack cycles during that time.
@@ -452,9 +452,18 @@ Answers (from AA):
 - Yes if you clear bit 3 of nextreg 0xc0, the hardware exits stackless nmi mode and even if a stackless nmi was pending that's cancelled.  If you then turn bit 3 on, it is still cancelled as the hardware needs to see an nmi ack cycle to mark the proper response to RETN as stackless.  So the next RETN will take the return address from the stack.  If the initial cause was stackless nmi then the SP will have two garbage values on the stack for return address.  You will need to fix that with the intended return address POP / PUSH maybe.
 
 - A RETN by itself without something that initiates an nmi ack cycle will behave like a normal RETN using the stack for return address.  The key is the hardware needs to see an nmi acknowledge cycle to enter into stackless behaviour for RETN and from your questions you know you can cancel that impending behaviour by clearing bit 3 in nextreg 0xc0.  This has been tested with the Frogger arcade game in RAMS; RAMS calls the Frogger NMI routine which terminates in RETN without a previous nmi being generated.
-"
 
 
+## NMI reason (cause)
+
+In 3.01.10 an NMI can be generated not only by the button but also by IO/FDC (I think this is disk) and by the program itself (by writing to nextreg 2).
+
+In these case bits 2, 3 or 4 will be set when the NMI occurs.
+If found dezogif will immediately return from the NMI.
+Before it has to clear those bits.
+
+Further AA:
+"Yes it is intended -- you will have to clear bits 2,3,4 in your nmi routine.  You should preserve bit 7 which holds the esp/expbus in reset (many users use this to keep the esp module quiet when not in use).  So in your nmi routine, read nexreg 0x02 to see what caused the nmi (if none of bits 2,3,4 are set then the cause is the physical button) and then clear nextreg 0x02 by writing either 128 or 0 depending on whether bit 7 was set or not.  Another nmi cannot occur while the multiface is active so nothing will happen until after the RETN exit."
 
 # TODO
 
@@ -472,6 +481,8 @@ Test that other joystick (other than the one used for UART) is still working.
 -> In normal mode everything behaves the same.
 If UART is configured on joy port 2 it is not possible to read the button state of 'A' and'Start' of the MD joystick.
 Open: wait on answer.
+Seems this is not working anymore. MD not supported in this setup.
+
 
 ## nextreg 0x02
 

@@ -33,4 +33,37 @@ UT_read_uart_byte_timeout:
  TC_END
 
 
+; Tests setting of the joystick IO mode.
+UT_set_uart_joystick:
+	; Joy port 1
+	MEMSETBYTE uart_joyport_selection, 1
+	call set_uart_joystick
+	; Read value
+	xor a :	in a,(4)
+	nop ; TEST ASSERTION a == 10100000b
+
+	; Joy port 2
+	MEMSETBYTE uart_joyport_selection, 2
+	call set_uart_joystick
+	; Read value
+	xor a :	in a,(4)
+	nop ; TEST ASSERTION a == 10110000b
+
+	; No joy port
+	MEMSETBYTE uart_joyport_selection, 0
+	call set_uart_joystick
+	; Read value
+	xor a :	in a,(4)
+	nop ; TEST ASSERTION a == 0
+
+	; Pathologic case
+	MEMSETBYTE uart_joyport_selection, 3
+	call set_uart_joystick
+	; Read value
+	xor a :	in a,(4)
+	nop ; TEST ASSERTION a == 0
+
+ TC_END
+
+
     ENDMODULE
