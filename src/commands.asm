@@ -830,14 +830,14 @@ cmd_get_sprites_palette:
 	; Select sprites
 	ld a,d	; eUlaCtrlReg
 	and 0x0F
-	or 0b00100000
+	or 00100000b
 	ld e,a
 	; Get palette index
 	call read_uart_byte
 	bit 0,a
 	ld a,e
  	jr z,.palette_0
-	or 0b01000000	; Select palette 1
+	or 01000000b	; Select palette 1
 .palette_0:
 	;ld d,a
 	;ld a,REG_PALETTE_CONTROL
