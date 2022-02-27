@@ -33,19 +33,41 @@
 
 
 ; UART TX. Write=transmit data, Read=status
-PORT_UART_TX:   equ 0x133b
+UART_TX:   equ 0x133b
 
 ; UART RX. Read data.
-PORT_UART_RX:   equ 0x143b
+UART_RX:   equ 0x143b
 
 
 ; UART selection.
-PORT_UART_CONTROL:   equ 0x153b
+UART_SELECT:   equ 0x153b
+
+/*
+0x163B UART Frame
+(R/W) (hard reset = 0x18)
+bit 7 = 1 to immediately reset the Tx and Rx modules to idle and empty fifos
+bit 6 = 1 to assert break on Tx (Tx = 0) when Tx reaches idle
+bit 5 = 1 to enable hardware flow control *
+bits 4:3 = number of bits in a frame
+  11 = 8 bits
+  10 = 7 bits
+  01 = 6 bits
+  00 = 5 bits
+bit 2 = 1 to enable parity check
+bit 1 = 0 for even parity, 1 for odd parity
+bit 0 = 0 for one stop bit, 1 for two stop bits
+* The esp ignores hardware flow control
+* In joystick i/o mode only cts is available
+*/
+UART_FRAME:     equ 0x163b
+
+
 
 ; UART Status Bits:
 UART_RX_FIFO_EMPTY: equ 0   ; 0=empty, 1=not empty
 UART_RX_FIFO_FULL:  equ 2   ; 0=not full, 1=full
-UART_TX_READY:      equ 1   ; 0=ready for next byte, 1=byte is being transmitted
+UART_TX_FULL:       equ 1   ; 1=Tx buffer is full
+UART_TX_EMPTY:      equ 4   ; 1=Tx buffer is empty
 
 
 
@@ -82,7 +104,7 @@ drain_rx_buffer:
     ret
 
 .read_loop:
-	ld bc,PORT_UART_TX
+	ld bc,UART_TX
 	in a,(c)					; Read status bits
     bit UART_RX_FIFO_EMPTY,a
     ret z   ; Return if buffer empty
@@ -138,8 +160,8 @@ wait_for_uart_rx:
     ld b,20
 .loop:
     ; Check if byte available.
-	ld a,HIGH PORT_UART_TX
-	in a,(LOW PORT_UART_TX)	; Read status bits
+	ld a,HIGH UART_TX
+	in a,(LOW UART_TX)	; Read status bits
     bit UART_RX_FIFO_EMPTY,a
     jr z,.no_byte   ; Jump if no byte available
 
@@ -170,8 +192,8 @@ wait_for_uart_rx:
 ;   AF
 ;===========================================================================
 check_uart_byte_available:
-	ld a,HIGH PORT_UART_TX
-	in a,(LOW PORT_UART_TX)
+	ld a,HIGH UART_TX
+	in a,(LOW UART_TX)
 	; Read status bits
     bit UART_RX_FIFO_EMPTY,a
     ret
@@ -194,7 +216,7 @@ read_uart_byte:
 
     ; Wait on byte
     ld e,0
-	ld bc,PORT_UART_TX
+	ld bc,UART_TX
 .wait_loop:
 	in a,(c)					; Read status bits
     bit UART_RX_FIFO_EMPTY,a
@@ -285,24 +307,54 @@ write_uart_byte:
 
 
 ;===========================================================================
-; Waits until TX is ready on the UART.
+; Waits until the next byte can be sent over the UART.
+; In Core 03.01.10 the uart tx buffer is 64 byte.
 ; If it takes too long an error is generated.
 ; Changes:
 ;  AF, BC (=PORT_UART_TX), E
 ;===========================================================================
 wait_for_uart_tx:
     ; Send response back
-    ld bc,PORT_UART_TX
+    ld bc,UART_TX
     ; Check if ready for transmit
     ld e,0
 .wait_tx:
     in a,(c)
-    bit UART_TX_READY,a
+    bit UART_TX_FULL,a
     ret z
+
+    ;bit UART_TX_EMPTY,a
+    ;ret nz
+
     dec e
     jr nz,.wait_tx
 
-    nop ; LOGPOINT write_uart_byte: ERROR=TIMEOUT
+    nop ; LOGPOINT wait_for_uart_tx: ERROR=TIMEOUT
+    jp tx_timeout   ; ASSERTION
+
+
+;===========================================================================
+; Waits until the UART TX buffer is coompletely empty.
+; Is used to wait unti the joy port can be switched.
+; Changes:
+;  AF, BC (=PORT_UART_TX), E
+;===========================================================================
+wait_for_uart_tx_empty:
+    ; Send response back
+    ld bc,UART_TX
+    ; Check if ready for transmit
+    ld de,64*256    ; max. 64 characters
+    ld e,0
+.wait_tx:
+    in a,(c)
+    bit UART_TX_EMPTY,a
+    ret nz  ; 1 if empty
+    dec de
+    ld a,d
+    or e
+    jr nz,.wait_tx
+
+    nop ; LOGPOINT wait_for_uart_tx_empty: ERROR=TIMEOUT
     jp tx_timeout   ; ASSERTION
 
 
@@ -313,14 +365,20 @@ wait_for_uart_tx:
 ; See also https://dl.dropboxusercontent.com/s/a4c4k9fsh2aahga/UsingUART2andWIFI.txt?dl=0
 ; The baudrate timings depend on the video timings in register 0x11.
 ; They don't depend on video mode being 50 or 60 Hz.
+; Sets also 8 bit mode.
 ; Returns:
 ;  -
 ; Changes:
 ;  A, BC, DE, HL
 ;===========================================================================
 set_uart_baudrate:
+    ; Set 8 bit
+    ld bc,UART_FRAME
+	ld a,0x18   ; 8 bit
+	out	(c),a
+
     ; Select UART and clear prescaler MSB
-    ld bc,PORT_UART_CONTROL
+    ld bc,UART_SELECT
 	ld a,00010000b
 	out	(c),a
 
@@ -336,7 +394,7 @@ set_uart_baudrate:
     ; ignoring the high byte
 
     ; Write low byte of prescaler
-	ld bc,PORT_UART_RX ; Writing=set baudrate
+	ld bc,UART_RX ; Writing=set baudrate
     ld l,a
     and 0x7F
 	out	(c),a		;set lower 7 bits

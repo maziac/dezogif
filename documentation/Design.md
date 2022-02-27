@@ -467,12 +467,29 @@ Further AA:
 
 # TODO
 
+## If dezogif is activated (NMI) after the screensaver has started
+Then no text is seen. Maybe wrong ULA mode.
+(one can see some characters where the screensavers rectangle has been at last. Maybe the colorscreen has been moved?)
+
+
+## Remove
+'No response received from remote ...'
+in DeZog if Core 03.01.10 is implemented.
+
+## Document
+
+When leaving i/o mode, joystick operation resumes after ~64 scan lines have passed.
+Otherwise I would have to wait 64 scan lines.
+
+## Test UART without joy port
+
 ## Stack corruption
 
 Check that there is no stack corruption for NMI.
 Also, dass ich nicht zusätzlich etwas auf dem stack ablege.
 
 ## Stackless anzeigen
+
 Vielleicht sollte ich den Stackless mode anzeigen.
 
 ## Test other joystick
