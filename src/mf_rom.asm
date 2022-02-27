@@ -55,7 +55,7 @@ nmi66h:
     inc b
 	in a,(c)    ; TODO: REMOVE
 	in a,(c)
-    and 0b00011100
+    and 00011100b
 ;    and 0
 ;    or 1
     jr z,.is_button_cause
@@ -70,14 +70,14 @@ nmi66h:
 
     ; Clear reason bits
 	in a,(c)    ; Read again
-    and 0b11100011
+    and 10000000b  ; Preserve esp/expbus bit
     nextreg REG_RESET,a
 
     ; RETN
     pop bc, af
     ld sp,(MF.backup_sp)
     retn
-    
+
 .is_button_cause:
 
     IF 0
