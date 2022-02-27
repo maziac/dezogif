@@ -467,21 +467,18 @@ Further AA:
 
 # TODO
 
+## Test UART without joy port
 ## If dezogif is activated (NMI) after the screensaver has started
 Then no text is seen. Maybe wrong ULA mode.
 (one can see some characters where the screensavers rectangle has been at last. Maybe the colorscreen has been moved?)
 
+# Update
+ZXNext description on DeZog.
+
 
 ## Remove
 'No response received from remote ...'
-in DeZog if Core 03.01.10 is implemented.
-
-## Document
-
-When leaving i/o mode, joystick operation resumes after ~64 scan lines have passed.
-Otherwise I would have to wait 64 scan lines.
-
-## Test UART without joy port
+in DeZog if Core > 03.01.10 with uart nmi is implemented.
 
 ## Stack corruption
 
@@ -492,23 +489,6 @@ Also, dass ich nicht zusätzlich etwas auf dem stack ablege.
 
 Vielleicht sollte ich den Stackless mode anzeigen.
 
-## Test other joystick
-
-Test that other joystick (other than the one used for UART) is still working.
--> In normal mode everything behaves the same.
-If UART is configured on joy port 2 it is not possible to read the button state of 'A' and'Start' of the MD joystick.
-Open: wait on answer.
-Seems this is not working anymore. MD not supported in this setup.
-
-
-## nextreg 0x02
-
-When NMI occurs this can also because of others reasons. I need to check that at start of ISR.
--> Open: wait on AA
-
-## To be checked: Can a program be debugged that changes the NMI behavior?
-
-No problem. Even toggling. Stepping, etc. All is working.
 
 ## UART NMI
 
