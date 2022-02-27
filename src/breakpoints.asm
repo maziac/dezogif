@@ -157,17 +157,11 @@ copy_rom_start_code_end
 	ORG MAIN_ADDR+copy_rom_start_code_end
 
 ;===========================================================================
-; Called by RST 0 or JP 0.
-; This point is reached when the program e.g. runs into a RST 0.
-; This indicates that either a breakpoint was hit (RST 0)
-; TODO: Remove "coop" code.
-; or the coop code has called it because the debugged program wants to
-; check for data on the UART (JP 0).
-; The cases are distinguished by the stack contents:
-; - Breakpoint: The stack contains the return address to the debugged program
+; Called by RST 0.
+; This point is reached when the program runs into a RST 0.
+; This indicates that a breakpoint was hit (RST 0).
+; Breakpoint: The stack contains the return address to the debugged program
 ;   which is != 0.
-; - Coop code: A 0 has been put on the stack. The next value on the stack is
-;   the return address to the debugged program.
 ; When entered:
 ; - PUSHED AF: F contains the interrupt enabled state in P/V (PE=interrrupts enabled),
 ;              A contains the used memory bank for slot 0
@@ -176,13 +170,6 @@ copy_rom_start_code_end
 ;
 ; Stack for a SW breakpoint (RST 0):
 ; - [SP+6]:	The return address (!=0)
-; - [SP+4]:	AF was put on the stack
-; - [SP+2]:	AF (Interrupt flags) was put on the stack
-; - [SP]:	BC
-; Stack for a function call from the debugged program
-; - [SP+10]:	The return address
-; - [SP+8]:	Function number + Parameter
-; - [SP+6]: 0x0000, to distinguish from SW breakpoint
 ; - [SP+4]:	AF was put on the stack
 ; - [SP+2]:	AF (Interrupt flags) was put on the stack
 ; - [SP]:	BC
