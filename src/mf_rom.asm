@@ -53,6 +53,7 @@ nmi66h:
 	out (c),a
 	; Read register
     inc b
+	in a,(c)    ; TODO: REMOVE
 	in a,(c)
     and 0b00011100
 ;    and 0
@@ -66,9 +67,17 @@ nmi66h:
 	ENDIF
 
     ; Immediately return if there is some other reason than a button press
+
+    ; Clear reason bits
+	in a,(c)    ; Read again
+    and 0b11100011
+    nextreg REG_RESET,a
+
+    ; RETN
     pop bc, af
     ld sp,(MF.backup_sp)
     retn
+    
 .is_button_cause:
 
     IF 0
