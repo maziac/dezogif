@@ -243,8 +243,5 @@ stack:
 ; Used to backup the debugged program's SP.
 backup_sp:      defw 0
 
-; Border color: TODO: Remove
-border_color:   defb 0
-
     ENDMODULE
 

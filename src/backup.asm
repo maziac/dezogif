@@ -176,32 +176,6 @@ adjust_debugged_program_stack_for_bp:
 	ret
 
 
-; TODO: Is this used at all? :
-;===========================================================================
-; Adjusts the stack of the debugged program by 6 bytes.
-; Before (debugged_prgm_stack_copy):
-; Stack for a function call from the debugged program
-; - [SP+10]:	The return address
-; - [SP+8]:	Function number
-; - [SP+6]: 0x0000, to distinguish from SW breakpoint
-; - [SP+4]:	AF was put on the stack
-; - [SP+2]:	AF (Interrupt flags) was put on the stack
-; - [SP]:	BC
-; ===========================================================================
-adjust_debugged_program_stack_for_function:
-	ld de,(debugged_prgm_stack_copy.return2)
-	ld (backup.pc),de
-
-	; Adjust debugged program SP
-	ld hl,(backup.sp)
-	add hl,6*2	; Skip complete stack
-	ld (backup.sp),hl
-
-	; Rest
-	jr adjust_debugged_program_stack_for_bp.af
-
-
-
 ;===========================================================================
 ; Adjusts the stack of the debugged program by 2 bytes.
 ; I.e. skips the return address.
