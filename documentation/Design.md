@@ -334,12 +334,12 @@ But the principle is the same.
 
 # Stack
 
-As soon as the dezogif program gets control the maskable interrupts are disabled and restored when the debugged program gets back control.
-I.e. the normal (maskable) interrupt cannot change the stack.
+## NMI in Core 03.01.05
 
-This is different for NMI. An NMI can occur anytime and is "non-maskable" from Z80 perspective.
+In core 03.01.05 an NMI can corrupt the stack in certain circumstances.
+The NMI can occur at anytime and therefore it can also happen during stack manipulation.
 
-Here is an example what could happen if the NMI wouldn't be disabled:
+Here is an example:
 ~~~
 	push bc
 	inc sp
@@ -362,14 +362,30 @@ NMI--> pushes the PC onto the stack
 ~~~
 In the example above the pushed BC value is lost and exchanged with the PC value.
 
-This is true for the debugged program as well: If an NMI occurs during stack manipulation the program might malfunction. Here there is nothing that can be done about it in the debugger.
+This occurs only rarely but there is nothing that can be done about it.
+See [core 03.01.10](#core03.01.10).
 
-For the debugged program this also applies
-- for maskable interrupts if the interrupts are not disabled (but this is a general failure of the program)
-- for SW breakpoints
 
-For SW breakpoints a RST is used. I.e. when a breakpoint is "hit" the PC is also placed on the stack.
-Thus, if a breakpoint is placed at a location where the SP has been manipulated the stack is corrupted as well.
+## NMI in Core 03.01.10
+
+In core 03.01.10 the default is to use the NMI stackless mode.
+In this mode the NMI return address is not written to the stack but to a ZXNext register.
+I.e. it will not corrupt the stack in any case.
+
+Of course, it is possible programmatically to turn the stackless mode off.
+In that case the NMI works as in 03.01.05 with the fear of stack corruption.
+
+The ```dezogif``` SW can cope with both situations dynamically.
+
+
+## SW Breakpoints
+
+In normal circumstances the user can place the breakpoints wherever he likes.
+But there are some places that would lead to a stack corruption.
+
+SW breakpoints use the programs stack. So, similar to the core 03.01.05 NMI stack corruption, it is also possible to get a corrupted stack for some locations.
+
+E.g.:
 ~~~
 		push bc
 		inc sp
@@ -381,13 +397,31 @@ BP->	dec sp
 BP->	dec sp
 	pop bc
 ~~~
+
 Placing a BP at any of the above locations will destroy the pushed BC value if the BP is hit.
 
 The user has to take care not to place breakpoints at these locations.
 
-TODO: Change description for NMI and 3.01.10: no stack corruption.
+These values are put on the user stack when a SW breakpoint is hit.
+I.e. below the SP that is currently displayed in DeZog these values have been changed:
+~~~
+[SP-2]:	The return address
+[SP-4]:	AF
+[SP-6]:	Interrupt flags (AF)
+[SP-8]:	BC
+~~~
+
+Note: The user could change these values after the breakpoint occurred without doing any harm.
+
 
 # Changes in NextZxOS 3.01.10
+
+## dezogif
+
+The ```dezogif```SW does not dynamically adapt to core 03.01.05 or 03.01.10.
+I.e. for each of the cores a different SW has to be built and only the latest one is maintained.
+
+
 ## Stackless NMI
 
 With 3.01.10 the "default" is that stackless NMI is enabled.
@@ -465,8 +499,28 @@ Before it has to clear those bits.
 Further AA:
 "Yes it is intended -- you will have to clear bits 2,3,4 in your nmi routine.  You should preserve bit 7 which holds the esp/expbus in reset (many users use this to keep the esp module quiet when not in use).  So in your nmi routine, read nexreg 0x02 to see what caused the nmi (if none of bits 2,3,4 are set then the cause is the physical button) and then clear nextreg 0x02 by writing either 128 or 0 depending on whether bit 7 was set or not.  Another nmi cannot occur while the multiface is active so nothing will happen until after the RETN exit."
 
+AA is willing to make a change later (after 03.01.10) to allow UART as well as an NMI source.
+Then it would be possible to break the debugged program from vscode.
+But, I would have to leave the UART on one joyport (or use UART directly without joyport).
+If UART is connected to the joyport only normal joysticks would work, not MD.
+At the moment also MD works because I'm constantly switching the UART at the joyport.
+Obviously, this wouldn't work anymore.
+But OK, most people don't use MD anyway and it would still be possible by using the UART without joyports.
+
+
+## UART
+
+The TX UART uses a 64 byte buffer (vs 1 byte in 03.01.05).
+There are also some new registers and no need to use the KEMPSTON joystick port anymore.
+
+
+
 # TODO
 
+
+## Verdacht
+
+Habe den Verdacht, dass manchmal der NMI button zum Unterbrechen des laufenden Programms nicht functioniert. Auch wiederholt nicht.
 ## Stack corruption
 
 Check that there is no stack corruption for NMI.
@@ -476,25 +530,4 @@ Also, dass ich nicht zusätzlich etwas auf dem stack ablege.
 ## Remove
 'No response received from remote ...'
 in DeZog if Core > 03.01.10 with uart nmi is implemented.
-
-
-## UART NMI
-
-According AA it should be possible to use the NMI also for the uart:
-
-"In 3.01.10, the program can generate either multiface or divmmc nmi by writing to nextreg 0x02.  These are equivalent to a button push so can be disabled in the same way as buttons are.  One intention is to provide an easy means for a program to re-enter the debugger.  The debugger can identify the nmi cause by reading nextreg 0x02.
-
-Also in 3.01.10, io can be trapped.  The first io being trapped are the +3 FDC ports ( https://gitlab.com/SpectrumNext/ZX_Spectrum_Next_FPGA/-/blob/master/cores/zxnext/nextreg.txt#L1155 ).  If enabled, io access to these ports will also cause an nmi interrupt.  I mention it because NextZXOS is currently trapping this io.
-
-3.01.10 has one bug in the user generated nmis (via nextreg 0x02 and io trap) -- the nmi is seen too late by the hardware so that they are only acknowledged after the following instruction executes.  If you have:
-
-~~~
-nextreg 0x02,?  ;; generate mf nmi
-nop
-~~~
-
-then the nmi occurs at the end of the nop.  This was fixed pretty quickly but the fix is in 3.01.11.  I can give you that or you can wait a little while until gitlab gets updated with a new core."
-
-So I could get rid of "pressing-the-button-to-stop".
-Must try.
 
