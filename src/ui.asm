@@ -116,11 +116,17 @@ wait_on_key_release:
 ;===========================================================================
 show_ui:
     ; Switch to ULA
-    nextreg REG_ULA_X_OFFSET,0
-    nextreg REG_ULA_Y_OFFSET,0
-    nextreg REG_ULA_CONTROL,0
-    nextreg REG_DISPLAY_CONTROL,0
-    nextreg REG_SPRITE_LAYER_SYSTEM,00010000b   ; USL
+    nextreg REG_ULA_X_OFFSET, 0
+    nextreg REG_ULA_Y_OFFSET, 0
+    nextreg REG_ULA_CONTROL, 0
+    nextreg REG_DISPLAY_CONTROL, 0
+    nextreg REG_SPRITE_LAYER_SYSTEM, 00010000b   ; USL
+    ; Turn off clipping (might have been used by screensaver)
+    nextreg REG_CLIP_WINDOW_CONTROL, RCWC_RESET_ULA_CLIP_INDEX
+    nextreg REG_CLIP_WINDOW_ULA, 0
+    nextreg REG_CLIP_WINDOW_ULA, 255
+    nextreg REG_CLIP_WINDOW_ULA, 0
+    nextreg REG_CLIP_WINDOW_ULA, 191
 
     ; Clear the screen
     MEMCLEAR SCREEN, SCREEN_SIZE

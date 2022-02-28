@@ -468,9 +468,6 @@ Further AA:
 # TODO
 
 ## Test UART without joy port
-## If dezogif is activated (NMI) after the screensaver has started
-Then no text is seen. Maybe wrong ULA mode.
-(one can see some characters where the screensavers rectangle has been at last. Maybe the colorscreen has been moved?)
 
 # Update
 ZXNext description on DeZog.
