@@ -389,7 +389,7 @@ cmd_continue:
 	jr nz,.not_loading
 	; Loading finished: Set border color after loading
 	ld a,(backup.border_color)
-	;out (BORDER),a ; TODO: re-enable
+	out (BORDER),a
     ; Disable flashing border
     call uart_flashing_border.disable
 .not_loading:

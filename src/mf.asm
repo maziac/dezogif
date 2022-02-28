@@ -118,19 +118,6 @@ mf_nmi_button_pressed:
 	; Save the return address from the debugged program to debugged_prgm_stack_copy.return1 and backup.pc
 	call save_nmi_return_address
 
-// TODO: REMOVE:
- if 0
-	; Read debugged program stack
-	ld hl,(MF.backup_sp)
-	ld de,2	; Just the return address
-	ld bc,debugged_prgm_stack_copy.return1
-	call read_debugged_prgm_mem
-
-	; Save PC
-	ld hl,(debugged_prgm_stack_copy.return1)
-	ld (backup.pc),hl
- endif
-
 	; Save also the interrupt state.
 	; Note: during NMI no maskable interrupt can happen.
 	; The IFF2 state can simply be read with a 1-time read through LD A,I.
@@ -226,7 +213,7 @@ mf_nmi_button_pressed_immediate_return:
 	out (c),a
 	pop bc
 
-	IF 01   ; TODO: Disable
+	IF 0
 	; Change border to red
 	ld a,RED
     out (BORDER),a

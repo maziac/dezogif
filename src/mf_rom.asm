@@ -53,14 +53,13 @@ nmi66h:
 	out (c),a
 	; Read register
     inc b
-	in a,(c)    ; TODO: REMOVE
 	in a,(c)
     and 00011100b
 ;    and 0
 ;    or 1
     jr z,.is_button_cause
 
-    IF 01   ; TODO: Disable
+    IF 0
 	; Change border to blue
 	ld a,BLUE
     out (BORDER),a

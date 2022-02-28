@@ -441,43 +441,6 @@ set_uart_joystick:
     nextreg REG_JOYSTICK_IO_MODE,0  ; Disable joy IO mode
     ret
 
-; TODO: REMOVE
- if 0
-    ; Core 3.01.05 implementation:
-    ld a,(uart_joyport_selection)
-    ld l,a
-    ; Read reg 0x05 to preserve the 50/60 Hz setting and scandoubler
-    ld a,REG_PERIPHERAL_1
-    call read_tbblue_reg    ; Reading the joysticks returns the original joy mode, even if set to UART
-    ; Joy 1
-    bit 0,l
-    jr z,.no_joy1
-    or 11001000b
-.no_joy1:
-    ; Joy 2
-    bit 1,l
-    jr z,.no_joy2
-    or 00110010b
-.no_joy2:
-    ; Write to reg 0x05
-    nextreg REG_PERIPHERAL_1,a
-
-    ; Write to 0x37
-    ld a,10010000b  ; Right joystick (Joy 2)
-    bit 1,l
-    jr nz,.joy_2
-    ; Check for joy 1
-    bit 0,l
-    jr z,.no_joys  ; Neither 1 or 2
-    ; Joy 1
-    ld a,10000000b  ; Left joystick (Joy 1)
-.joy_2:
-    out (KEMPSTON_JOY_2),a
-.no_joys:
-    ; I think I forgot to set "no joystick port"
-    ret
- endif
-
 
 ;===========================================================================
 ; Waits for a certain number of scanlines.

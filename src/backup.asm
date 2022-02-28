@@ -62,13 +62,6 @@ restore_registers:
 	; Disable joy port IO mode to enable the joysticks
 	nextreg REG_JOYSTICK_IO_MODE,0
 
- if 0	; TODO: REMOVE
-	;  Restore the joysticks
-	ld a,REG_PERIPHERAL_1
-    call read_tbblue_reg    ; Reading the joysticks returns the original joy mode, even if set to UART
-	nextreg REG_PERIPHERAL_1,a	; Writing it will restore it
- endif
-
 	; Skip IM
 	ld sp,backup.r
 

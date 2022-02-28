@@ -467,19 +467,15 @@ Further AA:
 
 # TODO
 
-# Update
-ZXNext description on DeZog.
-
-
-## Remove
-'No response received from remote ...'
-in DeZog if Core > 03.01.10 with uart nmi is implemented.
-
 ## Stack corruption
 
 Check that there is no stack corruption for NMI.
 Also, dass ich nicht zusätzlich etwas auf dem stack ablege.
 
+
+## Remove
+'No response received from remote ...'
+in DeZog if Core > 03.01.10 with uart nmi is implemented.
 
 
 ## UART NMI
