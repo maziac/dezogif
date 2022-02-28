@@ -467,8 +467,6 @@ Further AA:
 
 # TODO
 
-## Test UART without joy port
-
 # Update
 ZXNext description on DeZog.
 
@@ -482,9 +480,6 @@ in DeZog if Core > 03.01.10 with uart nmi is implemented.
 Check that there is no stack corruption for NMI.
 Also, dass ich nicht zusätzlich etwas auf dem stack ablege.
 
-## Stackless anzeigen
-
-Vielleicht sollte ich den Stackless mode anzeigen.
 
 
 ## UART NMI
