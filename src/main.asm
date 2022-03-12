@@ -12,36 +12,6 @@
 
     include "constants.asm"
 
-; TODO: REMOVE
-	STRUCT SLOT_BACK
-slot0:		defb
-slot7:		defb
-tmp_slot:	defb
-	ENDS
-
-
-sl_back:   SLOT_BACK
-
-
-LAB4:
-LAB1:
-    nop
-.end:
-
-LAB2: defw .end
-    nop
-.end:
-
-
-   MODULE M1
-    MODULE M2
-@glob_label:
-
-not_glob_label:
-     ENDMODULE
-    ENDMODULE
-
-
     MMU MAIN_SLOT e, LOADED_BANK ; e -> Everything should fit into one page, error if not.
     ORG MAIN_ADDR
 
@@ -95,7 +65,6 @@ main_bank_entry:
     ; Switch in ROM bank
     nextreg REG_MMU+0,ROM_BANK
     nextreg REG_MMU+1,ROM_BANK
-  ;  nextreg REG_MEMORY_MAPPING,011b  ; 48k Basic TODO: Maybe remove
     MEMCOPY MAIN_ADDR+0x2000-ROM_FONT_SIZE+MF_ORIGIN_ROM-MF.main_prg_copy, ROM_FONT, ROM_FONT_SIZE
 
     ; Restore SWAP_SLOT bank

@@ -418,7 +418,7 @@ Note: The user could change these values after the breakpoint occurred without d
 
 ## dezogif
 
-The ```dezogif```SW does not dynamically adapt to core 03.01.05 or 03.01.10.
+The ```dezogif``` SW does not dynamically adapt to core 03.01.05 or 03.01.10.
 I.e. for each of the cores a different SW has to be built and only the latest one is maintained.
 
 
@@ -512,22 +512,4 @@ But OK, most people don't use MD anyway and it would still be possible by using 
 
 The TX UART uses a 64 byte buffer (vs 1 byte in 03.01.05).
 There are also some new registers and no need to use the KEMPSTON joystick port anymore.
-
-
-
-# TODO
-
-
-## Verdacht
-
-Habe den Verdacht, dass manchmal der NMI button zum Unterbrechen des laufenden Programms nicht functioniert. Auch wiederholt nicht.
-## Stack corruption
-
-Check that there is no stack corruption for NMI.
-Also, dass ich nicht zusätzlich etwas auf dem stack ablege.
-
-
-## Remove
-'No response received from remote ...'
-in DeZog if Core > 03.01.10 with uart nmi is implemented.
 
