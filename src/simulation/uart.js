@@ -6,6 +6,8 @@ var whichNextReg = 0;
 var nextRegContents = new Map();	// Any values written to a next reg will be stored here as well.
 
 
+portUartTxData.length = 0;
+
 /**
  * Returns 0 for the UART port.
  * This is the whole "uart simulation".
@@ -42,6 +44,8 @@ API.readPort = (port) => {
 		let status = 0;
 		if (unitTestData.length != 0)
 			status |= 0b01;
+		status |= 0b010000; // UART_TX_EMPTY = always empty, simulate immediately read
+		API.log("  portUartTxData.length = " + portUartTxData.length);
 		return status;
 	}
 	// Check for PORT_UART_RX=0x143B

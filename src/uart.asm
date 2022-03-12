@@ -334,8 +334,8 @@ wait_for_uart_tx:
 
 
 ;===========================================================================
-; Waits until the UART TX buffer is coompletely empty.
-; Is used to wait unti the joy port can be switched.
+; Waits until the UART TX buffer is completely empty.
+; Is used to wait until the joy port can be switched.
 ; Changes:
 ;  AF, BC (=PORT_UART_TX), E
 ;===========================================================================
