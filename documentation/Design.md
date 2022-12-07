@@ -363,7 +363,7 @@ NMI--> pushes the PC onto the stack
 In the example above the pushed BC value is lost and exchanged with the PC value.
 
 This occurs only rarely but there is nothing that can be done about it.
-See [core 03.01.10](#core03.01.10).
+See [NMI in Core 03.01.10](#nmi-in-core-030105).
 
 
 ## NMI in Core 03.01.10

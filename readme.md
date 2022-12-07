@@ -24,7 +24,7 @@ When the NMI button was pressed dezogif send a DZRP pause notification to DeZog 
 
 The program is started when DeZog sends a DZRP continue request.
 
-See [Design.md](documentation/Design.doc) for more info.
+See [Design.md](documentation/Design.md) for more info.
 
 
 # Build
