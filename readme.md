@@ -18,9 +18,9 @@ When the debugged program is running no communication takes place and the joy po
 When the debugged program is stopped the dezogif takes over and configures the joy port for UART communication.
 
 This implies that it is not possible to stop the debugged program from DeZog.
-to stop it you need to press the yellow NMI button.
+To stop it you need to press the yellow NMI button.
 
-When the NMI button was pressed dezogif send a DZRP pause notification to DeZog to notify about the state change. Then dezogif will wait for further requests from DeZog, e.g. to read register values etc.
+When the NMI button was pressed dezogif sends a DZRP pause notification to DeZog to notify about the state change. Then dezogif will wait for further requests from DeZog, e.g. to read register values etc.
 
 The program is started when DeZog sends a DZRP continue request.
 

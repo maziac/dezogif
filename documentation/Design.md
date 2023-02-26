@@ -257,7 +257,7 @@ Slot/Banks/L2:
 X = The bank used by the debugged program
 XM = The modified (alt) ROM or the (modified) bank of the debugged program for slot 0
 MAIN = The main debugger program
-SWAP = Temporary swap space for the debugger program. Used e.g. to page in a different bank to read/Write the memory.
+SWAP = Temporary swap space for the debugger program. Used e.g. to page in a different bank to read/write the memory.
 L2 RW = Layer 2 read/write enable.
 PC = Slot used for program execution. (Also bold)
 M1 enabled = 1 if the M1 key is enabled. I.e. the NMI is only allowed during debugged program execution. While the debugger is running it is disabled.
@@ -308,12 +308,19 @@ Actually 2 banks/slots are required as the stack could reach over 2 slots. Even 
 
 # AltROM
 
-See https://gitlab.com/SpectrumNext/ZX_Spectrum_Next_FPGA/-/blob/master/cores/zxnext/nextreg.txt#L777 .
+See https://gitlab.com/SpectrumNext/ZX_Spectrum_Next_FPGA/-/blob/master/cores/zxnext/nextreg.txt#L825 .
 
 The Alternate ROM is used so I don't need to copy the ROM, modify/copy it to another bank.
 I could instead copy/modify the ROM to the AltROM.
 
 The advantage is that the ROM is switched in via bank 0xFF like the normal ROM.
+
+The dezogif uses the 48k Basic ROM, modifies it and writes it to the AltROM.
+For the Spectrum +2a/+3 this would be ROM3. For a 128k Spectrum this is ROM1.
+
+This also implies that your program cannot use any of the other ROMs.
+When the other ROMs are mapped the dezogif debugging code would be missing and as soon as a breakpoint should be hit or you do simple stepping the debugging would fail.
+
 
 
 
