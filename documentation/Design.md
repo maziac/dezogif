@@ -61,7 +61,7 @@ The SW has the following main tasks:
 
 When the yellow NMI button is pressed depending on the current state one of 4 cases can happen:
 
-- If pressed for the first time (after boot) the dezogif program is initializing itself. It copies itself into a bank 94. "Returns"/RETN from the NMI to enable maskable interrupts (It not really returns, it stays in a loop).
+- If pressed for the first time (after boot) the dezogif program is initializing itself. It copies itself into bank 94. "Returns"/RETN from the NMI to enable maskable interrupts (It not really returns, it stays in a loop).
 It shows the dezogif GUI and stays in a loop, waiting for UART commands from DeZog.
 - If pressed while the dezogif GUI is shown it immediately returns from the NMI interrupt.
 - If pressed while holding the Symbol Shift (or CTRL) key down it re-initializes itself just if pressed for the first time.
@@ -70,7 +70,7 @@ It shows the dezogif GUI and stays in a loop, waiting for UART commands from DeZ
 
 ## SW Breakpoints
 
-When a breakpoint is set the opcode at the breakpoint address is saved and instead a one byte opcode RST is added.
+When a breakpoint is set the opcode at the breakpoint address is saved and instead a one byte opcode RST 0 is added.
 
 So, at the RST position there is code located which jumps into the dezogif-program and informs DeZog via UART, then waits on input from DeZog.
 
@@ -87,7 +87,7 @@ DeZog analyzes the current instructions and sets one or two temporary breakpoint
 For non-branching instructions one breakpoint right after the instruction would already do.
 For the branching (and conditional branching) instruction we need also the branch location and set the 2nd breakpoint to it.
 
-So DeZog sets 2 temporary breakpoints at exch DZRP continue command. One at the breakpoint address + len and one at the branch address.
+So DeZog sets 2 temporary breakpoints at each DZRP continue command. One at the breakpoint address + len and one at the branch address.
 
 So, after our original breakpoint was hit the debug-program restores the original opcode and then adds the 2 temporary artificial breakpoints.
 The debug-program then jumps to the breakpoint location and after the instruction is executed immediately the next RST is done (because of the temporary breakpoints).
