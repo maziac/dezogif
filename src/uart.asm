@@ -65,7 +65,8 @@ UART_FRAME:     equ 0x163b
 
 ; UART Status Bits:
 UART_RX_FIFO_EMPTY: equ 0   ; 0=empty, 1=not empty
-UART_RX_FIFO_FULL:  equ 2   ; 0=not full, 1=full
+UART_RX_FIFO_OVERFLOW:  equ 2   ; 1=overflowed  ; (clears on read)
+;UART_RX_FIFO_NEAR_FULL:  equ 3   ; 1=buffer is near full (3/4)
 UART_TX_FULL:       equ 1   ; 1=Tx buffer is full
 UART_TX_EMPTY:      equ 4   ; 1=Tx buffer is empty
 
@@ -92,7 +93,7 @@ baudrate_table:
 ;===========================================================================
 ; Clears the receive FIFO.
 ; Changes:
-;   A, E, BC
+;   A, BC
 ;===========================================================================
 drain_rx_buffer:
     ld b,0  ; Check 256x that there is no data
@@ -112,7 +113,6 @@ drain_rx_buffer:
     ; At least 1 byte received, read it
     inc b	; The low byte stays the same
     in a,(c)
-    dec b
     jr .read_loop
 
 
@@ -241,12 +241,18 @@ read_uart_byte:
     ret
 
 
+; Called if a UART RX buffer overflow occurred.
+.rx_overflow: ; The receive timeout handler
+    ld a,ERROR_RX_OVERFLOW
+    jr rxtx_error
+
+
 ; Called if a UART RX timeout occurs.
 ; As this could happen from everywhere the call stack is reset
 ; and then the cmd_loop is entered again.
 rx_timeout: ; The receive timeout handler
     ld a,ERROR_RX_TIMEOUT
-timeout:
+rxtx_error:
     ld (last_error),a
     jp main
 
@@ -256,7 +262,7 @@ timeout:
 ; and then the cmd_loop is entered again.
 tx_timeout: ; The receive timeout handler
     ld a,ERROR_TX_TIMEOUT
-    jr timeout
+    jr rxtx_error
 
 
 
@@ -374,7 +380,7 @@ wait_for_uart_tx_empty:
 set_uart_baudrate:
     ; Set 8 bit
     ld bc,UART_FRAME
-	ld a,0x18   ; 8 bit
+	ld a,00011000b   ; 8 bit
 	out	(c),a
 
     ; Select UART and clear prescaler MSB
