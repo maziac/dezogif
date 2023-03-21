@@ -10,7 +10,7 @@
 
 ; The dezogif program version:
  MACRO PRG_VERSION
- 	defb "v2.1.0"
+ 	defb "v2.1.1-rc1"
  ENDM
 
 
@@ -87,6 +87,7 @@ TEXT_LAST_ERROR:
     defb AT, 0, 15*8, "Last Error:", AT, 0, 16*8, 0
 
 TEXT_ERROR_RX_TIMEOUT: defb "RX Timeout", 0
+TEXT_ERROR_RX_OVERFLOW: defb "RX Buffer overflow", 0
 TEXT_ERROR_TX_TIMEOUT: defb "TX Timeout", 0
 TEXT_ERROR_WRONG_FUNC_NUMBER: defb "Wrong function number", 0
 TEXT_ERROR_WRITE_MAIN_BANK: defb "CMD_WRITE_BANK: Can't write to  bank "
@@ -97,6 +98,7 @@ TEXT_ERROR_CORE_VERSION_NOT_SUPPORTED: ; Core not supported
 
 ERROR_TEXT_TABLE:
     defw TEXT_ERROR_RX_TIMEOUT
+    defw TEXT_ERROR_RX_OVERFLOW
     defw TEXT_ERROR_TX_TIMEOUT
     defw TEXT_ERROR_WRONG_FUNC_NUMBER
     defw TEXT_ERROR_WRITE_MAIN_BANK
