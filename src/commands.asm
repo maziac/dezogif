@@ -57,6 +57,8 @@ cmd_jump_table:
 .get_sprites_palette:	defw cmd_get_sprites_palette	; 16
 .get_sprites_clip_window_and_control:	defw cmd_get_sprites_clip_window_and_control	; 17
 
+; TODO: set  border
+
 ;.get_sprites:			defw 0	; not supported on a ZX Next
 ;.get_sprite_patterns:	defw 0	; not supported on a ZX Next
 
@@ -475,9 +477,9 @@ cmd_write_mem:
 	; Get byte
 	push de
 	call read_uart_byte
-	pop de
 	; Write
 	ld (hl),a
+	pop de
 	ret
 
 
@@ -831,11 +833,11 @@ cmd_get_sprites_palette:
 	ld a,d	; eUlaCtrlReg
 	and 0x0F
 	or 00100000b
-	ld e,a
+	ld d,a
 	; Get palette index
 	call read_uart_byte
 	bit 0,a
-	ld a,e
+	ld a,d	; TODO: Test both palettes.
  	jr z,.palette_0
 	or 01000000b	; Select palette 1
 .palette_0:
