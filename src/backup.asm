@@ -312,7 +312,7 @@ write_debugged_prgm_mem:
 ; 1. memory in range 0xE000-0xFFFF
 ; 2. memory in range 0x0000-0xDFFF
 ; 3. loop to 1
-; Each of the phase is optionally.
+; Each of the phase is optional.
 ; Parameters:
 ;   HL = memory to read
 ;   DE = size
