@@ -165,6 +165,9 @@
             "type": "dezog",
             "request": "launch",
             "name": "Unit Tests",
+            "presentation": {
+                "hidden": true
+            },
             "unitTests": true,
             "remoteType": "zsim",
             "zsim": {
@@ -176,12 +179,8 @@
                     "jsPath": "src/simulation/uart.js",
                 }
             },
-            "resetOnLaunch": true,
             "startAutomatically": true,
             "unitTestTimeout": 2,
-            "disassemblerArgs": {
-                "esxdosRst": true
-            },
             "sjasmplus": [
                 {
                     "path": "out/ut.sld",
@@ -192,7 +191,7 @@
             ],
             "rootFolder": "${workspaceFolder}",
             "load": "out/ut.nex",
-        },
+        }
 
     ]
 }

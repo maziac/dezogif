@@ -31,7 +31,7 @@
             "type": "shell",
             "command": "make",
             "args": [
-                "ut"
+                "unit_tests"
             ],
             "problemMatcher": {
                 "fileLocation": [
