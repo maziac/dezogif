@@ -81,61 +81,63 @@ UT_div_hl_e:
 
 ; Test integer to ascii routine (2 digits).
 UT_itoa_2digits:
-	ld hl,.output
+	ld de,.output
 	ld a,7
 	call itoa_2digits
-	nop ; TEST ASSERTION HL == ut_utilities.UT_itoa_2digits.output
+	nop ; TEST ASSERTION DE == ut_utilities.UT_itoa_2digits.output+1
 	TEST_MEMORY_BYTE .output, '0'
 	TEST_MEMORY_BYTE .output+1, '7'
 	TEST_MEMORY_BYTE .output+2, 0
 
+	ld de,.output
 	ld a,0
 	call itoa_2digits
-	nop ; TEST ASSERTION HL == ut_utilities.UT_itoa_2digits.output
 	TEST_MEMORY_BYTE .output, '0'
 	TEST_MEMORY_BYTE .output+1, '0'
 	TEST_MEMORY_BYTE .output+2, 0
 
+	ld de,.output
 	ld a,10
 	call itoa_2digits
-	nop ; TEST ASSERTION HL == ut_utilities.UT_itoa_2digits.output
 	TEST_MEMORY_BYTE .output, '1'
 	TEST_MEMORY_BYTE .output+1, '0'
 	TEST_MEMORY_BYTE .output+2, 0
 
+	ld de,.output
 	ld a,21
 	call itoa_2digits
-	nop ; TEST ASSERTION HL == ut_utilities.UT_itoa_2digits.output
 	TEST_MEMORY_BYTE .output, '2'
 	TEST_MEMORY_BYTE .output+1, '1'
 	TEST_MEMORY_BYTE .output+2, 0
 
-	ld a,21
+	ld de,.output
+	ld a,19
 	call itoa_2digits
-	nop ; TEST ASSERTION HL == ut_utilities.UT_itoa_2digits.output
-	TEST_MEMORY_BYTE .output, '2'
-	TEST_MEMORY_BYTE .output+1, '1'
+	TEST_MEMORY_BYTE .output, '1'
+	TEST_MEMORY_BYTE .output+1, '9'
 	TEST_MEMORY_BYTE .output+2, 0
 
+	ld de,.output
 	ld a,99
 	call itoa_2digits
-	nop ; TEST ASSERTION HL == ut_utilities.UT_itoa_2digits.output
 	TEST_MEMORY_BYTE .output, '9'
 	TEST_MEMORY_BYTE .output+1, '9'
 	TEST_MEMORY_BYTE .output+2, 0
 
 	; Invalid input: check that only 2 bytes are written
+	ld de,.output
 	ld a,100
 	call itoa_2digits
-	nop ; TEST ASSERTION HL == ut_utilities.UT_itoa_2digits.output
+	nop ; TEST ASSERTION DE == ut_utilities.UT_itoa_2digits.output+1
 	TEST_MEMORY_BYTE .output, '?'
 	TEST_MEMORY_BYTE .output+1, '?'
 	TEST_MEMORY_BYTE .output+2, 0
 
 	; Invalid input: check that only 2 bytes are written
+	ld de,.output
 	ld a,255
 	call itoa_2digits
-	nop ; TEST ASSERTION HL == ut_utilities.UT_itoa_2digits.output
+	nop ; TEST ASSERTION DE == ut_utilities.UT_itoa_2digits.output+1
 	TEST_MEMORY_BYTE .output, '?'
 	TEST_MEMORY_BYTE .output+1, '?'
 	TEST_MEMORY_BYTE .output+2, 0

@@ -169,38 +169,25 @@ div_hl_e:
 ; Is used to convert the core version into a string.
 ; Input:
 ; - A: The number to convert (<100)
-; - HL: The pointer to write to.
+; - DE: The pointer to write to.
 ; Changes:
-; - A, F, B, C
-; Note: HL is unchanged
+; - A, F, B, C, D, E, H, L
+; - DE = DE+1
 ;===========================================================================
 itoa_2digits:
-    inc hl
 	cp 100
 	jr c,.below100
 
 	; A >= 100, print just "??"
 	ld a,'?'
-	ldd (hl),a
-    ld (hl),a
+	ldi (de),a
+    ld (de),a
     ret
 
 .below100:
-    ld c,10
-    ld b,-1
-.loop10:
-    inc b
-    sub c
-    jr nc,.loop10
-    ; Print lower digit
-    add c
-    add a,'0'
-    ldd (hl),a
-    ; Print higher digit
-    ld a,b
-    add a,'0'
-    ld (hl),a
-    ret
+	ld h,0
+	ld l,a
+	jr itoa_5digits.two_digits:
 
 
 ;===========================================================================
@@ -230,6 +217,7 @@ itoa_5digits:
 	ld bc,100
 	call .inner_sub
 	ldi (de),a
+.two_digits:
 	; 10s
 	ld bc,10
 	call .inner_sub
