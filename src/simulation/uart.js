@@ -89,8 +89,9 @@ API.readPort = (port) => {
  * Simulate writing of ports.
  */
 API.writePort = (port, value) => {
-	// Check for port 0 = Unit test data
-	if (port == 0x0000) {
+	// Check for port 1 = Unit test data
+	if (port == 0x8000) {
+		// Note: writing to e.g. port 0 would also trigger changing the memory (port 0x7FFD)
 		// Store test data
 		API.log("  Pushed test data: " + value);
 		unitTestData.push(value);

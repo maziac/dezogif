@@ -15,6 +15,10 @@ test_memory_payload:
 	defw 0
 
 
+; Test data is written to this port:
+PORT_TEST_DATA:	equ 0x8000
+
+
 ; Helper function that inits all backup values to 0xFF.
 cmd_data_init:
 	ld hl,backup
@@ -40,7 +44,7 @@ test_prepare_command:
 	; Note: storing command information is not necessary
 	;add de,-(4+1+1)	; Correct the length
 	; Store custom data
-	ld bc,0	; Port 0 is to prepare the data that is later read through PORT_UART_RX
+	ld bc,PORT_TEST_DATA	; Port 0x8000 is used to prepare the data that is later read through PORT_UART_RX
 .loop:
 	ld a,d
 	or e
@@ -619,7 +623,7 @@ UT_5_cmd_write_bank:
 	pop de
 	dec de
 	; Prepare UART test data (command), 2x
-	ld bc,0x0000	; Port for test data
+	ld bc,PORT_TEST_DATA	; Port for test data
 	; Bank 28
 	ld a,28
 	out (c),a

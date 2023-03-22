@@ -19,7 +19,7 @@ UT_nmi_cause_wrong:
 	; Simulate a different cause
 	ld a,0b00000100
 	ld bc,0x0002
-	out (c),a
+	out (c),a	; Note: this will trigger writing to 0x7FFD (switching memory) as well. Use with care.
 	; Test
 	call MF.nmi66h
 
