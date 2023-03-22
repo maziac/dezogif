@@ -457,7 +457,7 @@ cmd_write_mem:
 
 .inner:
 	call save_swap_slot
-	; Read length and subtract 5
+	; Read length and subtract 3
 	ld hl,(receive_buffer.length)
 	ld de,-PAYLOAD_WRITE_MEM
 	add hl,de
@@ -467,9 +467,18 @@ cmd_write_mem:
 	ld bc,.write
 	call memory_loop
 
-	; Send response
-	ld de,1
-	jp send_length_and_seqno
+; .loop:
+; 	push de
+; 	call read_uart_byte
+; 	pop de
+; 	dec de
+; 	ld a,d
+; 	or e
+; 	jr nz,.loop
+
+ 	; Send response
+ 	ld de,1
+ 	jp send_length_and_seqno
 
 
 ; The inner call

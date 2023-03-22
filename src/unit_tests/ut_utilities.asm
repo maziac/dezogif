@@ -79,7 +79,7 @@ UT_div_hl_e:
  TC_END
 
 
-; Test integet to ascii routine.
+; Test integer to ascii routine (2 digits).
 UT_itoa_2digits:
 	ld hl,.output
 	ld a,7
@@ -141,6 +141,74 @@ UT_itoa_2digits:
 	TEST_MEMORY_BYTE .output+2, 0
  TC_END
 .output:	defb 0,0,0
+
+
+
+; Test integer to ascii routine (5 digits).
+UT_itoa_5digits:
+	ld de,.output
+	ld hl,7
+	call itoa_5digits
+	nop ; TEST ASSERTION DE == ut_utilities.UT_itoa_5digits.output+4
+	TEST_MEMORY_BYTE .output, '0'
+	TEST_MEMORY_BYTE .output+1, '0'
+	TEST_MEMORY_BYTE .output+2, '0'
+	TEST_MEMORY_BYTE .output+3, '0'
+	TEST_MEMORY_BYTE .output+4, '7'
+	TEST_MEMORY_BYTE .output+5, 0
+
+	ld de,.output
+	ld hl,0
+	call itoa_5digits
+	TEST_MEMORY_BYTE .output, '0'
+	TEST_MEMORY_BYTE .output+1, '0'
+	TEST_MEMORY_BYTE .output+2, '0'
+	TEST_MEMORY_BYTE .output+3, '0'
+	TEST_MEMORY_BYTE .output+4, '0'
+	TEST_MEMORY_BYTE .output+5, 0
+
+	ld de,.output
+	ld hl,99
+	call itoa_5digits
+	TEST_MEMORY_BYTE .output, '0'
+	TEST_MEMORY_BYTE .output+1, '0'
+	TEST_MEMORY_BYTE .output+2, '0'
+	TEST_MEMORY_BYTE .output+3, '9'
+	TEST_MEMORY_BYTE .output+4, '9'
+	TEST_MEMORY_BYTE .output+5, 0
+
+	ld de,.output
+	ld hl,100
+	call itoa_5digits
+	TEST_MEMORY_BYTE .output, '0'
+	TEST_MEMORY_BYTE .output+1, '0'
+	TEST_MEMORY_BYTE .output+2, '1'
+	TEST_MEMORY_BYTE .output+3, '0'
+	TEST_MEMORY_BYTE .output+4, '0'
+	TEST_MEMORY_BYTE .output+5, 0
+
+	ld de,.output
+	ld hl,2345
+	call itoa_5digits
+	TEST_MEMORY_BYTE .output, '0'
+	TEST_MEMORY_BYTE .output+1, '2'
+	TEST_MEMORY_BYTE .output+2, '3'
+	TEST_MEMORY_BYTE .output+3, '4'
+	TEST_MEMORY_BYTE .output+4, '5'
+	TEST_MEMORY_BYTE .output+5, 0
+
+	ld de,.output
+	ld hl,0xFFFF
+	call itoa_5digits
+	TEST_MEMORY_BYTE .output, '6'
+	TEST_MEMORY_BYTE .output+1, '5'
+	TEST_MEMORY_BYTE .output+2, '5'
+	TEST_MEMORY_BYTE .output+3, '3'
+	TEST_MEMORY_BYTE .output+4, '5'
+	TEST_MEMORY_BYTE .output+5, 0
+
+ TC_END
+.output:	defb 0,0,0,0,0,0
 
 
     ENDMODULE
