@@ -9,6 +9,7 @@
                 "all"
             ],
             "problemMatcher": {
+                "owner": "sjasmplus",
                 "fileLocation": [
                     "relative",
                     "${workspaceRoot}"
@@ -34,6 +35,7 @@
                 "unit_tests"
             ],
             "problemMatcher": {
+                "owner": "sjasmplus",
                 "fileLocation": [
                     "relative",
                     "${workspaceRoot}"

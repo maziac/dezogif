@@ -46,7 +46,7 @@
 ;   value = The byte value used to fill the area.
 ;   count = The number of bytes to fill.
 ; Changes:
-;   BC, DE, HL
+;   F, BC, DE, HL
 ;===========================================================================
 	MACRO MEMFILL dest?, value?, count?
 	ld bc,count?-1
@@ -63,7 +63,7 @@
 ;	dest = Pointer to destination
 ;   count = The number of bytes to clear.
 ; Changes:
-;   BC, DE, HL
+;   F, BC, DE, HL
 ;===========================================================================
 	MACRO MEMCLEAR dest?, count?
 	MEMFILL dest?, 0, count?
@@ -74,7 +74,7 @@
 ; Parameters:
 ;   count = The number of bytes to clear.
 ; Changes:
-;   BC, DE, HL
+;   F, BC, DE, HL
 ;===========================================================================
 	MACRO MEMCLEARHL count?
 	ld bc,count?-1
@@ -151,5 +151,70 @@ divisor = divisor / 10
 	di
 	in a,(0x3F)
 	rst 8
+	ENDM
+
+
+
+; Debug macros:
+
+;===========================================================================
+; Clears the logged lines, also on screen.
+; Starts/inits logging.
+; Sets the logging position to the start of the lines.
+; Lines are shown as "-------".
+; Parameters:
+;   none
+; Changes:
+;   -
+;===========================================================================
+	MACRO DBG_CLEAR
+	call dbg.clear
+	ENDM
+
+
+;===========================================================================
+; Logs a single character to the next position.
+; Parameters:
+;   val: the character to log, e.g. 'A' or '5'.
+; Changes:
+;   -
+;===========================================================================
+	MACRO DBG_LOG val?
+	push af
+	ld a,val?
+	call dbg.log
+	pop af
+	ENDM
+
+
+;===========================================================================
+; Logs a number [0;65535] together with prefix and suffix.
+; E.g. "#42768_"
+; Parameters:
+;   val: ???
+; Changes:
+;   -
+;===========================================================================
+	MACRO DBG_LOG_NUMBER number?
+	push hl
+	ld hl,number?
+	call dbg.log_number
+	pop hl
+	ENDM
+	MACRO DBG_LOG_NUMBER_A
+	call dbg.log_number_a
+	ENDM
+
+
+;===========================================================================
+; Prints the logged values.
+; Only prints new values.
+; Parameters:
+;   -
+; Changes:
+;   -
+;===========================================================================
+	MACRO DBG_PRINT
+	call dbg.print
 	ENDM
 

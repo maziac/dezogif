@@ -31,9 +31,6 @@
             "startAutomatically": true,
             "commandsAfterLaunch": [
             ],
-            "disassemblerArgs": {
-                "esxdosRst": true
-            },
             "rootFolder": "${workspaceFolder}",
             "topOfStack": "debug_stack.top",
             "loadObjs": [
@@ -44,6 +41,44 @@
             "tmpDir": ".tmp"
         },
 
+        {
+            "type": "dezog",
+            "request": "launch",
+            "name": "zsim main",
+            "remoteType": "zsim",
+            "zsim": {
+                "Z80N": true,
+                //"memoryModel": "ZXNEXT",
+                "memoryModel": "ZX48K", // Otherwise, because of loadObj the file association will not work.
+                "ulaScreen": true,
+                "zxKeyboard": true,
+                "customCode": {
+                    "jsPath": "src/simulation/uart.js",
+                }
+            },
+            "sjasmplus": [
+                {
+                    "path": "out/dezogif.sld",
+                    "srcDirs": [
+                        "src"
+                    ]
+                }
+            ],
+            "startAutomatically": false,
+            "commandsAfterLaunch": [
+            ],
+            "rootFolder": "${workspaceFolder}",
+            "topOfStack": "debug_stack.top",
+            "loadObjs": [
+                {
+                    "path": "out/main.bin",
+                    "start": "0xE000"
+                }
+            ],
+            "execAddress": "main_bank_entry",
+            "smallValuesMaximum": 513,
+            "tmpDir": ".tmp"
+        },
 
         {
             "type": "dezog",
@@ -55,9 +90,6 @@
                 "port": 10000,
                 "socketTimeout": 50
             },
-            "zsim": {
-                "Z80N": true,
-            },
             "sjasmplus": [
                 {
                     "path": "out/dezogif.sld",
@@ -68,13 +100,8 @@
             ],
             "startAutomatically": true,
             "commandsAfterLaunch": [
-                //"-sprites",
-                //"-patterns"
                 "-md 0x000 0x0100 0xC000 0x0100"
             ],
-            "disassemblerArgs": {
-                "esxdosRst": true
-            },
             "rootFolder": "${workspaceFolder}",
             "topOfStack": "stack_top",
             "load": "out/dezogif.nex",
