@@ -185,18 +185,28 @@ itoa_2digits:
     ret
 
 .below100:
-	ld h,0
-	ld l,a
-	jr itoa_5digits.two_digits:
+    ld c,10
+    ld b,-1
+.loop10:
+    inc b
+    sub c
+    jr nc,.loop10
+    add c
+	ld c,a
+    ; Print higher digit
+    ld a,b
+    add a,'0'
+    ldi (de),a
+    ; Print lower digit
+    ld a,c
+	add a,'0'
+    ld (de),a
+    ret
 
 
 ;===========================================================================
 ; Converts an integer into a string.
-; Does only work for numbers < 100 and always
-; uses 2 digits.
-; If number is >= 100 other characters (other than digits)
-; will appear.
-; Is used to convert the core version into a string.
+; Uses always 5 digits and fills with 0 if necessary.
 ; Input:
 ; - HL: The number to convert (0-65535)
 ; - DE: The pointer to write to.
@@ -213,20 +223,14 @@ itoa_5digits:
 	ld bc,1000
 	call .inner_sub
 	ldi (de),a
+.three_digits:
 	; 100s
 	ld bc,100
 	call .inner_sub
 	ldi (de),a
-.two_digits:
-	; 10s
-	ld bc,10
-	call .inner_sub
-	ldi (de),a
-	; 1s
-	ld a,'0'
-	add a,l
-	ld (de),a
-	ret
+	; hl < 100
+	ld a,l
+	jr itoa_2digits.below100
 
 ; Return in A the digit (char).
 .inner_sub:

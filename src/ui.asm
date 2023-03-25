@@ -143,26 +143,26 @@ show_ui:
     ; Show core version
     ld a,REG_VERSION
     call read_tbblue_reg
-    ld d,a  ; Save major and minor number
+    ld h,a  ; Save major and minor number
     ; Shift major number
     rra : rra : rra : rra
     and 0x0F
-    ld hl,text_core_version.major
+    ld de,text_core_version.major
     call itoa_2digits
     ; Minor version
-    ld a,d
+    ld a,h
     and 0x0F
-    ld hl,text_core_version.minor
+    ld de,text_core_version.minor
     call itoa_2digits
     ; Subminor
     ld a,REG_SUB_VERSION
     call read_tbblue_reg
-    ld e,a    ; save subminor
-    ld hl,text_core_version.subminor
+    ld l,a    ; save subminor
+    ld de,text_core_version.subminor
     call itoa_2digits
 
     ; Check version against core version 3.01.10 (minimum version)
-    ex de,hl    ; -> hl = current version
+    ; (hl = current version)
     ld de,(3 << 12) + (1 << 8) + (10)
     sbc hl,de   ; current version - 3.01.10
     jp p,.core_version_continue
@@ -226,5 +226,6 @@ show_ui:
 	add hl,a
     ld de,(hl)
 	pop hl	; Restore pointer to screen
-	jp text.ula.print_string
+    jp text.ula.print_string
+
 
