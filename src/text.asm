@@ -115,19 +115,19 @@ ula.print_char:
     jr nz,.loop
 
     ; Restore screen address
-    pop hl  ; Restore screen address
+    pop hl
     ret
 
 
 ; Prints a complete string (until 0) at ULA screen address in HL.
 ; IN:
-;   HL = screen address to write to.
+;   HL = screen address to write to. If (DE) start with an AT then HL can be omitted.
 ;   DE = pointer to 0-terminated string
 ;   B = x mod 8, i.e. the number to shift the character
 ; OUT:
-;   -
+;   HL (or better L only) increased by 1, pointing to the next screen address.
 ; Changed registers:
-;   HL, DE, C
+;   AF, HL, DE, C
 ula.print_string:
 .loop:
     ld a,(de)
