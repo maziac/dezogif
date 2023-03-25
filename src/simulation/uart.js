@@ -70,7 +70,7 @@ API.readPort = (port) => {
 			return majMin;
 		}
 		if (whichNextReg == 14 /*REG_SUB_VERSION*/) {
-			const subminor = 5;
+			const subminor = 10;
 			API.log("    Reading register REG_VERSION=14: " + subminor);
 			return subminor;
 		}
