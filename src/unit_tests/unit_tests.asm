@@ -37,6 +37,7 @@ main_end:    equ 0xE100  ; Not used
     include "data.asm"
     include "ui.asm"
     include "altrom.asm"
+    include "debug.asm"
 
     include "mf_rom.asm"
 
