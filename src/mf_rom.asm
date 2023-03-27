@@ -204,7 +204,7 @@ init_main_bank:
     ; The main program needs to be copied to MAIN_BANK
     ; Page in MAIN_BANK
     nextreg REG_MMU+MAIN_SLOT,MAIN_BANK
-    MEMCOPY MAIN_ADDR, main_prg_copy, MF_ORIGIN_ROM+0x2000-main_prg_copy-MF_DIFF_TO_RAM
+    MEMCOPY MAIN_ADDR, main_prg_copy, MF_DIFF_TO_RAM
 
     ; Jump to main bank
     jp main_bank_entry
