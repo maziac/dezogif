@@ -12,9 +12,21 @@
 
     include "constants.asm"
 
-    MMU MAIN_SLOT e, LOADED_BANK ; e -> Everything should fit into one page, error if not.
     ORG MAIN_ADDR
 
+
+/* TODO:
+- solve github issues.
+    - Clear copied memory
+- stepOver:
+	nop
+	NEXTREG $51,12
+    bei nop, stepped über beide
+- add command for setting a port.
+- Command to set a port to support setting 0x7FFD (to switch in the right ROM) when loading 128k SNA files.
+- Enabling/disabling of the interrupt. For loading 48k and 128k SNA files: index 0x13 (iff2), bit 2 contains 0=di, 1=ei. https://sinclair.wiki.zxnet.co.uk/wiki/SNA_format (sjasmplus always sets 0),
+- To be a little bit more future proof: Execute a little binary.
+*/
 
 ;===========================================================================
 ; Include modules
@@ -77,7 +89,7 @@ main_bank_entry:
     ; Init text printing
     call text.init
 
-    ; The main program has been copied into USED_MAIN_BANK
+    ; The main program has been copied into MAIN_BANK
     ld a,2  ; Joy 2 selected
     ld (uart_joyport_selection),a
     xor a
@@ -208,13 +220,6 @@ main_end:
 ;===========================================================================
 ; Save bin file.
 ;===========================================================================
-
-    ; Save NEX file
-    ;SAVENEX OPEN BIN_FILE, start_entry_point2, debug_stack.top //stack_top: The ZX Next has a problem (crashes the program immediately when it is run) if stack points to stack_top
-    ;SAVENEX CORE 3, 1, 5
-    ;SAVENEX CFG 0               ; black border
-    ;SAVENEX BAR 0, 0            ; no load bar
-    ;SAVENEX AUTO
 
     SAVEBIN "out/main.bin", 0xE000, MF_ORIGIN_ROM+0x2000-MF.main_prg_copy
 

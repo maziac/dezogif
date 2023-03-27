@@ -34,7 +34,7 @@ https://gitlab.com/SpectrumNext/ZX_Spectrum_Next_FPGA/-/blob/master/cores/zxnext
 
 | Range         | Slot | Debugged program | Debugger active                           |
 |---------------|------|------------------|-------------------------------------------|
-| 0x0000-0x1FFF | 0    | USED_ROM0_BANK*  | USED_MAIN_SLOT  |
+| 0x0000-0x1FFF | 0    | USED_ROM0_BANK*  | MAIN_SLOT  |
 | 0x2000-0xBFFF | 1-5  | -                | - |
 | 0xC000-0xDFFF | 6 (SWAP_SLOT) | -       | X |
 | 0xE000-0xFFFF | 7    | -                | - |

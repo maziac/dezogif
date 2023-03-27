@@ -16,6 +16,8 @@
 main_bank_entry:    equ 0x0000  ; Not used
 main_end:    equ 0xE100  ; Not used
 
+; The program is loaded here for testing (NEX file)
+LOADED_BANK:    EQU 92
 
     include "constants.asm"
 
