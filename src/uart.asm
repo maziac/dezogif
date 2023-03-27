@@ -96,24 +96,29 @@ baudrate_table:
 ;   A, BC
 ;===========================================================================
 drain_rx_buffer:
-    ld b,0  ; Check 256x that there is no data
-.wait_loop:
-    push bc
-    call .read_loop
-    pop bc
-    djnz .wait_loop
-    ret
-
-.read_loop:
+    DBG_LOG 'D'
 	ld bc,UART_TX
+.read_next_byte:
+    ld e,50
+.read_loop:
 	in a,(c)					; Read status bits
     bit UART_RX_FIFO_EMPTY,a
-    ret z   ; Return if buffer empty
+    jr nz,.read_byte
 
+    ; Wait
+    dec e
+    jr nz,.read_loop
+
+    DBG_LOG 'd'
+    ; No byte received since at least 10 us.
+    ret
+
+.read_byte:
     ; At least 1 byte received, read it
     inc b	; The low byte stays the same
-    in a,(c)
-    jr .read_loop
+    in a,(c)    ; read one byte
+    dec b
+    jr .read_next_byte
 
 
 ;===========================================================================
@@ -196,6 +201,8 @@ read_uart_byte:
 	ld bc,UART_TX
 .wait_loop:
 	in a,(c)					; Read status bits
+    bit UART_RX_FIFO_OVERFLOW,a
+    jr nz,.rx_overflow
     bit UART_RX_FIFO_EMPTY,a
     jr nz,.byte_received
     dec e
@@ -222,6 +229,7 @@ read_uart_byte:
 ; Called if a UART RX buffer overflow occurred.
 .rx_overflow: ; The receive timeout handler
     ld a,ERROR_RX_OVERFLOW
+    DBG_LOG 'O'
     jr rxtx_error
 
 
@@ -230,6 +238,7 @@ read_uart_byte:
 ; and then the cmd_loop is entered again.
 rx_timeout: ; The receive timeout handler
     ld a,ERROR_RX_TIMEOUT
+    DBG_LOG 'T'
 rxtx_error:
     ld (last_error),a
     jp main
