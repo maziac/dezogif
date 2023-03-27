@@ -10,8 +10,8 @@
 
 
 ; Is temporarily used. E.g. to change the AltROM. The debugged program can use this bank.
-TMP_BANK:       EQU 90
-TMP_BANKB:       EQU TMP_BANK+1
+TMP_BANK:       EQU 92
+TMP_BANKB:       EQU 93
 
 ; The 8k memory bank to store the code to.
 ; Debugged programs cannot use this bank.
