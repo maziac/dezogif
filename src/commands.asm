@@ -99,6 +99,9 @@ cmd_call:	; Get pointer to subroutine
 ;===========================================================================
 cmd_init:
 	; LOGPOINT [CMD] cmd_init
+
+	DBG_LOG 'I'
+
 	call .inner
 	; Reset error
 	xor a
@@ -109,18 +112,7 @@ cmd_init:
     ; Enable flashing border
     call uart_flashing_border.enable
 	; Afterwards start all over again / show	; Afterwards start all over again / show the "UI"
-    jp show_ui
-
-.inner:
-	; Read version number
-	ld hl,receive_buffer.payload
-	ld de,3
-	call receive_bytes
-	; Read remote program name
-.read_loop
-	call read_uart_byte
-	or a
-	jr nz,.read_loop
+    call show_ui
 
 	; Send length and seq-no
 	ld de,PROGRAM_NAME.end-PROGRAM_NAME + 1+5
@@ -146,6 +138,18 @@ cmd_init:
 	call write_uart_byte
 	or a
 	jr nz,.write_prg_name_loop
+	ret
+
+.inner:
+	; Read version number
+	ld hl,receive_buffer.payload
+	ld de,3
+	call receive_bytes
+	; Read remote program name
+.read_loop
+	call read_uart_byte
+	or a
+	jr nz,.read_loop
 	ret
 
 
@@ -450,6 +454,9 @@ cmd_read_mem.read:
 ;===========================================================================
 cmd_write_mem:
 	; LOGPOINT [CMD] cmd_write_mem
+
+	DBG_LOG 'W'
+
 	; Read address from message
 	ld hl,receive_buffer.payload
 	ld de,PAYLOAD_WRITE_MEM
@@ -467,14 +474,7 @@ cmd_write_mem:
 	ld bc,.write
 	call memory_loop
 
-; .loop:
-; 	push de
-; 	call read_uart_byte
-; 	pop de
-; 	dec de
-; 	ld a,d
-; 	or e
-; 	jr nz,.loop
+	DBG_PRINT
 
  	; Send response
  	ld de,1
