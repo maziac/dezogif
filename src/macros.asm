@@ -168,7 +168,7 @@ divisor = divisor / 10
 ;   -
 ;===========================================================================
 	MACRO DBG_CLEAR
-	call dbg.clear
+	call debug.clear
 	ENDM
 
 
@@ -182,7 +182,7 @@ divisor = divisor / 10
 	MACRO DBG_LOG val?
 	push af
 	ld a,val?
-	call dbg.log
+	call debug.log
 	pop af
 	ENDM
 
@@ -198,11 +198,11 @@ divisor = divisor / 10
 	MACRO DBG_LOG_NUMBER number?
 	push hl
 	ld hl,number?
-	call dbg.log_number
+	call debug.log_number
 	pop hl
 	ENDM
 	MACRO DBG_LOG_NUMBER_A
-	call dbg.log_number_a
+	call debug.log_number_a
 	ENDM
 
 
@@ -215,6 +215,6 @@ divisor = divisor / 10
 ;   -
 ;===========================================================================
 	MACRO DBG_PRINT
-	call dbg.print
+	call debug.print
 	ENDM
 

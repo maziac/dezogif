@@ -209,11 +209,11 @@ show_ui:
 	call text.ula.print_string
 
     ; Print 3 lines debugging
-    IFUSED dbg.clear
+    IFUSED debug.clear
     ; Caclulate screen address
-	ld de,256*8*dbg.TEXT_START_POSITION_LINE + 8*dbg.TEXT_START_POSITION_CLMN
+	ld de,256*8*debug.TEXT_START_POSITION_LINE + 8*debug.TEXT_START_POSITION_CLMN
 	call text.ula.calc_address
-	ld de,dbg.text
+	ld de,debug.text
 	call text.ula.print_string
     ENDIF
 

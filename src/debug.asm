@@ -3,12 +3,13 @@
 ;
 ; Include this for a few rudimentary debug functions for output on the
 ; ZX Spectrum ULA screen.
+; Note: These functions are meant for debugging dezogit itself.
 ;
 ; Basic functionality:
-; - dbg.clear: start logging, clear the logged lines
-; - dbg.log: log a single character
-; - dbg.log_number: log a number
-; - dbg.print: print all (not yet printed) logs to the screen.
+; - debug.clear: start logging, clear the logged lines
+; - debug.log: log a single character
+; - debug.log_number: log a number
+; - debug.print: print all (not yet printed) logs to the screen.
 ;
 ; Do not use these function directly but the macros defined
 ; in marcro.asm.
@@ -30,7 +31,7 @@
 
 
 
-	MODULE dbg
+	MODULE debug
 
 ; Data area
 
@@ -130,7 +131,7 @@ log_number:
 	push af, bc, de, hl
 	; Prefix
 	ld a,'#'
-	call dbg.log
+	call debug.log
 
 	; Number
 	ld de,(text_next_ptr)
@@ -140,7 +141,7 @@ log_number:
 
 	; Suffix
 	ld a,'_'
-	call dbg.log
+	call debug.log
 	pop hl, de, bc, af
 	ret
 
@@ -153,7 +154,7 @@ log_number_a:
 
 	; Prefix
 	ld a,'#'
-	call dbg.log
+	call debug.log
 
 	; Number
 	ld de,(text_next_ptr)
@@ -163,7 +164,7 @@ log_number_a:
 
 	; Suffix
 	ld a,'_'
-	call dbg.log
+	call debug.log
 	pop hl, de, bc, af
 	ret
 

@@ -99,9 +99,6 @@ cmd_call:	; Get pointer to subroutine
 ;===========================================================================
 cmd_init:
 	; LOGPOINT [CMD] cmd_init
-
-	DBG_LOG 'I'
-
 	call .inner
 	; Reset error
 	xor a
@@ -454,9 +451,6 @@ cmd_read_mem.read:
 ;===========================================================================
 cmd_write_mem:
 	; LOGPOINT [CMD] cmd_write_mem
-
-	DBG_LOG 'W'
-
 	; Read address from message
 	ld hl,receive_buffer.payload
 	ld de,PAYLOAD_WRITE_MEM
@@ -473,8 +467,6 @@ cmd_write_mem:
 	ld hl,(payload_write_mem.mem_start)
 	ld bc,.write
 	call memory_loop
-
-	DBG_PRINT
 
  	; Send response
  	ld de,1

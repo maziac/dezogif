@@ -96,7 +96,6 @@ baudrate_table:
 ;   A, BC
 ;===========================================================================
 drain_rx_buffer:
-    DBG_LOG 'D'
 	ld bc,UART_TX
 .read_next_byte:
     ld e,50
@@ -109,7 +108,6 @@ drain_rx_buffer:
     dec e
     jr nz,.read_loop
 
-    DBG_LOG 'd'
     ; No byte received since at least 10 us.
     ret
 
@@ -229,7 +227,6 @@ read_uart_byte:
 ; Called if a UART RX buffer overflow occurred.
 .rx_overflow: ; The receive timeout handler
     ld a,ERROR_RX_OVERFLOW
-    DBG_LOG 'O'
     jr rxtx_error
 
 
@@ -238,7 +235,6 @@ read_uart_byte:
 ; and then the cmd_loop is entered again.
 rx_timeout: ; The receive timeout handler
     ld a,ERROR_RX_TIMEOUT
-    DBG_LOG 'T'
 rxtx_error:
     ld (last_error),a
     jp main
