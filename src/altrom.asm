@@ -47,8 +47,10 @@ copy_modify_altrom:
     ; Copy modified ROM in SWAP_SLOT to AltROM:
     nextreg REG_MMU+SWAP_SLOT,TMP_BANK
     MEMCOPY 0x0000, SWAP_ADDR, 0x2000
+    MEMCLEAR SWAP_ADDR, 0x2000  ; Clear src
     nextreg REG_MMU+SWAP_SLOT,TMP_BANKB
     MEMCOPY 0x2000, SWAP_ADDR, 0x2000
+    MEMCLEAR SWAP_ADDR, 0x2000  ; Clear src
     ; Enable AltRom
     nextreg REG_ALTROM,10000000b
     ret
@@ -65,7 +67,9 @@ copy_modify_altrom:
 modify_bank:
      ; Overwrite the address 0 and 66h with code
     MEMCOPY SWAP_ADDR, copy_rom_start_0000h_code, copy_rom_start_0000h_code_end-copy_rom_start_0000h_code
+
     MEMCOPY SWAP_ADDR+copy_rom_start_0066h_code, MAIN_ADDR+copy_rom_start_0066h_code, copy_rom_start_0066h_code_end-copy_rom_start_0066h_code
+
     ; Save the bank number inside the bank (self modifying code)
     ld (SWAP_ADDR+dbg_enter.bank),a
 	ret

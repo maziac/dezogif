@@ -2,6 +2,8 @@
 
 # 2.1.1
 - Fixed a buffer overflow if a long write_mem was called after cmd_init.
+- Fixed: on intitalization too much memory was copied.
+- Temp banks now cleared after initialization.
 
 # 2.1.0
 - Support for Core 03.01.10.
