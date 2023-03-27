@@ -5,7 +5,7 @@
 ;===========================================================================
 
  IFDEF MF_FAKE
-; For testing:
+; For unit testing:
 MF_ORIGIN_ROM:  equ 0x6000  ; For testing another origin is defined
 MF_DIFF_TO_RAM:  equ main_end-MAIN_ADDR    ; Just after the debugger program
  ELSE

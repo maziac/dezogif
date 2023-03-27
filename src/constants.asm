@@ -5,9 +5,6 @@
 ;===========================================================================
 
 
-; For testing purposes: the MF code is put at address 0x6000.
-;	DEFINE MF_FAKE
-
 
 ; Is temporarily used. E.g. to change the AltROM. The debugged program can use this bank.
 TMP_BANK:       EQU 92
