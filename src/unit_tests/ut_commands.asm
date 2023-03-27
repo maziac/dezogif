@@ -152,6 +152,7 @@ UT_1_cmd_init:
 
 	; Test
 	call cmd_init.inner
+	call cmd_init.response
 
 	; Read response
 	call test_get_response

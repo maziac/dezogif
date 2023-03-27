@@ -122,6 +122,7 @@ cmd_init:
 	; Afterwards start all over again / show	; Afterwards start all over again / show the "UI"
     call show_ui
 
+.response:
 	; Send length and seq-no
 	ld de,PROGRAM_NAME.end-PROGRAM_NAME + 1+5
 	call send_length_and_seqno
