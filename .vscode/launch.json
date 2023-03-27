@@ -1,18 +1,18 @@
 {
-    // Verwendet IntelliSense zum Ermitteln möglicher Attribute.
-    // Zeigen Sie auf vorhandene Attribute, um die zugehörigen Beschreibungen anzuzeigen.
-    // Weitere Informationen finden Sie unter https://go.microsoft.com/fwlink/?linkid=830387
+
     "version": "0.2.0",
     "configurations": [
 
         {
+            // Start at the NMI $66
             "type": "dezog",
             "request": "launch",
-            "name": "zsim",
+            "name": "zsim nmi66",
             "remoteType": "zsim",
             "zsim": {
                 "Z80N": true,
-                "memoryModel": "ZXNEXT",
+                //"memoryModel": "ZXNEXT",
+                "memoryModel": "ZX48K", // Otherwise, because of loadObj, the file association will not work. Note: all the bank switching does not work if ZX48K is enabled. But it is possible to step.
                 "ulaScreen": true,
                 "zxKeyboard": true,
                 "customCode": {
@@ -28,7 +28,8 @@
                     "disableBanking": true
                 }
             ],
-            "startAutomatically": true,
+            //"startAutomatically": true,
+            "startAutomatically": false,
             "commandsAfterLaunch": [
             ],
             "rootFolder": "${workspaceFolder}",
@@ -42,14 +43,15 @@
         },
 
         {
+            // For debugging the UI.
             "type": "dezog",
             "request": "launch",
-            "name": "zsim main",
+            "name": "zsim test UI (main)",
             "remoteType": "zsim",
             "zsim": {
                 "Z80N": true,
                 //"memoryModel": "ZXNEXT",
-                "memoryModel": "ZX48K", // Otherwise, because of loadObj the file association will not work.
+                "memoryModel": "ZX48K", // Otherwise, because of loadObj, the file association will not work.
                 "ulaScreen": true,
                 "zxKeyboard": true,
                 "customCode": {
