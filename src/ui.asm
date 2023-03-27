@@ -208,6 +208,15 @@ show_ui:
 .print_border:
 	call text.ula.print_string
 
+    ; Print 3 lines debugging
+    IFUSED dbg.clear
+    ; Caclulate screen address
+	ld de,256*8*dbg.TEXT_START_POSITION_LINE + 8*dbg.TEXT_START_POSITION_CLMN
+	call text.ula.calc_address
+	ld de,dbg.text
+	call text.ula.print_string
+    ENDIF
+
 	; Show possibly error
 	ld a,(last_error)
 	or a
@@ -227,5 +236,3 @@ show_ui:
     ld de,(hl)
 	pop hl	; Restore pointer to screen
     jp text.ula.print_string
-
-
