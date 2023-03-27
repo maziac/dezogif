@@ -32,10 +32,6 @@
 
 	MODULE dbg
 
-; TODO: test line wrapping.
-
-
-
 ; Data area
 
 ; The log output start in columns and lines (not pixels).

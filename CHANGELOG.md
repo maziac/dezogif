@@ -1,5 +1,8 @@
 # Changelog
 
+# 2.1.1
+- Fixed a buffer overflow if a long write_mem was called after cmd_init.
+
 # 2.1.0
 - Support for Core 03.01.10.
 - No support for Core 03.01.05, use 2.0.0 instead.

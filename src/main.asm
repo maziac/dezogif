@@ -34,6 +34,7 @@
     include "text.asm"
     include "ui.asm"
     include "altrom.asm"
+    include "debug.asm" ; Include for some rudimentary debug functionality
 
 
 ;===========================================================================
@@ -91,6 +92,8 @@ main_bank_entry:
 
     ; Return from NMI (Interrupts are disabled)
     call nmi_return
+
+    DBG_CLEAR
 
     ; Flow through
 
