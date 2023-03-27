@@ -12,8 +12,8 @@
 
 	; Used in backup/restore of the slots.
 	STRUCT SLOT_BACKUP
-slot0:		defb
-slot7:		defb
+slot0:		defb	; Saved when entering debugging (RST 0), restored on continue. At the moment this must be 0xFF=ROM. I.e. saving/restoring has no real meaning. In future, when using UART interrupts, this will make more sense.
+slot7:		defb	; Saved when entering debugging (RST 0), restored on continue.
 tmp_slot:	defb	; Normally SWAP_SLOT but could be also other.
 	ENDS
 
@@ -100,6 +100,17 @@ cmd_call:	; Get pointer to subroutine
 cmd_init:
 	; LOGPOINT [CMD] cmd_init
 	call .inner
+	; Reset slots to ZX128 default: ROM0, 5, 2, 0 => ROM0, ROM0, 10, 11, 4, 5, 0, 1
+	ld hl,slot_backup
+	ldi (hl),ROM_BANK	; Slot 0
+	ld (hl),1	; Slot 7
+	; Other slots are set directly
+	nextreg REG_MMU+1,ROM_BANK
+	nextreg REG_MMU+2,10
+	nextreg REG_MMU+3,11
+	nextreg REG_MMU+4,4
+	nextreg REG_MMU+5,5
+	nextreg REG_MMU+6,0
 	; Reset error
 	xor a
 	ld (last_error),a
