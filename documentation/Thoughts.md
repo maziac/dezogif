@@ -48,10 +48,10 @@ Notes:
 When the debugger is active in occupies slot 0 with is program code and data.
 When the debugger is entered the currently active bank in slot 0 is saved (slot_backup.slot0).
 When the debugger is left this slot is restored.
-All other slots are the same as the ones form the debugged program.
+All other slots are the same as the ones of the debugged program.
 SWAP_SLOT is only used temporarily, i.e. within a cmd_... after any command is executed the SWAP_SLOT is restored.
 
-Commands that deal with memory will handle range 0x0000-0x1FFFF (slot 0) especially. All other memory is directly read/set. But for range 0x0000-0x1FFF the slot (slot_backup.slot0) is instead paged into SWAP_SLOT temporarily.
+Commands that deal with memory will handle range 0x0000-0x1FFF (slot 0) especially. All other memory is directly read/set. But for range 0x0000-0x1FFF the slot (slot_backup.slot0) is instead paged into SWAP_SLOT temporarily.
 The commands are:
 cmd_read_mem, cmd_write_mem, cmd_set_breakpoints, cmd_restore_mem.
 

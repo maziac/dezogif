@@ -324,19 +324,19 @@ When the other ROMs are mapped the dezogif debugging code would be missing and a
 
 
 
-## Setting Breakpoints
+# Setting Breakpoints
 
-The debugger program resides in the ROM area at 0xA000-0xFFFF.
+The debugger program resides in the ROM area at 0xE000-0xFFFF.
 If a breakpoint should be set in this area it would be set in the debugger program.
 Setting a breakpoint involves to exchange the opcode at the breakpoint address with RST opcode. I.e. a memory read and write.
 
-To do this the debugged program memory bank need to be paged in another slot (slot 6). Then the memory is read and set. Afterwards the original bank paging is restored.
+To do this the debugged program memory bank is paged in another slot (slot 6, SWAP). Then the memory is read and set. Afterwards the original bank paging is restored.
 
 
 # Reading/Writing Memory
 
 The problem is the same as for breakpoints. It's a little bit more tricky because whole memory areas are involved that can also overlap the bank boundaries. So the memory reading/writing need to be partitioned.
-But the principle is the same.
+But the principle is the same as with setting breakpoints.
 
 
 # Stack
