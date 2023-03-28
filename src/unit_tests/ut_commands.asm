@@ -1550,6 +1550,7 @@ UT_20_cmd_exec_asm.UT_success:
  TC_END
 
 .cmd_data:
+	defb 0	; Context
 	; A small assembler program that fills all registers
 	xor a	; clear z-flag
 	ld a,0x12
@@ -1578,7 +1579,8 @@ UT_20_cmd_exec_asm.UT_too_big:
  TC_END
 
 .cmd_data:
-	defs receive_buffer.end-receive_buffer.payload
+	defb 0	; Context
+	defs 101
 .cmd_data_end
 
 ; Test cmd_exec_asm: program just fits
@@ -1596,7 +1598,48 @@ UT_20_cmd_exec_asm.UT_just_fits:
  TC_END
 
 .cmd_data:
-	.(receive_buffer.end-receive_buffer.payload - 1)	nop	; 100 x NOP
+	defb 0	; Context
+	.100	nop	; 100 x NOP
+.cmd_data_end
+
+
+; Test cmd_interrupt_on_off: Test to enable/disable the interrupt.
+UT_20_cmd_interrupt_on_off:
+	; Enable
+	ld a,1
+	ld (.cmd_data),a
+	; Test data = asm program
+	TEST_PREPARE_COMMAND
+	; Test
+	call cmd_interrupt_on_off
+	; Get response
+	call test_get_response
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 1
+	; Check interrupt state:
+	ld a,(backup.interrupt_state)
+	and a,00000100b
+	; TEST ASSERT A == 0100b
+
+	; Disable
+	ld a,0
+	ld (.cmd_data),a
+	; Test data = asm program
+	TEST_PREPARE_COMMAND
+	; Test
+	call cmd_interrupt_on_off
+	; Get response
+	call test_get_response
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 1
+	; Check interrupt state:
+	ld a,(backup.interrupt_state)
+	and a,00000100b
+	; TEST ASSERT A == 0
+ TC_END
+
+.cmd_data:
+	defb 0
 .cmd_data_end
 
     ENDMODULE

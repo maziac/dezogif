@@ -103,8 +103,7 @@ receive_buffer:
 .command:
 	defb 0
 .payload:
-	defs 100	; maximum used count for CMD_EXEC_ASM
-	defs 1		; One more byte for a RET (for CMD_EXEC_ASM)
+	defs PAYLOAD_EXEC_ASM	; maximum used count for CMD_EXEC_ASM
 .end
 
 ; Just for testing buffer overflow:
@@ -118,6 +117,7 @@ payload_remove_breakpoint:	PAYLOAD_REMOVE_BREAKPOINT = receive_buffer.payload
 payload_continue:	PAYLOAD_CONTINUE = receive_buffer.payload
 payload_read_mem:	PAYLOAD_READ_MEM = receive_buffer.payload
 payload_write_mem:	PAYLOAD_WRITE_MEM = receive_buffer.payload
+payload_exec_asm:	PAYLOAD_EXEC_ASM = receive_buffer.payload
 
 
 ;===========================================================================

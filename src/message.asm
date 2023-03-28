@@ -73,6 +73,13 @@ slot	defb
 bank	defb
 	ENDS
 
+; CMD_EXEC_ASM
+	STRUCT PAYLOAD_EXEC_ASM
+context	defb
+code	defs 100
+end		defb	; For the RET
+	ENDS
+
 
 
 ;===========================================================================

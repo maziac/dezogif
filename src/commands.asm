@@ -45,7 +45,7 @@ cmd_jump_table:
 .set_register:		defw cmd_set_register		; 4
 .write_bank:		defw cmd_write_bank			; 5
 .continue:			defw cmd_continue			; 6
-.pause:				defw 0						; not supported on a ZX Next
+.pause:				defw 0						; 7, not supported on a ZX Next
 .read_mem:			defw cmd_read_mem			; 8
 .write_mem:			defw cmd_write_mem			; 9
 .set_slot:			defw cmd_set_slot			; 10
@@ -56,10 +56,12 @@ cmd_jump_table:
 .loopback:			defw cmd_loopback			; 15
 .get_sprites_palette:	defw cmd_get_sprites_palette	; 16
 .get_sprites_clip_window_and_control:	defw cmd_get_sprites_clip_window_and_control	; 17
-
-.get_port			defw cmd_read_port
-.write_port			defw cmd_write_port
-.exec_asm			defw cmd_exec_asm
+.get_sprites:		defw 0				; 18, not supported on a ZX Next
+.get_sprite_patterns:	defw 0			; 19, not supported on a ZX Next
+.get_port			defw cmd_read_port	; 20
+.write_port			defw cmd_write_port	; 21
+.exec_asm			defw cmd_exec_asm	; 22
+.interrupt_on_off	defw cmd_interrupt_on_off	; 23
 
 
 ; TODO: set  border
@@ -1053,7 +1055,7 @@ cmd_write_port:
 cmd_exec_asm:
 	; LOGPOINT [CMD] cmd_exec_asm
 	ld de,(receive_buffer.length)	; assembler code size
-	ld hl,receive_buffer.end-receive_buffer.payload - 1	; 1 for the RET
+	ld hl,PAYLOAD_EXEC_ASM-1	; 1 for the RET
 	or a
 	sbc hl,de
 	jr nc,.buffer_size_ok
@@ -1065,13 +1067,14 @@ cmd_exec_asm:
 	jp .send_response
 
 .buffer_size_ok:
+	; Load the context (ignored) and the assembler code
 	ld hl,receive_buffer.payload
 	call receive_bytes
 	; End the code with a RET
 	ld (hl),0xC9
 
 	; Execute
-	call receive_buffer.payload
+	call payload_exec_asm.code
 
 	; Save all registers
 	push hl, de, bc, af
@@ -1105,3 +1108,32 @@ cmd_exec_asm:
 	call write_uart_byte	; low byte
 	ld a,h
 	jp write_uart_byte	; high byte
+
+
+
+;===========================================================================
+; CMD_INTERRUPT_ON_OFF
+; Turns the interrupt on or off.
+; Changes:
+;  NA
+;===========================================================================
+cmd_interrupt_on_off:
+	; LOGPOINT [CMD] cmd_exec_asm
+	; Read: off=0 or on
+	call read_uart_byte
+	ld hl,backup.interrupt_state
+	or a
+	jr z,.disable
+
+	; Enable interrupt
+	set 2,(hl)
+
+.send_response:
+	; Send response
+	ld de,1
+	jp send_length_and_seqno
+
+.disable:
+	; Disable interrupt
+	res 2,(hl)
+	jr .send_response
