@@ -1541,7 +1541,7 @@ UT_20_cmd_exec_asm.UT_success:
 	; Check register values:
 	TEST_MEMORY_BYTE test_memory_payload+1, 0	; 0 = No error
 	; F
-	;TEST_MEMORY_BYTE test_memory_payload+2, 0
+	TEST_MEMORY_BYTE test_memory_payload+2, 0xF0
 	; A
 	TEST_MEMORY_BYTE test_memory_payload+3, 0x12
 	TEST_MEMORY_WORD test_memory_payload+4, 0x3456	; BC
@@ -1553,7 +1553,9 @@ UT_20_cmd_exec_asm.UT_success:
 	defb 0	; Context
 	; A small assembler program that fills all registers
 	xor a	; clear z-flag
-	ld a,0x12
+	ld hl,0x12F0
+	push hl
+	pop af	; AF = 0x12F0
 	ld bc,0x3456
 	ld de,0x789A
 	ld hl,0xBCDE
