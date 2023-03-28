@@ -104,6 +104,7 @@ receive_buffer:
 	defb 0
 .payload:
 	defs 11	; maximum used count for CMD_CONTINUE structure (PAYLOAD_CONTINUE)
+.end
 
 ; Just for testing buffer overflow:
 	defb 0	; WPMEM

@@ -57,6 +57,11 @@ cmd_jump_table:
 .get_sprites_palette:	defw cmd_get_sprites_palette	; 16
 .get_sprites_clip_window_and_control:	defw cmd_get_sprites_clip_window_and_control	; 17
 
+.get_port			defw cmd_read_port
+.write_port			defw cmd_write_port
+.exec_asm			defw cmd_exec_asm
+
+
 ; TODO: set  border
 
 ;.get_sprites:			defw 0	; not supported on a ZX Next
@@ -986,3 +991,116 @@ cmd_get_sprites_clip_window_and_control:
 	call read_tbblue_reg
 	jp write_uart_byte 	; Send sprite control byte
 
+
+
+;===========================================================================
+; CMD_READ_PORT
+; Reads a value from a port.
+; Changes:
+;  NA
+;===========================================================================
+cmd_read_port:
+	; LOGPOINT [CMD] cmd_write_port
+	; Read port (low byte)
+	call read_uart_byte
+	ld l,a
+	; Read port (high byte)
+	call read_uart_byte
+	ld b,a
+	; Read value from the port
+	ld c,l
+	in a,(c)
+
+	; Send response
+	push af
+	ld de,2
+	call send_length_and_seqno
+	; Write port value
+	pop af
+	jp write_uart_byte
+
+
+;===========================================================================
+; CMD_WRITE_PORT
+; Writes a value to a port.
+; Changes:
+;  NA
+;===========================================================================
+cmd_write_port:
+	; LOGPOINT [CMD] cmd_write_port
+	; Read port (low byte)
+	call read_uart_byte
+	ld l,a
+	; Read port (high byte)
+	call read_uart_byte
+	ld h,a
+	; Read value
+	call read_uart_byte
+	; Write to the port
+	ld bc,hl
+	out (c),a
+	; Send response
+	ld de,1
+	jp send_length_and_seqno
+
+
+;===========================================================================
+; CMD_EXEC_ASM
+; Executes a small assembler program.
+; Changes:
+;  NA
+;===========================================================================
+cmd_exec_asm:
+	; LOGPOINT [CMD] cmd_exec_asm
+	ld hl,receive_buffer.payload
+	ld hl,(receive_buffer.length)	; assembler code size
+	or a
+	ld de,receive_buffer.end-receive_buffer.payload
+	sbc hl,de
+	jr nc,.buffer_size_ok
+
+	; Code size too big -> return error
+	ld hl,0
+	push hl, hl, hl, hl
+	ld l,1	; error: 1 = buffer size too big
+	jp .send_response
+
+.buffer_size_ok:
+	ld hl,receive_buffer.payload
+	ld hl,(receive_buffer.length)	; assembler code size
+	call receive_bytes
+
+	; Execute
+	call receive_buffer.payload	; TODO: increase the payload size
+
+	; Save all registers
+	push hl, de, bc, af
+	; No error
+	ld l,0
+
+.send_response:
+	; l contains the error code.
+	; Send response
+	ld de,10
+	call send_length_and_seqno
+	; Send error code (=no error)
+	ld a,l	; error code
+	call write_uart_byte
+	; Send AF
+	pop hl	; H=A, L=F
+	call .write_reg
+	; Send BC
+	pop hl	; H=B, L=C
+	call .write_reg
+	; Send DE
+	pop hl	; H=D, L=E
+	call .write_reg
+	; Send HL
+	pop hl	; H=H, L=L
+	; Flow through
+
+.write_reg:
+	ld a,l
+	call write_uart_byte	; low byte
+	ld a,h
+	jp write_uart_byte	; high byte

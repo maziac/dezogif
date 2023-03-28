@@ -243,7 +243,7 @@ send_message:
 ; The sequence number is taken directly from the receive_buffer.
 ; Important: Use only for lengths up to 65536.
 ; Parameter:
-;  DE = Length.
+;  DE = Length (including the seq no, everything after the length)
 ; Returns:
 ;  -
 ; Changes:
@@ -260,7 +260,7 @@ send_length_and_seqno:
 ; The sequence number is taken directly from the receive_buffer.
 ; Important: Use only for lengths up to 65536.
 ; Parameter:
-;  HL/DE = Length. HL=MSB, DE=LSB
+;  HL/DE = Length (including the seq no). HL=MSB, DE=LSB
 ; Returns:
 ;  -
 ; Changes:
