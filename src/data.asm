@@ -103,7 +103,8 @@ receive_buffer:
 .command:
 	defb 0
 .payload:
-	defs 11	; maximum used count for CMD_CONTINUE structure (PAYLOAD_CONTINUE)
+	defs 100	; maximum used count for CMD_EXEC_ASM
+	defs 1		; One more byte for a RET (for CMD_EXEC_ASM)
 .end
 
 ; Just for testing buffer overflow:

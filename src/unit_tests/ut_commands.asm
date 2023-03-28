@@ -1528,44 +1528,75 @@ UT_19_cmd_write_port:
 .cmd_data_end
 
 
-; Test cmd_exec_asm
-UT_19_cmd_write_port:
-	; Test port value
-	ld a,0xA5
-	ld (.cmd_port_data),a
+; Test cmd_exec_asm: successfully execute a smallassembler program
+UT_20_cmd_exec_asm.UT_success:
+	; Test data = asm program
 	TEST_PREPARE_COMMAND
 	; Test
-	call cmd_write_port
+	call cmd_exec_asm
 	; Get response
 	call test_get_response
 	; Test size
-	TEST_MEMORY_WORD test_memory_payload.length, 1
-	; Check set value
-	ld bc,80ACh
-	in a,(c)
-	; TEST ASSERTION A == 0xA5
-
-	; Test port value
-	ld a,0x12
-	ld (.cmd_port_data),a
-	TEST_PREPARE_COMMAND
-	; Test
-	call cmd_write_port
-	; Get response
-	call test_get_response
-	; Test size
-	TEST_MEMORY_WORD test_memory_payload.length, 1
-	; Check set value
-	ld bc,80ACh
-	in a,(c)
-	; TEST ASSERTION A == 0x12
-
+	TEST_MEMORY_WORD test_memory_payload.length, 10
+	; Check register values:
+	TEST_MEMORY_BYTE test_memory_payload+1, 0	; 0 = No error
+	; F
+	;TEST_MEMORY_BYTE test_memory_payload+2, 0
+	; A
+	TEST_MEMORY_BYTE test_memory_payload+3, 0x12
+	TEST_MEMORY_WORD test_memory_payload+4, 0x3456	; BC
+	TEST_MEMORY_WORD test_memory_payload+6, 0x789A	; DE
+	TEST_MEMORY_WORD test_memory_payload+8, 0xBCDE	; HL
  TC_END
 
 .cmd_data:
-	defb 0xAC, 0x80	; Port 0x80AC
-.cmd_port_data:
-	defb 0
+	; A small assembler program that fills all registers
+	xor a	; clear z-flag
+	ld a,0x12
+	ld bc,0x3456
+	ld de,0x789A
+	ld hl,0xBCDE
+	; RET is not required at the end
+.cmd_data_end
+
+; Test cmd_exec_asm: program too big
+UT_20_cmd_exec_asm.UT_too_big:
+	; Test data = asm program
+	TEST_PREPARE_COMMAND
+	; Test
+	call cmd_exec_asm
+	; Get response
+	call test_get_response
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 10
+	; Check register values:
+	TEST_MEMORY_BYTE test_memory_payload+1, 1	; 1 = Error
+	TEST_MEMORY_WORD test_memory_payload+2, 0	; AF
+	TEST_MEMORY_WORD test_memory_payload+4, 0	; BC
+	TEST_MEMORY_WORD test_memory_payload+6, 0	; DE
+	TEST_MEMORY_WORD test_memory_payload+8, 0	;HL
+ TC_END
+
+.cmd_data:
+	defs receive_buffer.end-receive_buffer.payload
+.cmd_data_end
+
+; Test cmd_exec_asm: program just fits
+UT_20_cmd_exec_asm.UT_just_fits:
+	; Test data = asm program
+	TEST_PREPARE_COMMAND
+	; Test
+	call cmd_exec_asm
+	; Get response
+	call test_get_response
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 10
+	; Check register values:
+	TEST_MEMORY_BYTE test_memory_payload+1, 0	; 0 = No error
+ TC_END
+
+.cmd_data:
+	.(receive_buffer.end-receive_buffer.payload - 1)	nop	; 100 x NOP
 .cmd_data_end
 
     ENDMODULE

@@ -1052,39 +1052,40 @@ cmd_write_port:
 ;===========================================================================
 cmd_exec_asm:
 	; LOGPOINT [CMD] cmd_exec_asm
-	ld hl,receive_buffer.payload
-	ld hl,(receive_buffer.length)	; assembler code size
+	ld de,(receive_buffer.length)	; assembler code size
+	ld hl,receive_buffer.end-receive_buffer.payload - 1	; 1 for the RET
 	or a
-	ld de,receive_buffer.end-receive_buffer.payload
 	sbc hl,de
 	jr nc,.buffer_size_ok
 
 	; Code size too big -> return error
 	ld hl,0
 	push hl, hl, hl, hl
-	ld l,1	; error: 1 = buffer size too big
+	ld a,1	; error: 1 = buffer size too big
 	jp .send_response
 
 .buffer_size_ok:
 	ld hl,receive_buffer.payload
-	ld hl,(receive_buffer.length)	; assembler code size
 	call receive_bytes
+	; End the code with a RET
+	ld (hl),0xC9
 
 	; Execute
-	call receive_buffer.payload	; TODO: increase the payload size
+	call receive_buffer.payload
 
 	; Save all registers
 	push hl, de, bc, af
 	; No error
-	ld l,0
+	xor a
 
 .send_response:
-	; l contains the error code.
+	; a contains the error code.
+	push af
 	; Send response
 	ld de,10
 	call send_length_and_seqno
 	; Send error code (=no error)
-	ld a,l	; error code
+	pop af	; error code
 	call write_uart_byte
 	; Send AF
 	pop hl	; H=A, L=F
