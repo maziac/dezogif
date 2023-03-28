@@ -15,7 +15,7 @@ portUartTxData.length = 0;
 API.readPort = (port) => {
 	// Check for port 0x0001 = Read TX data for unit testing
 	if (port == 0x0001) {
-		// Port 0 (on reading) returns the data in the portUartTxData buffer
+		// Port 0001 (on reading) returns the data in the portUartTxData buffer
 		const value = portUartTxData.shift();
 		if (value == undefined) {
 			// Error in test, too less data.
@@ -80,6 +80,10 @@ API.readPort = (port) => {
 		}
 	}
 
+	if (port == 0x80AC) {
+		// Value that will be read from port 80AC
+		return port80ACValue;
+	}
 	// Otherwise do nothing
 	return undefined;
 }
@@ -116,6 +120,10 @@ API.writePort = (port, value) => {
 		// Select next reg
 		API.log("  Writing to nextreg register" + whichNextReg + ": " + value);
 		nextRegContents.set(whichNextReg, value);
+	}
+	else if (port == 0x80AC) {
+		// Value that will be output when reading from port 80AC
+		port80ACValue = value;
 	}
 	// Otherwise do nothing
 }

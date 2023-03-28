@@ -146,7 +146,7 @@ test_get_response:
 	ENDM
 
 ; Test response of cmd_init.
-UT_1_cmd_init:
+UT_01_cmd_init:
 	; Write test data to simulated UART buffer.
 	TEST_PREPARE_COMMAND
 
@@ -182,7 +182,7 @@ UT_1_cmd_init:
 
 
 ; Test response of cmd_close.
-UT_2_cmd_close:
+UT_02_cmd_close:
 	; Write test data to simulated UART buffer.
 	TEST_EMPTY_COMMAND
 
@@ -204,7 +204,7 @@ UT_2_cmd_close:
 	ret
 
 ; Test cmd_get_registers.
-UT_3_cmd_get_registers:
+UT_03_cmd_get_registers:
 	; Write test data to simulated UART buffer.
 	TEST_EMPTY_COMMAND
 
@@ -247,7 +247,7 @@ UT_3_cmd_get_registers:
 
  TC_END
 
-.cmd_data:	; WPMEM, ut_commands.UT_3_cmd_get_registers.cmd_data_end - ut_commands.UT_3_cmd_get_registers.cmd_data, W
+.cmd_data:	; WPMEM, ut_commands.UT_03_cmd_get_registers.cmd_data_end - ut_commands.UT_03_cmd_get_registers.cmd_data, W
 	defw 0x1001, 0x1002, 0x1003, 0x1004, 0x1005, 0x1006, 0x1007
 	defw 0x2001, 0x2002, 0x2003, 0x2004, 0x2005, 0x2006, 0x2007
 .cmd_data_end
@@ -259,7 +259,7 @@ UT_3_cmd_get_registers:
 
 
 ; Test that double register is set correctly.
-UT_4_cmd_set_register.UT_pc:
+UT_04_cmd_set_register.UT_pc:
 	TEST_PREPARE_COMMAND
 
     ; Test
@@ -284,7 +284,7 @@ UT_4_cmd_set_register.UT_pc:
 
 
 ; Test that single register low is set correctly.
-UT_4_cmd_set_register.UT_c:
+UT_04_cmd_set_register.UT_c:
 	TEST_PREPARE_COMMAND
 
 	ld bc,0xFEDE
@@ -312,7 +312,7 @@ UT_4_cmd_set_register.UT_c:
 
 
 ; Test that single register high is set correctly.
-UT_4_cmd_set_register.UT_b:
+UT_04_cmd_set_register.UT_b:
 	TEST_PREPARE_COMMAND
 
 	ld bc,0xFEDE
@@ -353,7 +353,7 @@ cmd_set_dreg:
 
 
 ; Test that register SP to HL' are set correctly.
-UT_4_cmd_set_register.UT_SP_to_HL2:
+UT_04_cmd_set_register.UT_SP_to_HL2:
 	; Init values
 	call cmd_data_init
 	; First set all double registers
@@ -443,7 +443,7 @@ set_reg:
 
 
 ; Test that register A to H' are set correctly.
-UT_4_cmd_set_register.UT_A_to_IR:
+UT_04_cmd_set_register.UT_A_to_IR:
 	; Init values
 	call cmd_data_init
 	; First set all single registers
@@ -512,7 +512,7 @@ UT_4_cmd_set_register.UT_A_to_IR:
 ; Test setting of interrupt modes.
 ; A real check is not possible, IM cannot be read.
 ; The check only allows a visual check that all lines have been covered.
-UT_4_cmd_set_register.UT_im:
+UT_04_cmd_set_register.UT_im:
 	ld a,13	; IM register
 	ld (payload_set_reg.register_number),a
 	; IM 0
@@ -536,7 +536,7 @@ UT_4_cmd_set_register.UT_im:
 
 ; Test writing a wrong register index.
 ; The check is simply that no crash happens.
-UT_4_cmd_set_register.UT_wrong_register:
+UT_04_cmd_set_register.UT_wrong_register:
 	ld a,35	; First non existing register
 	ld (payload_set_reg.register_number),a
 	ld hl,0xCC55
@@ -552,7 +552,7 @@ UT_4_cmd_set_register.UT_wrong_register:
 
 ; Test writing data to a memory bank.
 ; The test simulates the receive_bytes function call.
-UT_5_cmd_write_bank:
+UT_05_cmd_write_bank:
 	; Remember current bank for slot
 	ld a,REG_MMU+SWAP_SLOT
 	call read_tbblue_reg	; Result in A
@@ -643,7 +643,7 @@ UT_5_cmd_write_bank:
 
 
 ; Test cmd_continue
-UT_6_continue:
+UT_06_continue:
 	; Write test data to simulated UART buffer.
 	TEST_PREPARE_COMMAND
 
@@ -683,13 +683,13 @@ UT_6_continue:
 
 
 ; Test cmd_pause
-UT_7_pause:
+UT_07_pause:
 	; This command is not implemented for ZXNext (use NMI button instead).
  TC_END
 
 
 ; Test reading memory.
-UT_8_cmd_read_mem.UT_normal:
+UT_08_cmd_read_mem.UT_normal:
 	TEST_PREPARE_COMMAND
 
 	; Test
@@ -718,7 +718,7 @@ UT_8_cmd_read_mem.UT_normal:
 
 ; Test reading memory in each relevant bank.
 ; Note: The locations should not contain any code/data.
-UT_8_cmd_read_mem.UT_banks:
+UT_08_cmd_read_mem.UT_banks:
 	; Page in different memory to ROM
 	nextreg REG_MMU,81
 	nextreg REG_MMU+1,82
@@ -809,7 +809,7 @@ UT_8_cmd_read_mem.UT_banks:
 
 
 ; Test writing memory.
-UT_9_cmd_write_mem.UT_normal:
+UT_09_cmd_write_mem.UT_normal:
 	TEST_PREPARE_COMMAND
 
 	; Test
@@ -839,7 +839,7 @@ UT_9_cmd_write_mem.UT_normal:
 ; Test writing memory in each relevant bank.
 ; Note: The locations should not contain any code/data of
 ; the tested program which is around 0x7000 for unit testing.
-UT_9_cmd_write_mem.UT_banks:
+UT_09_cmd_write_mem.UT_banks:
 	; Page in different memory to ROM
 	nextreg REG_MMU,81
 	nextreg REG_MMU+1,82
@@ -1377,7 +1377,6 @@ UT_15_cmd_loopback:
 	nop ; ASSERTION
 
 
-
 ; Test cmd_get_sprites_palette.
 ; Test that 513 bytes are send for both palettes.
 ; Note: teh values are not simulated in zsim.
@@ -1448,5 +1447,82 @@ UT_17_cmd_get_sprites_clip_window_and_control:
 	*/
  TC_END
 
+
+; Test cmd_read_port
+UT_18_cmd_read_port:
+	; Test
+	TEST_PREPARE_COMMAND
+	; Test port value
+	ld bc,80ACh
+	ld a,0xA5
+	out (c),a
+	; Test
+	call cmd_read_port
+	; Get response
+	call test_get_response
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 2
+	; Check returned value
+	TEST_MEMORY_BYTE test_memory_payload+1, 0xA5
+
+	; Different value
+	TEST_PREPARE_COMMAND
+	; Test port value
+	ld bc,80ACh
+	ld a,0x12
+	out (c),a
+	; Test
+	call cmd_read_port
+	; Get response
+	call test_get_response
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 2
+	; Check returned value
+	TEST_MEMORY_BYTE test_memory_payload+1, 0x12
+
+ TC_END
+
+.cmd_data:
+	defb 0xAC, 0x80	; Port 0x80AC
+.cmd_data_end
+
+
+; Test cmd_write_port
+UT_19_cmd_write_port:
+	; Test
+	TEST_PREPARE_COMMAND
+	; Test port value
+	ld bc,80ACh
+	ld a,0xA5
+	out (c),a
+	; Test
+	call cmd_read_port
+	; Get response
+	call test_get_response
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 2
+	; Check returned value
+	TEST_MEMORY_BYTE test_memory_payload+1, 0xA5
+
+	; Different value
+	TEST_PREPARE_COMMAND
+	; Test port value
+	ld bc,80ACh
+	ld a,0x12
+	out (c),a
+	; Test
+	call cmd_read_port
+	; Get response
+	call test_get_response
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 2
+	; Check returned value
+	TEST_MEMORY_BYTE test_memory_payload+1, 0x12
+
+ TC_END
+
+.cmd_data:
+	defb 0xAC, 0x80	; Port 0x80AC
+.cmd_data_end
 
     ENDMODULE
