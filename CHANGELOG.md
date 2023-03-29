@@ -1,10 +1,11 @@
 # Changelog
 
-# 2.1.1
+# 2.2.0
 - Fixed a buffer overflow if a long write_mem was called after cmd_init.
 - Fixed: on intitalization too much memory was copied.
 - Temp banks now cleared after initialization.
 - cmd_init now initializes the slots.
+- Changed to DZRP 2.1.0.
 
 # 2.1.0
 - Support for Core 03.01.10.

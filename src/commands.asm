@@ -23,9 +23,9 @@ tmp_slot:	defb	; Normally SWAP_SLOT but could be also other.
 ; Const data.
 ;===========================================================================
 
-; DZRP version 1.6.0
+; DZRP version 2.1.0
 DZRP_VERSION.MAJOR:		equ 2
-DZRP_VERSION.MINOR:		equ 0
+DZRP_VERSION.MINOR:		equ 1
 DZRP_VERSION.PATCH:		equ 0
 
 
