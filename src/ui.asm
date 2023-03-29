@@ -209,13 +209,13 @@ show_ui:
 	call text.ula.print_string
 
     ; Print 3 lines debugging
-    IFUSED debug.clear
+ IFDEF DEBUG
     ; Caclulate screen address
 	ld de,256*8*debug.TEXT_START_POSITION_LINE + 8*debug.TEXT_START_POSITION_CLMN
 	call text.ula.calc_address
 	ld de,debug.text
 	call text.ula.print_string
-    ENDIF
+ ENDIF
 
 	; Show possibly error
 	ld a,(last_error)

@@ -64,8 +64,6 @@ cmd_jump_table:
 .interrupt_on_off	defw cmd_interrupt_on_off	; 23
 
 
-; TODO: set  border
-
 ;.get_sprites:			defw 0	; not supported on a ZX Next
 ;.get_sprite_patterns:	defw 0	; not supported on a ZX Next
 
@@ -106,6 +104,7 @@ cmd_call:	; Get pointer to subroutine
 ;===========================================================================
 cmd_init:
 	; LOGPOINT [CMD] cmd_init
+	; DBG_LOG 'i'
 	call .inner
 	; Reset slots to ZX128 default: ROM0, 5, 2, 0 => ROM0, ROM0, 10, 11, 4, 5, 0, 1
 	ld hl,slot_backup

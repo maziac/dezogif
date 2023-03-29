@@ -156,6 +156,7 @@ divisor = divisor / 10
 
 
 ; Debug macros:
+ IFDEF DEBUG
 
 ;===========================================================================
 ; Clears the logged lines, also on screen.
@@ -218,3 +219,14 @@ divisor = divisor / 10
 	call debug.print
 	ENDM
 
+ ELSE
+	; Define empty macros
+	MACRO DBG_CLEAR
+	ENDM
+	MACRO DBG_LOG val?
+	ENDM
+	MACRO DBG_LOG_NUMBER number?
+	ENDM
+	MACRO DBG_PRINT
+	ENDM
+ ENDIF

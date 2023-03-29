@@ -14,23 +14,12 @@
 
     ORG MAIN_ADDR
 
-
-/* TODO:
-- solve github issues.
-    - Clear copied memory
-- stepOver:
-	nop
-	NEXTREG $51,12
-    bei nop, stepped über beide
-- add command for setting a port.
-- Command to set a port to support setting 0x7FFD (to switch in the right ROM) when loading 128k SNA files.
-- Enabling/disabling of the interrupt. For loading 48k and 128k SNA files: index 0x13 (iff2), bit 2 contains 0=di, 1=ei. https://sinclair.wiki.zxnet.co.uk/wiki/SNA_format (sjasmplus always sets 0),
-- To be a little bit more future proof: Execute a little binary.
-*/
-
 ;===========================================================================
 ; Include modules
 ;===========================================================================
+
+    ; Define this for some rudimentary debug functionality
+    ;DEFINE DEBUG
 
     include "macros.asm"
     include "zx/zx.inc"
@@ -46,7 +35,7 @@
     include "text.asm"
     include "ui.asm"
     include "altrom.asm"
-    ;include "debug.asm" ; Include for some rudimentary debug functionality
+    include "debug.asm"
 
 
 ;===========================================================================
