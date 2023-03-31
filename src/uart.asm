@@ -88,13 +88,20 @@ baudrate_table:
 
 ;===========================================================================
 ; Clears the receive FIFO.
+; Default is to use a 100ms timeout.
+; For return from the breakpoints a faster version is used,
+; drain_rx_buffer_with_timeout.
+; The timeout is passed via DE. Unit=53/28000=1.9us, i.e. 526 => 1ms.
 ; Changes:
 ;   A, BC, DE
 ;===========================================================================
 drain_rx_buffer:
+    ld de,53000 ; 100 ms
+drain_rx_buffer_with_timeout:
+    ld (.read_next_byte+1),de
 	ld bc,UART_TX
-.read_next_byte:
 
+.read_next_byte:
     ld de,53000 ; 100ms
     ; 53 T-states => 265*53/28000 = 0.5ms
 .read_loop:
