@@ -189,8 +189,6 @@ cmd_init:
 ;===========================================================================
 ; CMD_CLOSE
 ; Closes the debug session.
-; Note: After CMD_CLOSE has sent the response, the client needs to introduce
-; short pause before sending teh next CMD_INIT.
 ; Changes:
 ;  NA
 ;===========================================================================
@@ -205,7 +203,7 @@ cmd_close:
     ; Enable flashing border
     call uart_flashing_border.enable
 	; Afterwards start all over again / show the "UI"
-	jp main	; Note: Since this takes some time, a pause between CMD_CLOSE and the next CMD_INIT is required.
+	jp main	
 
 
 ;===========================================================================
