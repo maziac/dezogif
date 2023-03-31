@@ -45,7 +45,7 @@ cmd_jump_table:
 .set_register:		defw cmd_set_register		; 4
 .write_bank:		defw cmd_write_bank			; 5
 .continue:			defw cmd_continue			; 6
-.pause:				defw 0						; 7, not supported on a ZX Next
+.pause:				defw cmd_not_supported		; 7, not supported on a ZX Next
 .read_mem:			defw cmd_read_mem			; 8
 .write_mem:			defw cmd_write_mem			; 9
 .set_slot:			defw cmd_set_slot			; 10
@@ -56,13 +56,13 @@ cmd_jump_table:
 .loopback:			defw cmd_loopback			; 15
 .get_sprites_palette:	defw cmd_get_sprites_palette	; 16
 .get_sprites_clip_window_and_control:	defw cmd_get_sprites_clip_window_and_control	; 17
-.get_sprites:		defw 0				; 18, not supported on a ZX Next
-.get_sprite_patterns:	defw 0			; 19, not supported on a ZX Next
-.get_port			defw cmd_read_port	; 20
-.write_port			defw cmd_write_port	; 21
-.exec_asm			defw cmd_exec_asm	; 22
-.interrupt_on_off	defw cmd_interrupt_on_off	; 23
-
+.get_sprites:		defw cmd_not_supported		; 18, not supported on a ZX Next
+.get_sprite_patterns:	defw cmd_not_supported	; 19, not supported on a ZX Next
+.get_port:			defw cmd_read_port	; 20
+.write_port:		defw cmd_write_port	; 21
+.exec_asm:			defw cmd_exec_asm	; 22
+.interrupt_on_off:	defw cmd_interrupt_on_off	; 23
+.end
 
 ;.get_sprites:			defw 0	; not supported on a ZX Next
 ;.get_sprite_patterns:	defw 0	; not supported on a ZX Next
@@ -85,7 +85,12 @@ cmd_jump_table:
 ;===========================================================================
 cmd_call:	; Get pointer to subroutine
 	ld a,(receive_buffer.command)
-	;out (BORDER),a
+	; Check that command number is in range
+	ld l,(cmd_jump_table.end-cmd_jump_table)/2
+	sub l
+	jr nc,cmd_not_supported
+	; Use table
+	add l
 	add a,a
 	ld hl,cmd_jump_table-2
 	add hl,a
@@ -94,6 +99,19 @@ cmd_call:	; Get pointer to subroutine
 	ld l,a
 	; jump to subroutine
 	jp (hl)
+
+
+;===========================================================================
+; CMD not supported.
+; Is called for a command that is not supported.
+; Creates an error output.
+; Changes:
+;  NA
+;===========================================================================
+cmd_not_supported:
+	; LOGPOINT [CMD] cmd_not_supported
+	ld a,ERROR_CMD_NOT_SUPPORTED
+    jp drain_main
 
 
 ;===========================================================================
@@ -171,6 +189,8 @@ cmd_init:
 ;===========================================================================
 ; CMD_CLOSE
 ; Closes the debug session.
+; Note: After CMD_CLOSE has sent the response, the client needs to introduce
+; short pause before sending teh next CMD_INIT.
 ; Changes:
 ;  NA
 ;===========================================================================
@@ -185,7 +205,7 @@ cmd_close:
     ; Enable flashing border
     call uart_flashing_border.enable
 	; Afterwards start all over again / show the "UI"
-	jp main
+	jp main	; Note: Since this takes some time, a pause between CMD_CLOSE and the next CMD_INIT is required.
 
 
 ;===========================================================================
@@ -364,8 +384,7 @@ cmd_write_bank:
 
 error_write_main_bank:
 	ld a,ERROR_WRITE_MAIN_BANK
-    ld (last_error),a
-    jp main
+    jp drain_main
 
 
 ;===========================================================================

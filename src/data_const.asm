@@ -95,6 +95,8 @@ TEXT_ERROR_WRITE_MAIN_BANK: defb "CMD_WRITE_BANK: Can't write to  bank "
     defb ". Bank is used by DeZog.", 0
 TEXT_ERROR_CORE_VERSION_NOT_SUPPORTED: ; Core not supported
     defb "Core Version not supported,     should be >= 03.01.10", 0
+TEXT_CMD_NOT_SUPPORTED: ; Core not supported
+    defb "Command not supported", 0
 
 ERROR_TEXT_TABLE:
     defw TEXT_ERROR_RX_TIMEOUT
@@ -103,5 +105,4 @@ ERROR_TEXT_TABLE:
     defw TEXT_ERROR_WRONG_FUNC_NUMBER
     defw TEXT_ERROR_WRITE_MAIN_BANK
     defw TEXT_ERROR_CORE_VERSION_NOT_SUPPORTED
-
-
+    defw TEXT_CMD_NOT_SUPPORTED
