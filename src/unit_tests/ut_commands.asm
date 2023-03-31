@@ -166,7 +166,7 @@ UT_01_cmd_init:
 	; Test DZRP version
 	TEST_MEMORY_BYTE test_memory_payload+2, DZRP_VERSION.MAJOR
 	TEST_MEMORY_BYTE test_memory_payload+3, DZRP_VERSION.MINOR
-	TEST_MEMORY_BYTE test_memory_payload+3, DZRP_VERSION.PATCH
+	TEST_MEMORY_BYTE test_memory_payload+4, DZRP_VERSION.PATCH
 
 	; Test machine type: 4 = ZX Next
 	TEST_MEMORY_BYTE test_memory_payload+5, 4
