@@ -12,6 +12,10 @@
 ; To save the sp value
 sp_backup:  defw    0
 
+; uart routines jump here in case of errors.
+@drain_main:
+	ret
+
 
 ; Test that subroutine returns correctly.
 UT_read_uart_byte_timeout:

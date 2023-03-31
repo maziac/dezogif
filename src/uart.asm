@@ -238,8 +238,7 @@ read_uart_byte:
 rx_timeout: ; The receive timeout handler
     ld a,ERROR_RX_TIMEOUT
 rxtx_error:
-    ld (last_error),a
-    jp main
+    jp drain_main
 
 
 ; Called if a UART TX timeout occurs.

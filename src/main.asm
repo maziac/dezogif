@@ -81,8 +81,6 @@ main_bank_entry:
     ; The main program has been copied into MAIN_BANK
     ld a,2  ; Joy 2 selected
     ld (uart_joyport_selection),a
-    xor a
-    ld (last_error),a
 
     ; Enable flashing border
     call uart_flashing_border.enable
@@ -94,7 +92,18 @@ main_bank_entry:
     ; Return from NMI (Interrupts are disabled)
     call nmi_return
 
-    ;DBG_CLEAR
+    ; No error
+    xor a
+
+;===========================================================================
+; main entry - Jump here in case of an error.
+; A contains the error.
+;===========================================================================
+drain_main:
+    ; Store error
+    ld (last_error),a
+    ; Drain
+    call drain_rx_buffer
 
     ; Flow through
 
@@ -135,9 +144,6 @@ main:
 
     ; Set UART
     call set_uart_joystick
-
-    ; Drain
-    call drain_rx_buffer
 
     ; Show the text
     call show_ui
