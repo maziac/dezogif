@@ -203,7 +203,7 @@ cmd_close:
     ; Enable flashing border
     call uart_flashing_border.enable
 	; Afterwards start all over again / show the "UI"
-	jp main	
+	jp main
 
 
 ;===========================================================================
@@ -873,7 +873,7 @@ cmd_get_sprites_palette:
 	; Get palette index
 	call read_uart_byte
 	bit 0,a
-	ld a,l	; TODO: Test both palettes.
+	ld a,l
  	jr z,.palette_0
 	or 01000000b	; Select palette 1
 .palette_0:
