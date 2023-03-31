@@ -9,16 +9,12 @@
 ;
 ; Speed:
 ; The routine runs at 28MHz. I.e. 7MHz for 4 T-States.
-; Or 7 million simple instructions per second.
+; Or about 7 million simple instructions per second.
 ; Baudrate:
-; The baudrate maximum is 1958400. Which is approx. 200kBytes per second.
-; That means download of a 64k Z80 program would take up to 0.25 seconds.
-;
-; The minimum required time for reading 1 byte at max. clock speed is
-; about 3us. Transmission time is 5us.
-; Timeout is set to 393us.
-;
-;
+; The baudrate maximum is 1958400.
+; Good results were achieved with 921600.
+; Which is approx. 100 kBytes per second.
+; That means download of a 64k Z80 program would take up to 0.5 seconds.
 ;
 ;===========================================================================
 
@@ -93,22 +89,26 @@ baudrate_table:
 ;===========================================================================
 ; Clears the receive FIFO.
 ; Changes:
-;   A, BC
+;   A, BC, DE
 ;===========================================================================
 drain_rx_buffer:
 	ld bc,UART_TX
 .read_next_byte:
-    ld e,50
+
+    ld de,53000 ; 100ms
+    ; 53 T-states => 265*53/28000 = 0.5ms
 .read_loop:
 	in a,(c)					; Read status bits
     bit UART_RX_FIFO_EMPTY,a
     jr nz,.read_byte
 
     ; Wait
-    dec e
+    dec de
+    ld a,d
+    or e
     jr nz,.read_loop
 
-    ; No byte received since at least 10 us.
+    ; No byte received since at least 100ms.
     ret
 
 .read_byte:
@@ -180,13 +180,11 @@ check_uart_byte_available:
 
 ;===========================================================================
 ; Waits until an RX byte is available and returns it.
+; Waits max. 100ms for the next byte, otherwise a timeout error is thrown.
 ; Returns:
 ;   A = the received byte.
 ; Changes:
-;   BC, E
-; Duration:
-;   66 T-states minimum
-;   2.4us at 28MHz
+;   BC, DE
 ;===========================================================================
 read_uart_byte:
     ; Change border
@@ -195,26 +193,30 @@ read_uart_byte:
     out (BORDER),a
 
     ; Wait on byte
-    ld e,0
+    ld de,40000 ; => 100ms
 	ld bc,UART_TX
+
+    ; 68 T-states => 200*68/27Mhz = 0.5ms
 .wait_loop:
 	in a,(c)					; Read status bits
     bit UART_RX_FIFO_OVERFLOW,a
     jr nz,.rx_overflow
     bit UART_RX_FIFO_EMPTY,a
     jr nz,.byte_received
-    dec e
+    dec de
+    ld a,d
+    or e
     jr nz,.wait_loop
 
+
     ; "Timeout"
-    ; Waited for 256*43 T-states=393us
 .timeout:
     nop ; LOGPOINT read_uart_byte: ERROR=TIMEOUT
     jp rx_timeout   ; ASSERTION
 
 .byte_received:
-    ; Change border
 .flash2:
+    ; Change border
     ld a,YELLOW
     out (BORDER),a
 

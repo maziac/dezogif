@@ -852,17 +852,14 @@ cmd_get_sprites_palette:
 	ld a,d	; eUlaCtrlReg
 	and 0x0F
 	or 00100000b
-	ld d,a
+	ld l,a
 	; Get palette index
 	call read_uart_byte
 	bit 0,a
-	ld a,d	; TODO: Test both palettes.
+	ld a,l	; TODO: Test both palettes.
  	jr z,.palette_0
 	or 01000000b	; Select palette 1
 .palette_0:
-	;ld d,a
-	;ld a,REG_PALETTE_CONTROL
-	;call write_tbblue_reg
 	NEXTREG REG_PALETTE_CONTROL,a
 
 /*
