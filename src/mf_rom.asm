@@ -47,7 +47,7 @@ nmi66h:
     ; Save to MF stack
     push af, bc
 
-    ; Core 03.01.10: Check for the cause of the NMI and return if not a bbutton press
+    ; Core 03.01.10: Check for the cause of the NMI and return if not a button press
     ld a,REG_RESET
 	ld bc,IO_NEXTREG_REG
 	out (c),a
