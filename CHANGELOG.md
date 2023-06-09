@@ -1,5 +1,8 @@
 # Changelog
 
+# 2.2.1
+- Fixed support for command 23 (cmd_interrupt_on_off).
+
 # 2.2.0
 - Improved stability on serial interface.
 - Fixed a buffer overflow if a long write_mem was called after cmd_init.

@@ -145,6 +145,44 @@ test_get_response:
 	call test_prepare_command
 	ENDM
 
+; Test command to subroutine pointer conversion.
+UT_get_cmd_pointer:
+	; Test several commands
+
+	; Minimum
+	ld a,1
+	ld (receive_buffer.command),a
+	call get_cmd_pointer
+	; ASSERTION HL == cmd_init
+
+	; Maximum
+	ld a,23
+	ld (receive_buffer.command),a
+	call get_cmd_pointer
+	; ASSERTION HL == cmd_interrupt_on_off
+
+	; Some not supported
+	ld a,7
+	ld (receive_buffer.command),a
+	call get_cmd_pointer
+	; ASSERTION HL == cmd_not_supported
+
+	; Out of range
+	ld a,24
+	ld (receive_buffer.command),a
+	call get_cmd_pointer
+	; ASSERTION HL == cmd_not_supported
+	ld a,128
+	ld (receive_buffer.command),a
+	call get_cmd_pointer
+	; ASSERTION HL == cmd_not_supported
+	ld a,-1
+	ld (receive_buffer.command),a
+	call get_cmd_pointer
+	; ASSERTION HL == cmd_not_supported
+
+ TC_END
+
 ; Test response of cmd_init.
 UT_01_cmd_init:
 	; Write test data to simulated UART buffer.
@@ -1449,7 +1487,7 @@ UT_17_cmd_get_sprites_clip_window_and_control:
 
 
 ; Test cmd_read_port
-UT_18_cmd_read_port:
+UT_20_cmd_read_port:
 	; Test
 	TEST_PREPARE_COMMAND
 	; Test port value
@@ -1488,7 +1526,7 @@ UT_18_cmd_read_port:
 
 
 ; Test cmd_write_port
-UT_19_cmd_write_port:
+UT_21_cmd_write_port:
 	; Test port value
 	ld a,0xA5
 	ld (.cmd_port_data),a
@@ -1529,7 +1567,7 @@ UT_19_cmd_write_port:
 
 
 ; Test cmd_exec_asm: successfully execute a smallassembler program
-UT_20_cmd_exec_asm.UT_success:
+UT_22_cmd_exec_asm.UT_success:
 	; Test data = asm program
 	TEST_PREPARE_COMMAND
 	; Test
@@ -1563,7 +1601,7 @@ UT_20_cmd_exec_asm.UT_success:
 .cmd_data_end
 
 ; Test cmd_exec_asm: program too big
-UT_20_cmd_exec_asm.UT_too_big:
+UT_22_cmd_exec_asm.UT_too_big:
 	; Test data = asm program
 	TEST_PREPARE_COMMAND
 	; Test
@@ -1586,7 +1624,7 @@ UT_20_cmd_exec_asm.UT_too_big:
 .cmd_data_end
 
 ; Test cmd_exec_asm: program just fits
-UT_20_cmd_exec_asm.UT_just_fits:
+UT_22_cmd_exec_asm.UT_just_fits:
 	; Test data = asm program
 	TEST_PREPARE_COMMAND
 	; Test
@@ -1606,7 +1644,7 @@ UT_20_cmd_exec_asm.UT_just_fits:
 
 
 ; Test cmd_interrupt_on_off: Test to enable/disable the interrupt.
-UT_20_cmd_interrupt_on_off:
+UT_23_cmd_interrupt_on_off:
 	; Enable
 	ld a,1
 	ld (.cmd_data),a

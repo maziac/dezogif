@@ -39,6 +39,7 @@ PROGRAM_NAME:	defb "dezogif "
 
 ; Command number <-> subroutine association
 cmd_jump_table:
+					defw cmd_not_supported		; 0 = reserved
 .init:				defw cmd_init				; 1
 .close:				defw cmd_close				; 2
 .get_registers:		defw cmd_get_registers		; 3
@@ -84,21 +85,27 @@ cmd_jump_table:
 ;  NA
 ;===========================================================================
 cmd_call:	; Get pointer to subroutine
+	call get_cmd_pointer
+	; jump to subroutine
+	jp (hl)
+get_cmd_pointer:	; For unit tests this is a separate function.
 	ld a,(receive_buffer.command)
 	; Check that command number is in range
 	ld l,(cmd_jump_table.end-cmd_jump_table)/2
 	sub l
-	jr nc,cmd_not_supported
+	jr nc,.not_supported
 	; Use table
 	add l
 	add a,a
-	ld hl,cmd_jump_table-2
+	ld hl,cmd_jump_table
 	add hl,a
 	ldi a,(hl)
 	ld h,(hl)
 	ld l,a
-	; jump to subroutine
-	jp (hl)
+	ret
+.not_supported:
+	ld hl,cmd_not_supported
+	ret
 
 
 ;===========================================================================
