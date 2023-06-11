@@ -10,7 +10,7 @@
 
 ; The dezogif program version:
  MACRO PRG_VERSION
- 	defb "v2.2.0"
+ 	defb "v2.2.1"
  ENDM
 
 
