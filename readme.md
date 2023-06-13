@@ -7,7 +7,6 @@ This is a ZXNext assembler program named 'dezogif' that communicates via the UAR
 It is intended to use this with the DeZog, a vscode debug adapter.
 
 
-
 # Design
 
 There are basically 2 states:
@@ -46,9 +45,7 @@ The program (dezogif/enNextMf.rom) is started after NextOS has been started by p
 
 To re-initialize later you need to hold down the "Symbol Shift" (or CTRL) key while hitting the NMI button.
 
-Note: the SW (enNextMf.rom) depends on the ZX Next core version you use.
-For a different core you need to use a different enNextMf.rom.
-in the [releases](https://github.com/maziac/dezogif/blob/master/releases) folder you find the right SW.
+Note: the SW (enNextMf.rom) is known to work with ZXNext core 03.01.10 and core 03.02.00. It will not work on older cores.
 
 
 # License
