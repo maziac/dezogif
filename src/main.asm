@@ -218,6 +218,13 @@ main_end:
     ASSERT main_end <= (MAIN_SLOT+1)*0x2000
     ASSERT main_end <= MAIN_ADDR+0x1F00
 
+    ; The real ceiling is lower than either of the two above, and neither of
+    ; them can see it: main_bank_entry copies the ZX font into the top of this
+    ; bank and nothing in the source emits a byte there, so growing past that
+    ; address aliases the debugger's variables onto the glyph bitmaps - silently
+    ; and in both directions. Same expression as the MEMCOPY that fills it.
+    ASSERT main_end <= MAIN_ADDR+0x2000-ROM_FONT_SIZE+MF_ORIGIN_ROM-MF.main_prg_copy
+
 
 
 ;===========================================================================
