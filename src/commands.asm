@@ -57,8 +57,8 @@ cmd_jump_table:
 .loopback:			defw cmd_loopback			; 15
 .get_sprites_palette:	defw cmd_get_sprites_palette	; 16
 .get_sprites_clip_window_and_control:	defw cmd_get_sprites_clip_window_and_control	; 17
-.get_sprites:		defw cmd_not_supported		; 18, not supported on a ZX Next
-.get_sprite_patterns:	defw cmd_not_supported	; 19, not supported on a ZX Next
+.get_sprites:		defw cmd_get_sprites		; 18, answered with zeros; see there
+.get_sprite_patterns:	defw cmd_get_sprite_patterns	; 19, ditto
 .get_port:			defw cmd_read_port	; 20
 .write_port:		defw cmd_write_port	; 21
 .exec_asm:			defw cmd_exec_asm	; 22
@@ -1063,6 +1063,87 @@ cmd_get_sprites_clip_window_and_control:
 	call read_tbblue_reg
 	jp write_uart_byte 	; Send sprite control byte
 
+
+
+;===========================================================================
+; CMD_GET_SPRITES / CMD_GET_SPRITE_PATTERNS
+;
+; THE NEXT CANNOT READ EITHER OF THESE BACK. Ports 0x57 (attribute upload) and
+; 0x5B (pattern upload) have no read decode at all: zxnext.vhd:651-652 declares
+; port_57_wr and port_5b_wr with no read counterpart, and neither port appears
+; in the port read response (zxnext.vhd:2803) or in the port data mux (:2837).
+; Port 0x303B is readable, but it returns the sprite STATUS byte -- collision
+; and max-sprites-per-line (video/sprites.vhd:748) -- not attributes. So this
+; is a property of the silicon, which is why these two were routed to
+; cmd_not_supported in the first place.
+;
+; SO WHY ANSWER AT ALL. Because cmd_not_supported does not merely stay silent:
+; it jumps to drain_main, which re-initialises the debugger -- prgm_state to
+; PRGM_IDLE, the clock and backup state reset, the screen repainted. Opening a
+; sprite view therefore hung the client AND tore the session down underneath
+; it. DeZog's ZxNextSerialRemote overrides both and throws before either
+; reaches a wire, so this was never seen over serial; a remote that does not
+; override them inherits DzrpBufferRemote's plain sendDzrpCmd(18/19) and blocks.
+;
+; THE ANSWER IS ZEROS, AT EXACTLY THE LENGTH ASKED FOR, and the length is not
+; ours to choose: DzrpBufferRemote asserts count*5 for sprites and 256*count
+; for patterns and then slices the reply into fixed-size records, so a short
+; reply is a desynchronisation rather than a refusal -- and DZRP has no error
+; response to send instead. A zeroed attribute has its visible bit clear, so
+; the sprite view renders empty: the closest this wire format comes to saying
+; "there is nothing I can show you".
+;
+; An emulator remote is not subject to this and can answer for real, because
+; the sprite arrays are ordinary host variables there. The same DeZog session
+; will show a populated sprite view against an emulator and an empty one
+; against a real Next: a capability difference in the target.
+; Changes:
+;  NA
+;===========================================================================
+cmd_get_sprites:
+	; LOGPOINT [CMD] cmd_get_sprites
+	call sprites_read_count	; A = count
+	; 5 bytes per sprite: HL = A*5, which cannot carry (255*5 = 1275).
+	ld l,a
+	ld h,0
+	add hl,hl		; *2
+	add hl,hl		; *4
+	ld e,a
+	ld d,0
+	add hl,de		; *5
+	jr sprites_send_zeros
+
+cmd_get_sprite_patterns:
+	; LOGPOINT [CMD] cmd_get_sprite_patterns
+	call sprites_read_count	; A = count
+	; 256 bytes per pattern, so the count IS the high byte. 255*256 = 65280, and
+	; the length field below adds one for the sequence number: 65281 still fits
+	; the 16 bits send_length_and_seqno takes.
+	ld h,a
+	ld l,0
+	; Flow through
+
+sprites_send_zeros:
+	; HL = how many payload bytes to send.
+	push hl
+	inc hl			; + the sequence number
+	ex de,hl
+	call send_length_and_seqno
+	pop hl
+.loop:
+	ld a,h
+	or l
+	ret z
+	xor a
+	call write_uart_byte
+	dec hl
+	jr .loop
+
+sprites_read_count:
+	; The payload is <index><count>. The index is read so that the stream stays
+	; in step, and then dropped: with no data to index into it selects nothing.
+	call read_uart_byte
+	jp read_uart_byte
 
 
 ;===========================================================================
