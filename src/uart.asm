@@ -363,20 +363,43 @@ wait_for_uart_tx_empty:
 ; The baudrate timings depend on the video timings in register 0x11.
 ; They don't depend on video mode being 50 or 60 Hz.
 ; Sets also 8 bit mode.
+;
+; UART1 - the "Pi" UART - is used rather than UART0, and that is what makes
+; asynchronous break possible over the cable. NR 0x0B bit 0 chooses which UART
+; the joystick pin feeds, and with bit 0 CLEAR the same i/o mode holds the
+; ESP-01's TX line idle and de-asserts its RTR (zxnext.vhd:3343, :3349). So a
+; build that left i/o mode on with bit 0 clear - which is what buys the break -
+; would sever the ESP for the whole session. Bit 0 SET leaves both those signals
+; alone; what it costs instead is the Raspberry Pi header UART (:3344, :3350),
+; which is far rarer on a real Next.
+;
+; THE SELECT MUST BE WRITTEN BEFORE THE FRAME AND PRESCALER REGISTERS, and that
+; order is load bearing. 0x133B, 0x143B and 0x163B all act on whichever channel
+; 0x153B bit 6 selects at the instant of the access - they are two independent
+; sets of registers, not one (serial/uart.vhd:302-305 for the frame register,
+; :350-376 for the read mux). Written the other way round the frame byte lands
+; on UART0 and UART1 keeps whatever it had. It would LOOK correct, because
+; 0x163B's documented default is 0x18 and that is exactly the value written
+; here - but that default is restored only by i_reset_hard, which
+; zxnext.vhd:3367 ties to the constant '0' ("hard_reset done by core load"), so
+; no reset a program can cause ever puts it back and a program that had
+; configured UART1 differently would leave the debugger at its frame settings.
+;
 ; Returns:
 ;  -
 ; Changes:
 ;  A, BC, DE, HL
 ;===========================================================================
 set_uart_baudrate:
+    ; Select UART1 (bit 6) and clear prescaler MSB (bit 4 = write these bits).
+    ; This comes FIRST: it is what makes the two writes below land on UART1.
+    ld bc,UART_SELECT
+	ld a,01010000b
+	out	(c),a
+
     ; Set 8 bit
     ld bc,UART_FRAME
 	ld a,00011000b   ; 8 bit
-	out	(c),a
-
-    ; Select UART and clear prescaler MSB
-    ld bc,UART_SELECT
-	ld a,00010000b
 	out	(c),a
 
     ; Get display timing
@@ -411,6 +434,22 @@ set_uart_baudrate:
 ; RX = PIN 9 Joystick 2
 ; These pins are not used on normal Joystick.
 ; Only for Sega Genesis controller which cannot be used.
+;
+; BIT 0 IS NOW SET ON BOTH PORTS, and it is what makes asynchronous break
+; reachable here. It routes the joystick pin to UART1 instead of UART0
+; (zxnext.vhd:3340-3341), which leaves the ESP-01's TX and RTR lines untouched
+; (:3343, :3349, both conditioned on bit 0 = 0). That matters twice over: it is
+; what lets restore_registers leave i/o mode ON across a resume on joy port 2 -
+; see there - and it also means this routine no longer disturbs the ESP at all,
+; where before it idled the module's TX line for as long as the debugger held
+; the machine, on either port.
+;
+; Only joy port 2 gets asynchronous break, and the asymmetry is deliberate. The
+; enable is global and the mode field names exactly one connector
+; (zxnext.vhd:3536, :3538), so the cable and a real joystick cannot share a
+; port; keeping port 1's old behaviour is what leaves that connector free for
+; the debugged program's own joystick.
+;
 ; Parameters:
 ;  uart_joyport_selection:
 ;     0x0=00b => no joystick port used
@@ -425,13 +464,13 @@ set_uart_joystick:
     dec a
     jr nz,.joy_port_cont
     ; Joy port 1 selected
-    nextreg REG_JOYSTICK_IO_MODE,10100000b  ; Left joy port
+    nextreg REG_JOYSTICK_IO_MODE,10100001b  ; Left joy port, UART1
     ret
 .joy_port_cont:
     dec a
     jr nz,.joy_port_none
     ; Joy port 2 selected
-    nextreg REG_JOYSTICK_IO_MODE,10110000b  ; Right joy port
+    nextreg REG_JOYSTICK_IO_MODE,10110001b  ; Right joy port, UART1
     ret
 .joy_port_none:
     ; No joy port selected

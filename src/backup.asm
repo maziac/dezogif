@@ -59,8 +59,19 @@ restore_registers:
     ; Wait for TX ready. (This is to make sure everything is transmitted before the joyport configuration is changed.)
     call wait_for_uart_tx_empty
 
+	; Hand the joy ports back - EXCEPT on joy port 2, where leaving i/o mode on
+	; is the whole of what makes asynchronous break possible: clearing NR 0x0B
+	; severs the joystick pin from both UARTs (zxnext.vhd:3340-3341, :3536), so
+	; a byte from the PC has nowhere to land while the debugged program runs.
+	; See set_uart_joystick for why only one port, and why UART1.
+	; A is free here: wait_for_uart_tx_empty above has already changed it, and
+	; the debugged program's registers are all still on the stack.
+	ld a,(uart_joyport_selection)
+	cp 2
+	jr z,.keep_io_mode
 	; Disable joy port IO mode to enable the joysticks
 	nextreg REG_JOYSTICK_IO_MODE,0
+.keep_io_mode:
 
 	; Skip IM
 	ld sp,backup.r
