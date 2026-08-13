@@ -38,6 +38,22 @@ UART_RX:   equ 0x143b
 ; UART selection.
 UART_SELECT:   equ 0x153b
 
+; 0x153B is a shared POINTER, not a register the debugger owns. Bit 6 says which
+; of the machine's two UARTs every one of 0x133B, 0x143B and 0x163B refers to at
+; the instant of the access (serial/uart.vhd:350-376), so "in a,(0x133B)" means
+; "the status of whichever channel is selected" where the debugger means "the
+; status of mine". Those coincide only while nothing else has moved the pointer,
+; and a debugged program legitimately using the OTHER UART must move it - the
+; machine has two of them precisely so that two owners can coexist.
+;
+; Writing these values back has BIT 4 CLEAR, which is what makes the correction
+; safe: with bit 4 clear the write changes only the select and leaves both 17-bit
+; prescalers alone (serial/uart.vhd:280-286). A write with bit 4 set would take
+; bits 2:0 as the selected channel's prescaler MSB.
+UART_SELECT_BIT:    equ 01000000b   ; bit 6: the channel, on a read
+UART_SELECT_OURS:   equ 01000000b   ; UART1 - see set_uart_baudrate
+UART_SELECT_OTHER:  equ 00000000b   ; UART0
+
 /*
 0x163B UART Frame
 (R/W) (hard reset = 0x18)
@@ -172,6 +188,23 @@ wait_for_uart_rx:
 
 ;===========================================================================
 ; Checks if a byte is available at the UART.
+;
+; This is also what the NMI poll asks, and it satisfies that on its own: one
+; status read, no CALL below it, and it does not pop the RX FIFO - 0x133B is the
+; status register where 0x143B is the data one.
+;
+; It borrows the UART channel select, and that is not defensive programming
+; against the debugged program: it is this read being under-specified without
+; it. See UART_SELECT_OURS above. The common path does not write - it reads the
+; select, compares, and falls straight through - so only a program that has
+; actually moved the pointer pays for the correction, and it gets its value back
+; before the NMI returns.
+;
+; The read does clear the sticky RX overflow and framing flags
+; (serial/uart.vhd:536-539). That is pre-existing - the idle loop already reads
+; this register continuously - and mf_nmi_poll asks its prgm_state question
+; first so that this is never touched while the debugger is using the link.
+;
 ; Returns:
 ;   NZ = Byte available
 ;   Z = No byte available
@@ -179,10 +212,38 @@ wait_for_uart_rx:
 ;   AF
 ;===========================================================================
 check_uart_byte_available:
+    ; Is 0x133B about our channel?
+	ld a,HIGH UART_SELECT
+	in a,(LOW UART_SELECT)
+    and UART_SELECT_BIT
+    cp UART_SELECT_OURS
+    jr nz,.borrow_select
+
 	ld a,HIGH UART_TX
 	in a,(LOW UART_TX)
 	; Read status bits
     bit UART_RX_FIFO_EMPTY,a
+    ret
+
+.borrow_select:
+    ; The debugged program owns the pointer and is still running, so this is a
+    ; loan: point the pointer at our channel, read, and hand it straight back.
+    push bc
+    ld bc,UART_SELECT
+    ld a,UART_SELECT_OURS
+    out (c),a
+
+	ld a,HIGH UART_TX
+	in a,(LOW UART_TX)
+    bit UART_RX_FIFO_EMPTY,a
+
+    ; Neither "ld a,n" nor "out (c),a" touches the flags, so the verdict the
+    ; caller reads survives the restore with no push/pop of AF. "in a,(n)" does
+    ; not either, unlike "in r,(c)" - which is why the read can sit between the
+    ; two writes.
+    ld a,UART_SELECT_OTHER
+    out (c),a
+    pop bc
     ret
 
 ;===========================================================================
@@ -459,6 +520,27 @@ set_uart_baudrate:
 ;  AF, BC, HL
 ;===========================================================================
 set_uart_joystick:
+    ; Reclaim the UART channel select before anything uses the link, and without
+    ; that the guard in check_uart_byte_available would be half a fix:
+    ; set_uart_baudrate points 0x153B at our channel exactly once, when MAIN is
+    ; first entered, and nothing has re-established it since. So a program that
+    ; moved the pointer and then stopped - at a breakpoint, on the button, or
+    ; through the poll's own break-in - would hand the debugger a link whose
+    ; every read and write went to the OTHER UART, and the session would be mute
+    ; rather than merely unbreakable. This is the right single place: all three
+    ; entries into the debugger come through here (main.asm, mf.asm,
+    ; breakpoints.asm) and none of them has touched the link yet.
+    ;
+    ; It does NOT put the debugged program's selection back on resume. That
+    ; value belongs with the other break-time captures in backup.*, not here,
+    ; because this routine also runs when the debugger is ALREADY executing
+    ; (main.asm's path through drain_main and cmd_close) where the value it
+    ; would read is its own. A program using the other UART must re-select after
+    ; a break.
+    ld bc,UART_SELECT
+    ld a,UART_SELECT_OURS
+    out (c),a
+
     ; Core 3.01.10
     ld a,(uart_joyport_selection)
     dec a
