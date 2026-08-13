@@ -181,16 +181,33 @@ cmd_init:
 	ret
 
 .inner:
-	; Read version number
-	ld hl,receive_buffer.payload
-	ld de,3
-	call receive_bytes
-	; Read remote program name
-.read_loop
-	call read_uart_byte
-	or a
-	jr nz,.read_loop
-	ret
+	; Consume exactly the payload the frame declared, and drop it.
+	;
+	; The response above is built from our own DZRP_VERSION and PROGRAM_NAME, so
+	; nothing ever looked at the remote's version or name, and storing a
+	; client-chosen count into the payload buffer would need a bound check that
+	; buys nothing.
+	;
+	; This used to read 3 version bytes by count and then the remote's program
+	; name UNTIL A NUL, ignoring the length field entirely. A frame whose
+	; declared length disagreed with its payload then left the stream
+	; desynchronised, silently, for the rest of the session. The length field is
+	; what frames a command; the NUL is content, and content may tell a handler
+	; how to interpret what it read but must never decide how much leaves the
+	; stream. Every other handler here already takes its count from
+	; receive_buffer.length.
+	;
+	; Only the low 16 bits are used, as everywhere else here.
+	ld de,(receive_buffer.length)
+.read_loop:
+	ld a,d
+	or e
+	ret z
+	dec de
+	push de
+	call read_uart_byte	; Changes BC, DE
+	pop de
+	jr .read_loop
 
 
 ;===========================================================================
