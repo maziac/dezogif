@@ -63,12 +63,24 @@ INTRO_TEXT:
     defb "B = Border"
     defb 0
 
+; Rows 6 AND 7. Row 7 says whether the PC can break into a running program,
+; because that is a property of which port was chosen and of nothing else: only
+; joy port 2 keeps i/o mode across a resume, so only there does a byte from the
+; PC have anywhere to land while the debugged program runs (restore_registers).
+;
+; It says "ready" rather than "on", deliberately. The debugger's half is all
+; this line can speak for; the break also needs the debugged program to have
+; installed the two Copper instructions, which nothing on this screen can see.
+; See documentation/AsynchronousBreak.md.
 JOY1_SELECTED_TEXT:
-    defb AT, 0, 6*8, "Using Joy 1 (left)", 0
+    defb AT, 0, 6*8, "Using Joy 1 (left)"
+    defb AT, 0, 7*8, "PC break: needs Joy 2", 0
 JOY2_SELECTED_TEXT:
-    defb AT, 0, 6*8, "Using Joy 2 (right)", 0
+    defb AT, 0, 6*8, "Using Joy 2 (right)"
+    defb AT, 0, 7*8, "PC break: ready", 0
 NOJOY_SELECTED_TEXT:
-    defb AT, 0, 6*8, "No joystick port used.", 0
+    defb AT, 0, 6*8, "No joystick port used."
+    defb AT, 0, 7*8, "PC break: needs Joy 2", 0
 
 SELECTED_TEXT_TABLE:
     defw NOJOY_SELECTED_TEXT
