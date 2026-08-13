@@ -130,8 +130,16 @@ mf_nmi_button_pressed:
 	; Make sure the joyport is configured for the UART
 	call set_uart_joystick
 
-	; First drain receive message queue
-	call drain_rx_buffer
+	; First drain receive message queue - UNLESS this break was the poll's.
+	; See MF.nmi_poll_break: for a button press the drain is right, for a poll
+	; break it would eat the very command that asked for the break.
+	; Read and cleared in one place, so a button press after a poll break drains
+	; normally. "call z" because a zero flag from "or a" means "not a poll".
+	ld hl,MF.nmi_poll_break
+	ld a,(hl)
+	ld (hl),0
+	or a
+	call z,drain_rx_buffer
 
 	; Send pause notification
 	ld d,BREAK_REASON.MANUAL_BREAK
@@ -153,6 +161,91 @@ mf_nmi_button_pressed:
 
 	; Enter debugging loop
 	jp cmd_loop
+
+
+;===========================================================================
+; The asynchronous-break poll.
+;
+; Reached by JP from mf_rom.asm's .software_cause, which has already cleared the
+; NR 0x02 cause latch, saved the debugged program's bank in MF.nmi_slot7, paged
+; MAIN_BANK into MAIN_SLOT and checked that the image there is ours. Nothing may
+; be called in this bank before that check, which is why the check is in MF ROM
+; and everything below is here: MF ROM bytes are scarce and these are not.
+;
+; When entered:
+;   MF ROM/RAM paged in; MAIN_BANK in MAIN_SLOT; interrupts disabled by the NMI.
+;   SP = MF.stack, holding [AF][BC] - the debugged program's, pushed by nmi66h.
+;   DE, HL, IX, IY and the alternate set are the debugged program's and MUST
+;   survive: the decline returns to it, and the break hands them to
+;   save_registers.
+;
+; Two questions, in this order, and the order matters.
+;
+;   1. Is a program running? Answered from prgm_state, which is exact and needs
+;      no new flag - but it lives in MAIN_BANK, so it could not have been asked
+;      before the magic check. Anything other than PRGM_RUNNING means the
+;      debugger itself is executing (stopped at a breakpoint, or idling in
+;      main_loop) and there is nothing to break into.
+;   2. Only then, is there traffic? Asking that first would read the UART status
+;      register while the debugger is using the link itself - and that read
+;      clears the sticky RX overflow and framing flags (serial/uart.vhd:536-539),
+;      so a poll firing once a frame would wipe an overflow the debugger's own
+;      code was about to report. With the order this way round the status
+;      register is only touched while the debugged program runs.
+;
+; What counts as traffic is "any byte", which is a decision with a visible cost:
+; check_uart_byte_available is one status read and cannot tell a CMD_PAUSE from
+; anything else that arrives, so a stray byte on the cable breaks the program in
+; when nobody asked. Parsing inside the NMI is the alternative and it is worse.
+; The precedent is cmd_loop's own wait_for_uart_rx, which has always resumed on
+; any byte.
+;===========================================================================
+mf_nmi_poll:
+	; 1. Is there a debugged program to break into?
+	ld a,(prgm_state)
+	cp PRGM_RUNNING
+	jr nz,.decline
+
+	; 2. Has the PC said anything?
+	call check_uart_byte_available
+	jr z,.decline
+
+	; --- break in ---------------------------------------------------------
+	; The NMI interrupted a running program, so MAIN_SLOT held ITS bank. This is
+	; the one path on which that value is what continue must page back.
+	ld a,(MF.nmi_slot7)
+	ld (slot_backup.slot7),a
+
+	; Tell mf_nmi_button_pressed not to drain: the command that caused this
+	; break is in the RX FIFO and the drain would eat it. See there.
+	ld a,1
+	ld (MF.nmi_poll_break),a
+
+	; The clock is switched HERE and nowhere else, which is the difference
+	; between this and the button path: nmi66h speeds up before it has decided
+	; anything, and a poll doing that would move the machine's clock once a
+	; frame whether or not it broke in. The debugged program's speed is read
+	; first, because the next instruction destroys it.
+	; Note REG_TURBO_MODE does not read back what was written - bits 5:4 are the
+	; actual speed and 1:0 the programmed one (zxnext.vhd:5903) - which is what
+	; the button path stores too, and is correct for the same reason.
+	ld a,REG_TURBO_MODE
+	call read_tbblue_reg
+	ld (backup.speed),a
+	nextreg REG_TURBO_MODE,RTM_28MHZ
+
+	; Hand over to the button path, which is correct from here on unchanged: a
+	; running program was interrupted, which is exactly what
+	; mf_nmi_button_pressed is written for. AF and BC are popped because that is
+	; the stack state it expects.
+	pop bc
+	pop af
+	jp mf_nmi_button_pressed
+
+.decline:
+	; The common case, once a frame. Back to MF ROM, which is where MAIN_SLOT
+	; has to be put back from: this bank is about to stop being mapped.
+	jp MF.nmi66h.poll_decline
 
 
 ;===========================================================================

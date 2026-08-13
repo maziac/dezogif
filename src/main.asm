@@ -53,6 +53,14 @@ main_bank_entry:
     ; Init state
     MEMCLEAR tmp_breakpoint_1, 2*TMP_BREAKPOINT
 
+    ; The poll's drain-skip flag. MF RAM is RAM: undefined at power-on, so
+    ; without this the first button press could read a stale non-zero byte and
+    ; skip a drain it needs. Here rather than in data.asm because it lives in MF
+    ; RAM, and before the page-out below because that is the last moment MF RAM
+    ; is addressable.
+    xor a
+    ld (MF.nmi_poll_break),a
+
     ; Disable Multiface
     MF_PAGE_OUT
 
