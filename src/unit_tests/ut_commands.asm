@@ -722,7 +722,9 @@ UT_06_continue:
 
 ; Test cmd_pause
 UT_07_pause:
-	; This command is not implemented for ZXNext (use NMI button instead).
+	; cmd_pause acknowledges and does nothing else: there is nothing to pause,
+	; since cmd_loop only runs while already stopped. Use the NMI button to
+	; break into a running program.
  TC_END
 
 

@@ -46,7 +46,7 @@ cmd_jump_table:
 .set_register:		defw cmd_set_register		; 4
 .write_bank:		defw cmd_write_bank			; 5
 .continue:			defw cmd_continue			; 6
-.pause:				defw cmd_not_supported		; 7, not supported on a ZX Next
+.pause:				defw cmd_pause				; 7, acknowledged only; see cmd_pause
 .read_mem:			defw cmd_read_mem			; 8
 .write_mem:			defw cmd_write_mem			; 9
 .set_slot:			defw cmd_set_slot			; 10
@@ -457,6 +457,39 @@ cmd_continue:
 .not_loading:
 	; Continue
 	jp restore_registers
+
+
+;===========================================================================
+; CMD_PAUSE
+; Acknowledges, and does nothing else.
+;
+; Command 7 used to be routed to cmd_not_supported, which stores an error and
+; jumps to drain_main: the frame was consumed and NOTHING was sent, where DZRP
+; specifies a Length=1 response. A client that sends it therefore waits
+; forever. DeZog's ZxNextSerialRemote never puts the command on the wire -- it
+; overrides sendDzrpCmdPause() to throw "To pause execution use the yellow NMI
+; button of the ZX Next." -- which is why this was never seen over serial. A
+; remote that does not override it inherits DzrpBufferRemote's plain
+; sendDzrpCmd(7) and blocks on the response.
+;
+; ACKNOWLEDGING IS THE WHOLE OF IT, and the two things it must NOT do matter:
+;
+;  - it must not touch prgm_state. This handler is only ever reached from
+;    cmd_loop, which runs only while the debugger is already stopped, so there
+;    is nothing here to pause. Writing PRGM_STOPPED would clobber PRGM_LOADING
+;    and break the next cmd_continue's "loading finished" branch, leaving the
+;    border colour unrestored and the flashing border still enabled.
+;
+;  - it must not send an NTF_PAUSE. That notification reports a TRANSITION into
+;    the stopped state, and no transition happens here.
+; Changes:
+;  NA
+;===========================================================================
+cmd_pause:
+	; LOGPOINT [CMD] cmd_pause
+	; Send response: the sequence number alone
+	ld de,1
+	jp send_length_and_seqno
 
 
 ;===========================================================================
