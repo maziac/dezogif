@@ -722,7 +722,7 @@ UT_06_continue:
 
 ; Test cmd_pause
 UT_07_pause:
-	; This command is not implemented for ZXNext (use NMI button instead).
+	; cmd_pause acknowledges and does nothing else
  TC_END
 
 

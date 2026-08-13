@@ -46,7 +46,7 @@ cmd_jump_table:
 .set_register:		defw cmd_set_register		; 4
 .write_bank:		defw cmd_write_bank			; 5
 .continue:			defw cmd_continue			; 6
-.pause:				defw cmd_not_supported		; 7, not supported on a ZX Next
+.pause:				defw cmd_pause				; 7
 .read_mem:			defw cmd_read_mem			; 8
 .write_mem:			defw cmd_write_mem			; 9
 .set_slot:			defw cmd_set_slot			; 10
@@ -440,6 +440,20 @@ cmd_continue:
 .not_loading:
 	; Continue
 	jp restore_registers
+
+
+;===========================================================================
+; CMD_PAUSE
+; Acknowledges, and does nothing else.
+; Note: This command reaches dezogif only if async break is enabled.
+; Changes:
+;  NA
+;===========================================================================
+cmd_pause:
+	; LOGPOINT [CMD] cmd_pause
+	; Send response: the sequence number alone
+	ld de,1
+	jp send_length_and_seqno
 
 
 ;===========================================================================
