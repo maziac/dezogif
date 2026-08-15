@@ -61,6 +61,8 @@ INTRO_TEXT:
     defb "R = Reset"
     defb AT, 0, 13*8
     defb "B = Border"
+    defb AT, 0, 14*8
+    defb "C = PC break"
     defb 0
 
 ; Rows 6 AND 7. Row 7 says whether the PC can break into a running program,
@@ -92,6 +94,13 @@ BORDER_OFF_TEXT:
     defb AT, 11*8, 13*8, "off", 0
 BORDER_ON_TEXT:
     defb AT, 11*8, 13*8, "on", 0
+
+; Row 14. "C = PC break" is 12 columns, so the state starts at 13 and the
+; longest rendering ends at column 16 - well inside 32.
+COPPER_OFF_TEXT:
+    defb AT, 13*8, 14*8, "off", 0
+COPPER_ON_TEXT:
+    defb AT, 13*8, 14*8, "on", 0
 
 
 ; Error texts

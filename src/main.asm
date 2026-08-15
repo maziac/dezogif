@@ -173,6 +173,9 @@ main_loop:
     call check_key_reset
     call check_key_border
     jp z,main   ; Jump if "B" pressed
+    ; The "C" key: PC-initiated break on/off.
+    call check_key_copper
+    jp z,main   ; Jump if "C" pressed
     call read_key_joyport
     inc e
     jr z,.no_keyboard
