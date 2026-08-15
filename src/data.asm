@@ -156,6 +156,11 @@ uart_joyport_selection: defb 0
 ; 1 = on
 slow_border_change:	defb 1
 
+; Whether the DEBUGGER installs the Copper list that drives the break poll. On
+; by default, so a program that does not use the Copper is breakable from the PC
+; with no source change at all. The "C" key turns it off.
+copper_break_enabled:	defb 1
+
 
 ;===========================================================================
 ; Used by: text.asm
