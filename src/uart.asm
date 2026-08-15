@@ -51,8 +51,22 @@ UART_SELECT:   equ 0x153b
 ; prescalers alone (serial/uart.vhd:280-286). A write with bit 4 set would take
 ; bits 2:0 as the selected channel's prescaler MSB.
 UART_SELECT_BIT:    equ 01000000b   ; bit 6: the channel, on a read
-UART_SELECT_OURS:   equ 01000000b   ; UART1 - see set_uart_baudrate
-UART_SELECT_OTHER:  equ 00000000b   ; UART0
+
+; WHICH CHANNEL IS OURS IS A RUNTIME QUESTION, and it follows the joy port
+; selection. UART1 is what makes asynchronous break possible over a cable on a
+; joystick port - see set_uart_baudrate - but that reasoning covers only the
+; selections that turn i/o mode ON. With it off, which is what "no joystick
+; port" means, the two channels listen to different pins (zxnext.vhd:3340-3341):
+;
+;   uart0_rx <= joy_uart_rx when ... nr_0b_joy_iomode_0 = '0' else i_UART0_RX;
+;   uart1_rx <= joy_uart_rx when ... nr_0b_joy_iomode_0 = '1' else pi_uart_rx;
+;
+; UART0's else-branch is i_UART0_RX, the WiFi connector CN9 where a serial/USB
+; adapter goes (Design.md's "Communication" section) - and UART1's is the
+; Raspberry Pi header. So selecting UART1 for that case points the debugger at
+; a pin the cable is not on and nothing arrives at all.
+UART_SELECT_JOY:    equ 01000000b   ; UART1, fed by the joystick pin in i/o mode
+UART_SELECT_CN9:    equ 00000000b   ; UART0, fed by i_UART0_RX
 
 /*
 0x163B UART Frame
@@ -99,6 +113,12 @@ baudrate_table:
     defb 32000000/BAUDRATE
     defb 33000000/BAUDRATE
     defb 27000000/BAUDRATE
+
+
+; The 0x153B select byte for the channel the debugger is using -
+; UART_SELECT_JOY or UART_SELECT_CN9, chosen from uart_joyport_selection by
+; set_uart_baudrate. See the constants above for why it is not one of them.
+uart_select_ours:   defb UART_SELECT_JOY
 
 
 
@@ -195,7 +215,7 @@ wait_for_uart_rx:
 ;
 ; It borrows the UART channel select, and that is not defensive programming
 ; against the debugged program: it is this read being under-specified without
-; it. See UART_SELECT_OURS above. The common path does not write - it reads the
+; it. See uart_select_ours above. The common path does not write - it reads the
 ; select, compares, and falls straight through - so only a program that has
 ; actually moved the pointer pays for the correction, and it gets its value back
 ; before the NMI returns.
@@ -212,12 +232,18 @@ wait_for_uart_rx:
 ;   AF
 ;===========================================================================
 check_uart_byte_available:
-    ; Is 0x133B about our channel?
+    ; Is 0x133B about our channel? Which channel that IS follows the joy port
+    ; selection - UART1 on a joystick port, UART0 on CN9 - so this reads it
+    ; rather than comparing against a constant. HL is pushed for that and
+    ; restored on both paths, so the AF-only contract above still holds.
+    push hl
+    ld hl,uart_select_ours
 	ld a,HIGH UART_SELECT
 	in a,(LOW UART_SELECT)
     and UART_SELECT_BIT
-    cp UART_SELECT_OURS
+    cp (hl)
     jr nz,.borrow_select
+    pop hl
 
 	ld a,HIGH UART_TX
 	in a,(LOW UART_TX)
@@ -230,20 +256,28 @@ check_uart_byte_available:
     ; loan: point the pointer at our channel, read, and hand it straight back.
     push bc
     ld bc,UART_SELECT
-    ld a,UART_SELECT_OURS
+    ld a,(hl)
     out (c),a
+
+    ; The program's channel is the other one - there are only two, and the
+    ; compare above has just shown it is not ours. Computed HERE rather than
+    ; after the read, because "xor" sets the flags and the read is what puts the
+    ; verdict in them.
+    xor UART_SELECT_BIT
+    ld h,a
 
 	ld a,HIGH UART_TX
 	in a,(LOW UART_TX)
     bit UART_RX_FIFO_EMPTY,a
 
-    ; Neither "ld a,n" nor "out (c),a" touches the flags, so the verdict the
+    ; Neither "ld a,r" nor "out (c),a" touches the flags, so the verdict the
     ; caller reads survives the restore with no push/pop of AF. "in a,(n)" does
     ; not either, unlike "in r,(c)" - which is why the read can sit between the
-    ; two writes.
-    ld a,UART_SELECT_OTHER
+    ; two writes. "pop" leaves them alone too.
+    ld a,h
     out (c),a
     pop bc
+    pop hl
     ret
 
 ;===========================================================================
@@ -425,14 +459,27 @@ wait_for_uart_tx_empty:
 ; They don't depend on video mode being 50 or 60 Hz.
 ; Sets also 8 bit mode.
 ;
-; UART1 - the "Pi" UART - is used rather than UART0, and that is what makes
-; asynchronous break possible over the cable. NR 0x0B bit 0 chooses which UART
-; the joystick pin feeds, and with bit 0 CLEAR the same i/o mode holds the
-; ESP-01's TX line idle and de-asserts its RTR (zxnext.vhd:3343, :3349). So a
-; build that left i/o mode on with bit 0 clear - which is what buys the break -
-; would sever the ESP for the whole session. Bit 0 SET leaves both those signals
-; alone; what it costs instead is the Raspberry Pi header UART (:3344, :3350),
-; which is far rarer on a real Next.
+; ON A JOYSTICK PORT, UART1 - the "Pi" UART - is used rather than UART0, and
+; that is what makes asynchronous break possible over the cable. NR 0x0B bit 0
+; chooses which UART the joystick pin feeds, and with bit 0 CLEAR the same i/o
+; mode holds the ESP-01's TX line idle and de-asserts its RTR (zxnext.vhd:3343,
+; :3349). So a build that left i/o mode on with bit 0 clear - which is what buys
+; the break - would sever the ESP for the whole session. Bit 0 SET leaves both
+; those signals alone; what it costs instead is the Raspberry Pi header UART
+; (:3344, :3350), which is far rarer on a real Next.
+;
+; ON THE "NO JOYSTICK PORT" SELECTION, UART0 - because that means the cable is
+; on the WiFi connector CN9, and with i/o mode off UART1's receiver is wired to
+; the Pi header instead (zxnext.vhd:3341). Selecting UART1 there points the
+; debugger at a pin the cable is not on and it receives nothing at all. See
+; UART_SELECT_JOY above; reported on real hardware, 2026-08-15.
+;
+; THE CHANNEL IS THEREFORE CHOSEN HERE, from uart_joyport_selection, and that
+; puts an ordering constraint on main.asm: the selection must be established
+; before this runs, or the first configure lands on the wrong channel. It also
+; means this routine is called again from set_uart_joystick whenever the
+; debugger takes control, so that the selector keys reconfigure rather than
+; leaving a channel at whatever baud rate the machine happened to have.
 ;
 ; THE SELECT MUST BE WRITTEN BEFORE THE FRAME AND PRESCALER REGISTERS, and that
 ; order is load bearing. 0x133B, 0x143B and 0x163B all act on whichever channel
@@ -449,13 +496,34 @@ wait_for_uart_tx_empty:
 ; Returns:
 ;  -
 ; Changes:
-;  A, BC, DE, HL
+;  A, BC, HL
+;  DE IS PRESERVED, and that is load bearing rather than incidental:
+;  set_uart_joystick calls this, and breakpoints.asm holds the break reason in D
+;  across that call. This header claimed DE and the body never touched it -
+;  read_tbblue_reg changes A, BC and F only.
 ;===========================================================================
 set_uart_baudrate:
-    ; Select UART1 (bit 6) and clear prescaler MSB (bit 4 = write these bits).
-    ; This comes FIRST: it is what makes the two writes below land on UART1.
+    ; Which of the two UARTs is ours? UART1 when the cable is on a joystick
+    ; port, UART0 when it is on CN9.
+    ;
+    ; THE TEST MUST AGREE WITH set_uart_joystick's, which takes every value but
+    ; 1 and 2 as "no joystick port". "dec a : cp 2" carries for exactly 1 and 2,
+    ; where 0 wraps to 0xFF and 3 becomes 2, and neither carries. "ld a,n" does
+    ; not touch the flags, so the jump below is still testing that "cp".
+    ld a,(uart_joyport_selection)
+    dec a
+    cp 2
+    ld a,UART_SELECT_JOY
+    jr c,.channel_chosen
+    ld a,UART_SELECT_CN9
+.channel_chosen:
+    ld (uart_select_ours),a
+
+    ; Select it, and clear the prescaler MSB with it (bit 4 = write these bits,
+    ; bits 2:0 = 0). This comes FIRST: it is what makes the two writes below
+    ; land on our channel rather than on the other one.
+    or 00010000b
     ld bc,UART_SELECT
-	ld a,01010000b
 	out	(c),a
 
     ; Set 8 bit
@@ -537,9 +605,22 @@ set_uart_joystick:
     ; (main.asm's path through drain_main and cmd_close) where the value it
     ; would read is its own. A program using the other UART must re-select after
     ; a break.
-    ld bc,UART_SELECT
-    ld a,UART_SELECT_OURS
-    out (c),a
+    ;
+    ; It reclaims the frame register and the prescaler with it, by calling
+    ; set_uart_baudrate rather than writing the select by hand - those are
+    ; per-channel too, so the same argument covers them. That is also what makes
+    ; the selector keys work: the channel FOLLOWS uart_joyport_selection, and a
+    ; user pressing "3" comes back through here, where the newly selected
+    ; channel gets configured before anything reads it.
+    ;
+    ; Reprogramming the link at every entry cannot disturb a byte in flight,
+    ; which matters because the poll can break in on a command with more of the
+    ; PC's traffic still arriving. The receiver latches its prescaler and frame
+    ; bits when it sees a start bit and holds them for the whole character
+    ; (serial/uart_rx.vhd:51, :143-151), and the transmitter samples at the
+    ; moment a byte is sent (uart_tx.vhd:37-38). The one bit that WOULD abort a
+    ; transfer is the frame register's bit 7, always written clear.
+    call set_uart_baudrate
 
     ; Core 3.01.10
     ld a,(uart_joyport_selection)

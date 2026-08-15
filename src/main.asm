@@ -80,15 +80,20 @@ main_bank_entry:
     ; Restore SWAP_SLOT bank
     ;nextreg REG_MMU+SWAP_SLOT,a
 
+    ; The main program has been copied into MAIN_BANK.
+    ;
+    ; THIS COMES BEFORE set_uart_baudrate AND NOT AFTER IT: that routine picks
+    ; the UART channel from this byte - UART1 for a joystick port, UART0 for a
+    ; cable on CN9 - so setting the default afterwards would configure the ESP's
+    ; channel first and ours second, leaving the module carrying our baud rate.
+    ld a,2  ; Joy 2 selected
+    ld (uart_joyport_selection),a
+
     ; Set baudrate
     call set_uart_baudrate
 
     ; Init text printing
     call text.init
-
-    ; The main program has been copied into MAIN_BANK
-    ld a,2  ; Joy 2 selected
-    ld (uart_joyport_selection),a
 
     ; Enable flashing border
     call uart_flashing_border.enable
