@@ -90,10 +90,45 @@ check_key_border:
 ; IT FOLLOWS THAT THIS MUST NOT BE CALLED FROM A RESUME OR FROM A BREAK. By then
 ; the debugged program's own list may be live, and re-installing would destroy
 ; it on every single CMD_CONTINUE.
+;
+; AND "cmd_init RUNS BEFORE THE PROGRAM HAS RUN" IS ONLY TRUE OF A *FIRST*
+; ATTACH, WHICH IS WHY prgm_state IS TESTED BELOW. The path is ordinary rather
+; than exotic: a program resumed with CMD_CONTINUE and no temporary breakpoint
+; is exactly what asynchronous break is for; its client can then be lost with no
+; CMD_CLOSE, and nothing detects that while the program is genuinely running; a
+; new client connects and its CMD_INIT is the first byte the poll sees, so the
+; poll breaks in and cmd_call - which dispatches on the command byte and carries
+; no prgm_state guard of its own - hands it to cmd_init. Without the test below
+; that reconnect silently overwrites the debugged program's own live list, and
+; the list is write-only, so nothing can put it back.
+;
+; PRGM_IDLE is exact for the question: it holds only while nothing is loaded,
+; running or stopped. The break is not lost by refusing - the list installed on
+; the first attach is still running unless the program replaced it, and the "C"
+; key forces an install.
+;
+; WHAT THIS DOES NOT GUARD, deliberately. Nothing stops the Copper when a
+; session ends, so a later CMD_INIT installs over whatever the previous program
+; left running. main's prologue is what writes PRGM_IDLE, and it is reached from
+; cmd_close, from drain_main's three callers (cmd_not_supported,
+; error_write_main_bank, and rx_timeout/rxtx_error in uart.asm), and - once a
+; CMD_LOOPBACK has left the debugger in main_loop - from the B, C and joy-port
+; keys. It is accepted for all of them by one argument: main's prologue treats
+; arriving there as "there is no session to preserve" and acts on it, resetting
+; backup.layer_2_port, backup.speed, backup.interrupt_state and
+; slot_backup.slot0. By the time PRGM_IDLE is readable the program can no longer
+; be correctly resumed whatever we do about the Copper, so destroying its list
+; is a consequence of a loss that has already happened rather than a new one.
 ; Changes:
 ;   AF, BC
 ;===========================================================================
 copper_break_arm:
+    ; A FIRST attach only. Its caller reads prgm_state BEFORE overwriting it
+    ; with PRGM_LOADING - see the ordering note at the call site in cmd_init,
+    ; because getting that wrong makes this test silently inert.
+    ld a,(prgm_state)
+    cp PRGM_IDLE
+    ret nz
     ; The "C" key's state, tested here rather than at the call site so that
     ; cmd_init carries one call and no branch.
     ld a,(copper_break_enabled)

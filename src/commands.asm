@@ -145,14 +145,20 @@ cmd_init:
 	; Reset error
 	xor a
 	ld (last_error),a
+    ; Install the asynchronous-break Copper list, on a FIRST attach only.
+    ;
+    ; THIS CALL MUST STAY ABOVE THE prgm_state WRITE BELOW IT, and that ordering
+    ; is the whole safety of it: copper_break_arm reads prgm_state to tell a
+    ; first attach - nothing loaded, nothing running, so nothing that can own
+    ; the Copper - from a re-attach to a debuggee that may have installed a list
+    ; of its own. Move it below and it reads PRGM_LOADING every time, the guard
+    ; is silently inert, and a reconnect destroys the debugged program's raster
+    ; effects irrecoverably, because the list is write-only. It is also why this
+    ; is here and not on the resume path. See ui.asm's copper_break_arm.
+    call copper_break_arm
 	; Program state
 	ld a,PRGM_LOADING
 	ld (prgm_state),a
-    ; A client has opened a session, so the program it is about to push has not
-    ; run yet and cannot own the Copper. That is the one safe moment to install
-    ; the asynchronous-break list, and it is why this is here and not on the
-    ; resume path - see ui.asm's copper_break_arm.
-    call copper_break_arm
     ; Enable flashing border
     call uart_flashing_border.enable
 	; Afterwards start all over again / show	; Afterwards start all over again / show the "UI"
