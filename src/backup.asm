@@ -60,7 +60,12 @@ restore_registers:
     call wait_for_uart_tx_empty
 
 	; Disable joy port IO mode to enable the joysticks
+    ld a,(copper_break_enabled)
+    or a
+    jr nz,.dont_enable_md_joysticks
+	; Enable (MD) joysticks (if no copper, no async break)
 	nextreg REG_JOYSTICK_IO_MODE,0
+.dont_enable_md_joysticks:
 
 	; Skip IM
 	ld sp,backup.r
