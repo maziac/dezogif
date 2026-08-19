@@ -149,6 +149,10 @@ test_get_response:
 UT_get_cmd_pointer:
 	; Test several commands
 
+	; Simulate program runnning state
+	ld a,PRGM_RUNNING
+	ld (prgm_state),a
+
 	; Minimum
 	ld a,1
 	ld (receive_buffer.command),a
@@ -162,13 +166,13 @@ UT_get_cmd_pointer:
 	; ASSERTION HL == cmd_interrupt_on_off
 
 	; Some not supported
-	ld a,7
+	ld a,18
 	ld (receive_buffer.command),a
 	call get_cmd_pointer
 	; ASSERTION HL == cmd_not_supported
 
 	; Out of range
-	ld a,24
+	ld a,25
 	ld (receive_buffer.command),a
 	call get_cmd_pointer
 	; ASSERTION HL == cmd_not_supported

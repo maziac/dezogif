@@ -62,7 +62,7 @@ break_install:
 ; Changes:
 ;   -
 ;===========================================================================
-	MACRO copper_break_stop
+	MACRO COPPER_BREAK_STOP
 	nextreg REG_COPPER_CONTROL_H,RCCH_COPPER_STOP
 	ENDM
 

@@ -276,7 +276,7 @@ clear_tmp_breakpoints:
 	ld hl,tmp_breakpoint_2.bp_address
 	; Flow through
 
-; Clears (and restores) a singel breakpoint.
+; Clears (and restores) a single breakpoint.
 clear_tmp_breakpoint:
 	ld de,(hl)	; tmp_breakpoint_X.bp_address
 	ld a,e

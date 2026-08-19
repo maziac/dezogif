@@ -93,7 +93,7 @@ check_key_copper:
     call copper.break_install
     jr .ret
 .off:
-    copper_break_stop
+    COPPER_BREAK_STOP
 .ret:
     xor a   ; Z
     ret

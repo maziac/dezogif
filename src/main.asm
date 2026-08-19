@@ -119,7 +119,7 @@ drain_main:
 
 main_with_copper_stop:
     ; Stop the copper list if it is running.
-    copper_break_stop
+    COPPER_BREAK_STOP
 
     ; Flow through
 
