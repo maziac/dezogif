@@ -1,8 +1,6 @@
 {
-
     "version": "0.2.0",
     "configurations": [
-
         {
             // Start at the NMI $66
             "type": "dezog",
@@ -13,8 +11,8 @@
                 "Z80N": true,
                 //"memoryModel": "ZXNEXT",
                 "memoryModel": "ZX48K", // Otherwise, because of loadObj, the file association will not work. Note: all the bank switching does not work if ZX48K is enabled. But it is possible to step.
-                "ulaScreen": true,
-                "zxKeyboard": true,
+                "ulaScreen": "spectrum",
+                "zxKeyboard": "spectrum",
                 "customCode": {
                     "jsPath": "src/simulation/uart.js",
                 }
@@ -24,24 +22,24 @@
                     "path": "out/dezogif.sld",
                     "srcDirs": [
                         "src"
-                    ],
-                    "disableBanking": true
+                    ]
                 }
             ],
-            //"startAutomatically": true,
-            "startAutomatically": false,
-            "commandsAfterLaunch": [
-            ],
+            "startAutomatically": true,
+            //"startAutomatically": false,
+            "commandsAfterLaunch": [],
             "rootFolder": "${workspaceFolder}",
             "topOfStack": "debug_stack.top",
             "loadObjs": [
-                { "path": "out/enNextMf.rom", "start": "0"}
+                {
+                    "path": "out/enNextMf.rom",
+                    "start": "0"
+                }
             ],
             "execAddress": "0x0066",
             "smallValuesMaximum": 513,
             "tmpDir": ".tmp"
         },
-
         {
             // For debugging the UI.
             "type": "dezog",
@@ -52,8 +50,8 @@
                 "Z80N": true,
                 //"memoryModel": "ZXNEXT",
                 "memoryModel": "ZX48K", // Otherwise, because of loadObj, the file association will not work.
-                "ulaScreen": true,
-                "zxKeyboard": true,
+                "ulaScreen": "spectrum",
+                "zxKeyboard": "spectrum",
                 "customCode": {
                     "jsPath": "src/simulation/uart.js",
                 }
@@ -67,8 +65,7 @@
                 }
             ],
             "startAutomatically": false,
-            "commandsAfterLaunch": [
-            ],
+            "commandsAfterLaunch": [],
             "rootFolder": "${workspaceFolder}",
             "topOfStack": "debug_stack.top",
             "loadObjs": [
@@ -81,7 +78,6 @@
             "smallValuesMaximum": 513,
             "tmpDir": ".tmp"
         },
-
         {
             "type": "dezog",
             "request": "launch",
@@ -110,7 +106,6 @@
             "smallValuesMaximum": 513,
             "tmpDir": ".tmp"
         },
-
         {
             "type": "dezog",
             "request": "launch",
@@ -138,9 +133,6 @@
                 //"-logpoint enable DEFAULT"
                 //"-md 0 100 0xc000 100 0x2000 100 0xe000 100"
             ],
-            "disassemblerArgs": {
-                "esxdosRst": true
-            },
             "rootFolder": "${workspaceFolder}",
             "topOfStack": "debug_stack.top",
             "loadObjs": [
@@ -174,9 +166,6 @@
                 //"-logpoint enable DEFAULT"
                 //"-md 0 100 0xc000 100 0x2000 100 0xe000 100"
             ],
-            "disassemblerArgs": {
-                "esxdosRst": true
-            },
             "rootFolder": "${workspaceFolder}",
             "topOfStack": "debug_stack.top",
             "loadObjs": [
@@ -189,7 +178,6 @@
             "smallValuesMaximum": 513,
             "tmpDir": ".tmp"
         },
-
         {
             "type": "dezog",
             "request": "launch",
@@ -202,8 +190,8 @@
             "zsim": {
                 "Z80N": true,
                 "memoryModel": "ZXNEXT",
-                "ulaScreen": true,
-                "zxKeyboard": true,
+                "ulaScreen": "spectrum",
+                "zxKeyboard": "spectrum",
                 "customCode": {
                     "jsPath": "src/simulation/uart.js",
                 }
@@ -221,6 +209,5 @@
             "rootFolder": "${workspaceFolder}",
             "load": "out/ut.nex",
         }
-
     ]
 }
