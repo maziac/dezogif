@@ -77,7 +77,7 @@ copy_rom_start_0000h_code_end
 copy_rom_start_0066h_code:
 dbg_enter:
     ; Store current AF
-    push af  ; LOGPOINT [BP] RST 0, called from ${w@(SP):hex}h (${w@(SP)})
+    push af  ; LOGPOINT [BP] RST 0, called from ${w@(SP):hex16}h (${w@(SP)})
 	; Get interrupt state 2 times, analyze it later
 	ld a,i
 	push af
@@ -210,7 +210,7 @@ enter_debugger:
 .int_found:
 	; Store interrupt state in bit 2
 	ld (backup.interrupt_state),a
-	; LOGPOINT [INT] Saving interrupt state: ${A:hex}h
+	; LOGPOINT [INT] Saving interrupt state: ${A:hex8}h
 
 	; Correct the saved values
 	ld hl,(debugged_prgm_stack_copy.bc)
@@ -361,7 +361,7 @@ set_tmp_breakpoint:
 
 .setbp:
 	; Set BP
-	ld (hl),BP_INSTRUCTION ; LOGPOINT [BP] set_tmp_breakpoint @${HL:hex} (${HL})
+	ld (hl),BP_INSTRUCTION ; LOGPOINT [BP] set_tmp_breakpoint @${HL:hex16} (${HL})
 	; Restore real address
 	pop hl
 	; Store to 'opcode'
@@ -376,7 +376,7 @@ set_tmp_breakpoint:
 	ret z	; Do nothing if already a breakpoint set
 
 	; Set BP
-	ld (hl),BP_INSTRUCTION ; LOGPOINT [BP] set_tmp_breakpoint @${HL:hex} (${HL})
+	ld (hl),BP_INSTRUCTION ; LOGPOINT [BP] set_tmp_breakpoint @${HL:hex16} (${HL})
 
 .store:
 	; Store to 'opcode'

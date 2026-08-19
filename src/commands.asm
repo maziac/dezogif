@@ -691,7 +691,7 @@ cmd_set_breakpoints:
 	add HIGH SWAP_ADDR	; 0xC0
 	ld h,a
 	; Get memory
-	ld a,(hl)	; LOGPOINT [CMD] BP=${HL:hex}h, ${HL} (SWAP)
+	ld a,(hl)	; LOGPOINT [CMD] BP=${HL:hex16}h, ${HL} (SWAP)
 	; Set breakpoint
 	ld (hl),BP_INSTRUCTION
 
@@ -705,7 +705,7 @@ cmd_set_breakpoints:
 
 .normal:
 	; Get memory
-	ld a,(hl)	; LOGPOINT [CMD] BP=${HL:hex}h, ${HL}
+	ld a,(hl)	; LOGPOINT [CMD] BP=${HL:hex16}h, ${HL}
 	; Set breakpoint
 	ld (hl),BP_INSTRUCTION
 
