@@ -152,7 +152,9 @@ cmd_init:
     ; run yet and cannot own the Copper. That is the one safe moment to install
     ; the asynchronous-break list, and it is why this is here and not on the
     ; resume path - see ui.asm's copper_break_arm.
-    call copper_break_arm
+    ld a,(copper_break_enabled)
+	or a
+    call nz,copper.break_install
     ; Enable flashing border
     call uart_flashing_border.enable
 	; Afterwards start all over again / show	; Afterwards start all over again / show the "UI"

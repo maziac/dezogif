@@ -29,6 +29,7 @@
     include "mf.asm"
     include "utilities.asm"
     include "uart.asm"
+    include "copper.asm"
     include "message.asm"
     include "commands.asm"
     include "backup.asm"
@@ -118,7 +119,7 @@ drain_main:
 
 main_with_copper_stop:
     ; Stop the copper list if it is running.
-    call copper_break_stop
+    copper_break_stop
 
     ; Flow through
 
