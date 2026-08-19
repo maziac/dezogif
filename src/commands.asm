@@ -89,7 +89,16 @@ cmd_call:	; Get pointer to subroutine
 	; jump to subroutine
 	jp (hl)
 get_cmd_pointer:	; For unit tests this is a separate function.
+ 	ld a,(prgm_state)
+	dec a  ; PRGM_IDLE=1, i.e. Z-flag set if in idle state
 	ld a,(receive_buffer.command)
+	jr nz,.not_idle
+	; Idle state: Only CMD_INIT (1) is allowed
+	dec a
+	ld hl,main
+	ret nz ; Not 1 (CMD_INIT), so jump back to main loop
+	inc a  ; Restore value
+.not_idle:
 	; Check that command number is in range
 	ld l,(cmd_jump_table.end-cmd_jump_table)/2
 	sub l
