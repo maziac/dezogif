@@ -159,6 +159,7 @@ slow_border_change:	defb 1
 ; Whether the DEBUGGER installs the Copper list that drives the break poll. On
 ; by default, so a program that does not use the Copper is breakable from the PC
 ; with no source change at all. The  "A" key turns it off.
+; 1=on, 0=off
 copper_break_enabled:	defb 1
 
 

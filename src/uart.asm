@@ -369,14 +369,14 @@ wait_for_uart_tx_empty:
 ;  A, BC, DE, HL
 ;===========================================================================
 set_uart_baudrate:
-    ; Set 8 bit
-    ld bc,UART_FRAME
-	ld a,00011000b   ; 8 bit
-	out	(c),a
-
     ; Select UART and clear prescaler MSB
     ld bc,UART_SELECT
 	ld a,00010000b
+	out	(c),a
+
+    ; Set 8 bit
+    ld bc,UART_FRAME
+	ld a,00011000b   ; 8 bit
 	out	(c),a
 
     ; Get display timing
@@ -407,9 +407,9 @@ set_uart_baudrate:
 
 ;===========================================================================
 ; Sets up the ESP UART at joystick port.
-; TX = PIN 7 both joystick ports
-; RX = PIN 9 Joystick 2
-; These pins are not used on normal Joystick.
+; TX = PIN 7
+; RX = PIN 9
+; These pins are not used on normal joysticks.
 ; Only for Sega Genesis controller which cannot be used.
 ; Parameters:
 ;  uart_joyport_selection:

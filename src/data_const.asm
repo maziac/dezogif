@@ -10,7 +10,7 @@
 
 ; The dezogif program version:
  MACRO PRG_VERSION
- 	defb "v2.2.1"
+ 	defb "v2.3.0-rc1"
  ENDM
 
 
@@ -49,50 +49,57 @@ INTRO_TEXT:
     defb AT, 0, 4*8
     defb "Video timing:"
 
+    defb AT, 0, 6*8
+    defb "UART:"
+    defb AT, 0, 7*8
+    defb "Async break:"
     defb AT, 0, 8*8
-    defb "Keys:"
-    defb AT, 0, 9*8
-    defb "1 = Joy 1"
+    defb "Border:"
+
     defb AT, 0, 10*8
-    defb "2 = Joy 2"
+    defb "Keys:"
     defb AT, 0, 11*8
-    defb "3 = No joystick port"
+    defb "1 = Joy 1"
     defb AT, 0, 12*8
-    defb "R = Reset"
+    defb "2 = Joy 2"
     defb AT, 0, 13*8
-    defb "B = Border"
+    defb "3 = CN9 ESP"
     defb AT, 0, 14*8
+    defb "R = Reset"
+    defb AT, 0, 15*8
+    defb "B = Border"
+    defb AT, 0, 16*8
     defb "A = Async break"
-    defb 0
+    defb AT, 0, 17*8, 0
 
 JOY1_SELECTED_TEXT:
-    defb AT, 0, 6*8, "Using Joy 1 (left)", 0
+    defb AT, 6*8, 6*8, "Joy 1 (left)", 0
 JOY2_SELECTED_TEXT:
-    defb AT, 0, 6*8, "Using Joy 2 (right)", 0
-NOJOY_SELECTED_TEXT:
-    defb AT, 0, 6*8, "No joystick port used.", 0
+    defb AT, 6*8, 6*8, "Joy 2 (right)", 0
+CN9_SELECTED_TEXT:
+    defb AT, 6*8, 6*8, "CN9 ESP", 0
 
 SELECTED_TEXT_TABLE:
-    defw NOJOY_SELECTED_TEXT
+    defw CN9_SELECTED_TEXT
     defw JOY1_SELECTED_TEXT
     defw JOY2_SELECTED_TEXT
 
 
 BORDER_OFF_TEXT:
-    defb AT, 11*8, 13*8, "off", 0
+    defb AT, 8*8, 8*8, "black", 0
 BORDER_ON_TEXT:
-    defb AT, 11*8, 13*8, "on", 0
+    defb AT, 8*8, 8*8, "changing", 0
 
-; Row 14. "A = Async break" is 15 columns, so the state starts at 16
+; Async break text:
 COPPER_OFF_TEXT:
-    defb AT, 16*8, 14*8, "off", 0
+    defb AT, 13*8, 7*8, "off", 0
 COPPER_ON_TEXT:
-    defb AT, 16*8, 14*8, "on", 0
+    defb AT, 13*8, 7*8, "on", 0
 
 
 ; Error texts
 TEXT_LAST_ERROR:
-    defb AT, 0, 15*8, "Last Error:", AT, 0, 16*8, 0
+    defb AT, 0, 18*8, "Last Error:", AT, 0, 16*8, 0
 
 TEXT_ERROR_RX_TIMEOUT: defb "RX Timeout", 0
 TEXT_ERROR_RX_OVERFLOW: defb "RX Buffer overflow", 0

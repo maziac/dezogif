@@ -240,9 +240,9 @@ show_ui:
     ; Clear the screen
     MEMCLEAR SCREEN, SCREEN_SIZE
     ; Black on white
-    MEMFILL COLOR_SCREEN, WHITE+(BLACK<<3), COLOR_SCREEN_SIZE+15*COLOR_SCREEN_WIDTH
+    MEMFILL COLOR_SCREEN, WHITE+(BLACK<<3), COLOR_SCREEN_SIZE+18*COLOR_SCREEN_WIDTH
     ; Red on black for a probable error report
-    MEMFILL COLOR_SCREEN+15*COLOR_SCREEN_WIDTH, RED+BRIGHT, 9*COLOR_SCREEN_WIDTH
+    MEMFILL COLOR_SCREEN+18*COLOR_SCREEN_WIDTH, RED+BRIGHT, 6*COLOR_SCREEN_WIDTH
 
     ; Print text
     ld de,INTRO_TEXT
@@ -308,11 +308,11 @@ show_ui:
 	call text.ula.print_string
 
     ; Show border option
-    ld de,BORDER_ON_TEXT
+    ld de,BORDER_OFF_TEXT
     ld a,(slow_border_change)
     or a
     jr z,.print_border
-    ld de,BORDER_OFF_TEXT
+    ld de,BORDER_ON_TEXT
 .print_border:
 	call text.ula.print_string
 
