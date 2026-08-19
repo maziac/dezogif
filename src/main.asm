@@ -116,6 +116,12 @@ drain_main:
     ; Flow through
 
 
+main_with_copper_stop:
+    ; Stop the copper list if it is running.
+    call copper_break_stop
+
+    ; Flow through
+
 ;===========================================================================
 ; main routine - The main loop of the program.
 ;===========================================================================

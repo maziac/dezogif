@@ -215,7 +215,7 @@ cmd_close:
     ; Enable flashing border
     call uart_flashing_border.enable
 	; Afterwards start all over again / show the "UI"
-	jp main
+	jp main_with_copper_stop
 
 
 ;===========================================================================
