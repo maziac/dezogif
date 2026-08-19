@@ -659,6 +659,7 @@ cmd_set_breakpoints:
 .handle_64k_address:
 	; Normal 64k address:
 	; Check memory area
+    ld a,h
 	cp HIGH MAIN_ADDR	; 0xE000
 	jr c,.normal
 
@@ -740,6 +741,7 @@ cmd_restore_mem:
 
 .handle_64k_address:
 	; Check memory area
+    ld a,h
 	cp HIGH MAIN_ADDR	; 0xE000
 	jr c,.normal
 
