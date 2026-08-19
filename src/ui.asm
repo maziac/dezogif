@@ -69,7 +69,7 @@ check_key_border:
 ;===========================================================================
 ; Installs the two-instruction Copper list that raises a Multiface NMI once per
 ; frame - the clock the break poll rides on, and therefore the whole of
-; PC-initiated break.
+; async break.
 ;
 ;   WAIT line,0    = 0x8000 | (hpos<<9) | line
 ;   MOVE $02,$08   = (reg<<8) | value   -> NR 0x02 bit 3, the Multiface NMI
@@ -94,7 +94,7 @@ check_key_border:
 ;   AF, BC
 ;===========================================================================
 copper_break_arm:
-    ; The "C" key's state, tested here rather than at the call site so that
+    ; The "A" key's state, tested here rather than at the call site so that
     ; cmd_init carries one call and no branch.
     ld a,(copper_break_enabled)
     or a
@@ -131,7 +131,7 @@ copper_break_install:
 ; Note what this does NOT do: remove our two instructions. The list cannot be
 ; read, so it cannot be edited - stopping the Copper is the only "off" there is,
 ; and it stops the debugged program's OWN list too if it installed one. That is
-; the honest cost of the "C" key.
+; the honest cost of the "A" key.
 ; Changes:
 ;   AF, BC
 ;===========================================================================
@@ -141,20 +141,20 @@ copper_break_stop:
 
 
 ;===========================================================================
-; Checks key "C".
-; Turns PC-initiated break on and off. Off is worth having for two reasons: the
+; Checks key "A".
+; Turns async break on and off. Off is worth having for two reasons: the
 ; poll costs ~1288 T-states a frame, which is 0.230% of a frame at 28 MHz but
 ; 1.84% at 3.5 MHz, and a program that owns the Copper may want the debugger to
 ; keep its hands off it.
 ; Returns:
-;   Z = C pressed
-;   NZ = C not pressed
+;   Z = A pressed
+;   NZ = A not pressed
 ;===========================================================================
 check_key_copper:
     ; Read port
-    ld bc,PORT_KEYB_VCXZCAPS
+    ld bc,PORT_KEYB_GFDSA
     in a,(c)
-    bit 3,a ; "C"
+    bit 0,a ; "A"
     ret nz
     ; Wait on key release. BC still holds the port, as check_key_border relies
     ; on too.
@@ -316,7 +316,7 @@ show_ui:
 .print_border:
 	call text.ula.print_string
 
-    ; Show the PC-break option. Row 14, which was the one free row on this
+    ; Show the async break option. Row 14, which was the one free row on this
     ; screen.
     ld de,COPPER_OFF_TEXT
     ld a,(copper_break_enabled)

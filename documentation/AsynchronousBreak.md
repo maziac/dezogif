@@ -20,8 +20,8 @@ does not use the Copper this costs nothing but the cable and the port selection
 below.
 
 The debugger's half needs the serial cable on **joy port 2**. The stub's own
-screen says which you have, on the line under the port selection: `PC break:
-ready` or `PC break: needs Joy 2`.
+screen says which you have, on the line under the port selection: `Async break:
+ready` or `Async break: needs Joy 2`.
 
 
 ## What to add to the program
@@ -44,9 +44,9 @@ was there, or add to it. Your program installs its own list when it runs, which
 overwrites the debugger's; carrying the two instructions is what keeps the break
 working across that.
 
-The **"C" key** on the debugger's own screen turns the whole thing off, for a
+The **"A" key** on the debugger's own screen turns the whole thing off, for a
 program that wants the frame back or would rather the debugger left the Copper
-alone. The screen's row 14 says which it is: `C = PC break on` or `off`.
+alone. The screen's row 14 says which it is: `A = Async break on` or `off`.
 
 ### The two instructions
 
@@ -206,7 +206,7 @@ A write of NR `0x62` that *changes* the mode bits restarts the list from index
 overwrites whatever was there. If the list is your own, this is entirely under
 your control: restart it, with the two instructions in it, and the break comes
 back. If you were relying on the debugger's, the cure is a fresh debug session
-or the "C" key off and on again.
+or the "A" key off and on again.
 
 **5. While anything is using config mode.** Config mode suppresses every
 Multiface NMI while it is active (`zxnext.vhd:2102-2105`). It is normally a
@@ -216,7 +216,7 @@ window of milliseconds and it self-recovers.
 it disconnects the cable's receive line, which is exactly what the debugger
 stopped doing in order to make the break work. It kills the break **silently**,
 and the M1 button is the way back. A program that wants its own joystick i/o
-mode can have it; it cannot have it and PC-initiated break at the same time.
+mode can have it; it cannot have it and async break at the same time.
 
 **7. After a reset, until the next M1 press.** Any reset puts NR `0x0B` back to
 disabled (`zxnext.vhd:4939-4941`), so the cable's receive line is disconnected
@@ -237,8 +237,8 @@ to see on the machine:
 - DeZog reports the stop as **`Manual break`**, the same reason an M1 press
   gives. DZRP has no break reason meaning "the PC asked".
 
-If Pause does nothing: check the stub's screen reads `PC break: ready` rather
-than `PC break: needs Joy 2` (state 1), and that nothing has reset the machine
+If Pause does nothing: check the stub's screen reads `Async break: ready` rather
+than `Async break: needs Joy 2` (state 1), and that nothing has reset the machine
 since the last M1 press (state 7). Then check the two instructions really are in
 the list, and that NR `0x06` bit 3 has not been cleared (state 3). Then press
 M1, which always works.

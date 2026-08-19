@@ -62,7 +62,7 @@ INTRO_TEXT:
     defb AT, 0, 13*8
     defb "B = Border"
     defb AT, 0, 14*8
-    defb "C = PC break"
+    defb "A = Async break"
     defb 0
 
 JOY1_SELECTED_TEXT:
@@ -83,12 +83,11 @@ BORDER_OFF_TEXT:
 BORDER_ON_TEXT:
     defb AT, 11*8, 13*8, "on", 0
 
-; Row 14. "C = PC break" is 12 columns, so the state starts at 13 and the
-; longest rendering ends at column 16 - well inside 32.
+; Row 14. "A = Async break" is 15 columns, so the state starts at 16
 COPPER_OFF_TEXT:
-    defb AT, 13*8, 14*8, "off", 0
+    defb AT, 16*8, 14*8, "off", 0
 COPPER_ON_TEXT:
-    defb AT, 13*8, 14*8, "on", 0
+    defb AT, 16*8, 14*8, "on", 0
 
 
 ; Error texts
