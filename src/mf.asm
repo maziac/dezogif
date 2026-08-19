@@ -201,14 +201,16 @@ mf_nmi_button_pressed:
 ; any byte.
 ;===========================================================================
 mf_nmi_poll:
-	; 1. Is there a debugged program to break into?
+	; Optimized to leave as early as possible if no break is needed. I.e.
+	; for the common case.
+	; 1. Has the PC said anything?
+	call check_uart_byte_available
+	jp z,MF.nmi66h.poll_decline
+
+	; 2. Is there a debugged program to break into?
 	ld a,(prgm_state)
 	cp PRGM_RUNNING
-	jr nz,.decline
-
-	; 2. Has the PC said anything?
-	call check_uart_byte_available
-	jr z,.decline
+	jp nz,MF.nmi66h.poll_decline
 
 	; --- break in ---------------------------------------------------------
 	; The NMI interrupted a running program, so MAIN_SLOT held ITS bank. This is
@@ -241,11 +243,6 @@ mf_nmi_poll:
 	pop bc
 	pop af
 	jp mf_nmi_button_pressed
-
-.decline:
-	; The common case, once a frame. Back to MF ROM, which is where MAIN_SLOT
-	; has to be put back from: this bank is about to stop being mapped.
-	jp MF.nmi66h.poll_decline
 
 
 ;===========================================================================
