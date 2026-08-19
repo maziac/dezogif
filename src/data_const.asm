@@ -99,7 +99,7 @@ COPPER_ON_TEXT:
 
 ; Error texts
 TEXT_LAST_ERROR:
-    defb AT, 0, 18*8, "Last Error:", AT, 0, 16*8, 0
+    defb AT, 0, 18*8, "Last Error:", AT, 0, 19*8, 0
 
 TEXT_ERROR_RX_TIMEOUT: defb "RX Timeout", 0
 TEXT_ERROR_RX_OVERFLOW: defb "RX Buffer overflow", 0
