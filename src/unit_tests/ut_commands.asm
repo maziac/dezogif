@@ -245,6 +245,10 @@ UT_02_cmd_close:
 @main_with_copper_stop:
 	ret
 
+; get_cmd_pointer jumps here:
+@main:
+	ret
+
 ; Test cmd_get_registers.
 UT_03_cmd_get_registers:
 	; Write test data to simulated UART buffer.
