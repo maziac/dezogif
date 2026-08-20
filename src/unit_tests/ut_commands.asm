@@ -242,7 +242,7 @@ UT_02_cmd_close:
  TC_END
 
 ; cmd_close jumps here:
-@main:
+@main_with_copper_stop:
 	ret
 
 ; Test cmd_get_registers.
