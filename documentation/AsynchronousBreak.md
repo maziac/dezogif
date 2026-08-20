@@ -163,26 +163,6 @@ Seven states, in rough order of how likely they are to be met. None of them
 damages anything: in each, Pause simply does nothing until the state passes, and
 the M1 button always still works.
 
-**1. The cable on joy port 1, or on no port.** The break works on **joy port 2
-only**. Press **2** on the stub's screen and put the cable in the right-hand
-connector.
-
-The reason it is one port and not both is that the port selector is what decides
-whether the cable's receive line stays connected while your program runs, and
-the connector holding the cable cannot also hold a joystick. Port 2 keeps the
-line live so a Pause can land; port 1 is left alone so that the debugged program
-gets a real joystick on the left connector.
-
-**Joystick caveat, and it applies to both ports.** While the debugger holds a
-joy port, **Kempston (port `0x1F`) and MD (port `0x37`) reads keep working on
-both connectors** — so a game reading Kempston on port 1 has a working stick.
-But **Sinclair, Cursor and user-defined joystick types produce nothing**, on
-either connector, and the **MD 6-button extended buttons read as 0**, because
-the keyboard-key injection those types rely on is switched off for the whole
-register. A game using those cannot be given a working joystick by any port
-choice. On port 2 that now lasts while the debugged program runs, where before
-it lasted only while the debugger was stopped.
-
 **2. While the machine is inside an esxDOS / DivMMC call.** Any live DivMMC
 automap session blocks **every** Multiface NMI for its whole duration — the poll
 and the M1 button alike. Not just the DivMMC NMI menu: any file I/O, any dot
@@ -212,11 +192,6 @@ or the "A" key off and on again.
 Multiface NMI while it is active (`zxnext.vhd:2102-2105`). It is normally a
 window of milliseconds and it self-recovers.
 
-**6. If the program writes NR `0x0B`.** That is the joystick i/o mode: clearing
-it disconnects the cable's receive line, which is exactly what the debugger
-stopped doing in order to make the break work. It kills the break **silently**,
-and the M1 button is the way back. A program that wants its own joystick i/o
-mode can have it; it cannot have it and async break at the same time.
 
 **7. After a reset, until the next M1 press.** Any reset puts NR `0x0B` back to
 disabled (`zxnext.vhd:4939-4941`), so the cable's receive line is disconnected
@@ -237,8 +212,7 @@ to see on the machine:
 - DeZog reports the stop as **`Manual break`**, the same reason an M1 press
   gives. DZRP has no break reason meaning "the PC asked".
 
-If Pause does nothing: check the stub's screen reads `Async break: ready` rather
-than `Async break: needs Joy 2` (state 1), and that nothing has reset the machine
-since the last M1 press (state 7). Then check the two instructions really are in
-the list, and that NR `0x06` bit 3 has not been cleared (state 3). Then press
+If Pause does nothing: check the stub's screen reads `Async break: on` rather
+than `Async break: off`. Then check the two instructions really are in
+the list, and that NR `0x06` bit 3 has not been cleared. Then press
 M1, which always works.

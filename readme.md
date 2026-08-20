@@ -48,6 +48,15 @@ To re-initialize later you need to hold down the "Symbol Shift" (or CTRL) key wh
 Note: the SW (enNextMf.rom) is known to work with ZXNext core 03.01.10 and core 03.02.00. It will not work on older cores.
 
 
+# Copper, Async Break
+
+When started, as a default, dezogif supports "Async Break". I.e. as you would expect you can interrupt (break) a running program from DeZog by pressing the "Pause" button.
+
+Implementation wise this depends on the Copper (ZX Next internal HW) being tun and creating an MF (Multiface) interrupt.
+
+More information can be found here [AsynchronousBreak.md](documentation/AsynchronousBreak.md) and especially if your program uses the Copper you should read it.
+[documentation/AsynchronousBreak.md]
+
 # License
 
 This program is licensed under the [MIT license](https://github.com/maziac/dezogif/blob/master/LICENSE.txt).
