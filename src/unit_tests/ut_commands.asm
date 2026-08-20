@@ -1537,7 +1537,7 @@ UT_20_cmd_read_port:
 	; Test
 	TEST_PREPARE_COMMAND
 	; Test port value
-	ld bc,80ACh
+	ld bc,80ABh
 	ld a,0xA5
 	out (c),a
 	; Test
@@ -1552,7 +1552,7 @@ UT_20_cmd_read_port:
 	; Different value
 	TEST_PREPARE_COMMAND
 	; Test port value
-	ld bc,80ACh
+	ld bc,80ABh
 	ld a,0x12
 	out (c),a
 	; Test
@@ -1567,7 +1567,7 @@ UT_20_cmd_read_port:
  TC_END
 
 .cmd_data:
-	defb 0xAC, 0x80	; Port 0x80AC
+	defb 0xAB, 0x80	; Port 0x80AB
 .cmd_data_end
 
 
@@ -1585,7 +1585,7 @@ UT_21_cmd_write_port:
 	; Test size
 	TEST_MEMORY_WORD test_memory_payload.length, 1
 	; Check set value
-	ld bc,80ACh
+	ld bc,80ABh
 	in a,(c)
 	; TEST ASSERTION A == 0xA5
 
@@ -1600,14 +1600,14 @@ UT_21_cmd_write_port:
 	; Test size
 	TEST_MEMORY_WORD test_memory_payload.length, 1
 	; Check set value
-	ld bc,80ACh
+	ld bc,80ABh
 	in a,(c)
 	; TEST ASSERTION A == 0x12
 
  TC_END
 
 .cmd_data:
-	defb 0xAC, 0x80	; Port 0x80AC
+	defb 0xAB, 0x80	; Port 0x80AB
 .cmd_port_data:
 	defb 0
 .cmd_data_end

@@ -31,7 +31,7 @@ API.readPort = (port) => {
 	}
 	if (port == 0x0003) {
 		// Port 0 (on reading) returns the data in the portUartTxData buffer
-		return (portUartTxData.length>>>8)&0xFF;	// HIGH byte
+		return (portUartTxData.length >>> 8) & 0xFF;	// HIGH byte
 	}
 	if (port == 0x0004) {
 		// Return the last write to the nextreg register
@@ -52,7 +52,7 @@ API.readPort = (port) => {
 	if (port == 0x143B) {
 		// Reads a byte
 		const value = unitTestData.shift();
-		API.log("  Reading from PORT_UART_RX=0x143B: "+value);
+		API.log("  Reading from PORT_UART_RX=0x143B: " + value);
 		if (value == undefined) {
 			// Error in test, too less data.
 			API.log("  Reading from PORT_UART_RX=0x143B although no test data available.");
@@ -80,9 +80,10 @@ API.readPort = (port) => {
 		}
 	}
 
-	if (port == 0x80AC) {
-		// Value that will be read from port 80AC
-		return port80ACValue;
+	if (port == 0x80AB) {
+		// Value that will be read from port 80AB
+		API.log("  Reading from port 80AB: " + port80ABValue);
+		return port80ABValue;
 	}
 	// Otherwise do nothing
 	return undefined;
@@ -121,9 +122,11 @@ API.writePort = (port, value) => {
 		API.log("  Writing to nextreg register" + whichNextReg + ": " + value);
 		nextRegContents.set(whichNextReg, value);
 	}
-	else if (port == 0x80AC) {
-		// Value that will be output when reading from port 80AC
-		port80ACValue = value;
+	else if (port == 0x80AB) {
+		// Value that will be output when reading from port 80AB
+		port80ABValue = value;
+		API.log("  Writing to port 80AB: " + value);
+		API.log("  port80ABValue: " + value);
 	}
 	// Otherwise do nothing
 }
