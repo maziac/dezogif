@@ -80,7 +80,7 @@ test_prepare_header:
 ; Reads the response from the simulated UART.
 ; Note:
 ; Reading port 0x0001 reads data that was prior written to the PORT_UART_TX.
-; Reading port 0x0002 reads the length of the remaining data in PORT_UART_TX.
+; Reading port 3/5 reads the length of the remaining data in PORT_UART_TX.
 test_get_response:
 	; First test for error
     TEST_MEMORY_BYTE last_error, 0
@@ -89,10 +89,11 @@ test_get_response:
 	ld hl,0xFFFF
 	ld (test_memory_payload.length),hl
 	; Length
-	ld bc,0x0002	; Port for length
+	ld bc,0x0003	; Port for length
 	in a,(c)	; Read length low byte
 	ld e,a
 	inc bc
+	inc bc ; 0x0005
 	in a,(c)	; Read length high byte
 	ld d,a
 	dec de		; Skip A5

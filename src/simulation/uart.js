@@ -24,16 +24,16 @@ API.readPort = (port) => {
 		}
 		return value;
 	}
-	// Check for port 0x0002/3 = Read length of TX data for unit testing
-	if (port == 0x0002) {
+	// Check for port 0x0003/5 = Read length of TX data for unit testing
+	if (port == 0x0003) {
 		// Port 0 (on reading) returns the data in the portUartTxData buffer
 		return portUartTxData.length & 0xFF;	// LOW byte
 	}
-	if (port == 0x0003) {
+	if (port == 0x0005) {
 		// Port 0 (on reading) returns the data in the portUartTxData buffer
 		return (portUartTxData.length >>> 8) & 0xFF;	// HIGH byte
 	}
-	if (port == 0x0004) {
+	if (port == 0x0007) {
 		// Return the last write to the nextreg register
 		return nextRegContents.get(whichNextReg);
 	}
@@ -106,8 +106,8 @@ API.writePort = (port, value) => {
 		// Store the written byte.
 		portUartTxData.push(value);
 	}
-	// Check for port 2 = REG_RESET data that will be read on reading a next register.
-	else if (port == 0x0002) {
+	// Check for port 0x0003 = REG_RESET data that will be read on reading a next register.
+	else if (port == 0x0003) {
 		// Store test data
 		API.log("  Store test data for RESET_REG: " + value);
 		portRegReset = value;

@@ -11,28 +11,28 @@
 
 
 ; In core 03.01.10 the NMI can be caused not only by the button.
-; Check that in the other case the function immeidately returns.
+; Check that in the other case the function immediately returns.
 UT_nmi_cause_wrong:
 	; Redirect (modify) NMI ISR.
     MEMCOPY MF.nmi66h.is_button_cause, .jmp, 3
 
 	; Simulate a different cause
 	ld a,0b00000100
-	ld bc,0x0002
+	ld bc,0x0003
 	out (c),a	; Note: this will trigger writing to 0x7FFD (switching memory) as well. Use with care.
 	; Test
 	call MF.nmi66h
 
 	; Simulate a different cause
 	ld a,0b00001000
-	ld bc,0x0002
+	ld bc,0x0003
 	out (c),a
 	; Test
 	call MF.nmi66h
 
 	; Simulate a different cause
 	ld a,0b00010000
-	ld bc,0x0002
+	ld bc,0x0003
 	out (c),a
 	; Test
 	call MF.nmi66h
@@ -50,7 +50,7 @@ UT_nmi_cause_button:
 
 	; Simulate button cause
 	ld a,0b11100011
-	ld bc,0x0002
+	ld bc,0x0003
 	out (c),a
 	; Test
 	call MF.nmi66h
