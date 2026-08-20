@@ -57,7 +57,7 @@ The source code is available on [github](https://github.com/maziac/dezogif).
 
 # Acknowledgements
 
-Many thanks to Chris Kirby. I have used his NDS code https://github.com/Ckirby101/NDS-NextDevSystem as starting point and used e.g. his routine to set the baudrate.
+- Many thanks to Chris Kirby. I have used his [NDS code](https://github.com/Ckirby101/NDS-NextDevSystem) as starting point and used e.g. his routine to set the baudrate.
 
-
+- A lot of thanks also to [jorgegv](https://github.com/jorgegv). He did a great work with his fork [dezogif_ng](https://github.com/jorgegv/dezogif_ng) which allows to connect the ZXNext with DeZog through a wifi interface. And he contributed the copper code for asynchronous break and a lot of other fixes. Please also have a look at his [JNext ZX Next emulator](https://github.com/jorgegv/jnext).
 
