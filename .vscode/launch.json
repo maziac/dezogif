@@ -194,7 +194,8 @@
                 "zxKeyboard": "spectrum",
                 "customCode": {
                     "jsPath": "src/simulation/uart.js",
-                }
+                },
+                "portInMode": "SINGLE"
             },
             "startAutomatically": true,
             "unitTestTimeout": 2,

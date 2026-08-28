@@ -69,11 +69,9 @@ nmi66h:
     ld a,REG_RESET
 	out (c),a
 	; Read register
-    inc b
+    inc b ; IO_NEXTREG_DAT (0x253B)
 	in a,(c)
-    and 00011100b
-;    and 0
-;    or 1
+    and 0001_1100b
     jr z,.is_button_cause
 
     ; Not a button press. The three bits kept by the mask are, from
@@ -104,8 +102,8 @@ nmi66h:
     ; (:5891), so a read-modify-write of this register resets the machine -
     ; and on the poll path that would be once a frame.
 	in a,(c)    ; Read again
-    and 10000000b  ; Preserve esp/expbus bit
-    nextreg REG_RESET,a
+    and 1000_0000b  ; Preserve esp/expbus bit
+    nextreg REG_RESET,a ; TODO: change to out (c),a to save 8 T-States
 
     pop af      ; the bit 3 answer
     jr nz,.software_cause

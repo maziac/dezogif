@@ -17,21 +17,14 @@ UT_nmi_cause_wrong:
     MEMCOPY MF.nmi66h.is_button_cause, .jmp, 3
 
 	; Simulate a different cause
-	ld a,0b00000100
+	ld a,0000_0100b
 	ld bc,0x0003
 	out (c),a	; Note: this will trigger writing to 0x7FFD (switching memory) as well. Use with care.
 	; Test
 	call MF.nmi66h
 
 	; Simulate a different cause
-	ld a,0b00001000
-	ld bc,0x0003
-	out (c),a
-	; Test
-	call MF.nmi66h
-
-	; Simulate a different cause
-	ld a,0b00010000
+	ld a,0001_0000b
 	ld bc,0x0003
 	out (c),a
 	; Test
@@ -49,7 +42,28 @@ UT_nmi_cause_button:
     MEMCOPY MF.nmi66h.is_button_cause, .jmp, 3
 
 	; Simulate button cause
-	ld a,0b11100011
+	ld a,1110_0011b
+	ld bc,0x0003
+	out (c),a
+	; Test
+	call MF.nmi66h
+
+	TEST_FAIL	; If returned here the testcase has failed
+
+.jmp:
+	jp .success
+.success:
+ 	TC_END	; If jumped here the testcase has passed
+
+
+
+; Check that in case of a copper generated interrupt the NMI function is executed.
+UT_nmi_cause_copper:
+	; Redirect (modify) NMI ISR.
+    MEMCOPY MF.nmi66h.software_cause, .jmp, 3
+
+	; Simulate copper cause
+	ld a,0000_1000b
 	ld bc,0x0003
 	out (c),a
 	; Test
