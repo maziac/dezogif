@@ -49,7 +49,6 @@ PRGM_RUNNING:	equ 4	; After CMD_CONTINUE
 
 
 ; The raster line at which the asynchronous-break Copper list raises its
-; Multiface NMI. Any line works; 100 is mid-screen and well clear of the border.
-; The same line the listing in the user documentation uses, so a program that
-; installs its own list at 100 lands where this one did.
-COPPER_BREAK_LINE:	equ 100
+; Multiface NMI. Any line works; 0 is the first line just after the
+; vertical blank.
+COPPER_BREAK_LINE:	equ 0
