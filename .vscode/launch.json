@@ -195,7 +195,8 @@
                 "customCode": {
                     "jsPath": "src/simulation/uart.js",
                 },
-                "portInMode": "SINGLE"
+                "portInMode": "SINGLE",
+                "defaultPortIn": 255
             },
             "startAutomatically": true,
             "unitTestTimeout": 2,

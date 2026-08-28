@@ -425,13 +425,13 @@ set_uart_joystick:
     dec a
     jr nz,.joy_port_cont
     ; Joy port 1 selected
-    nextreg REG_JOYSTICK_IO_MODE,10100000b  ; Left joy port
+    nextreg REG_JOYSTICK_IO_MODE,1010_0000b  ; Left joy port
     ret
 .joy_port_cont:
     dec a
     jr nz,.joy_port_none
     ; Joy port 2 selected
-    nextreg REG_JOYSTICK_IO_MODE,10110000b  ; Right joy port
+    nextreg REG_JOYSTICK_IO_MODE,1011_0000b  ; Right joy port
     ret
 .joy_port_none:
     ; No joy port selected

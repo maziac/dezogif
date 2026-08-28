@@ -43,28 +43,28 @@ UT_set_uart_joystick:
 	MEMSETBYTE uart_joyport_selection, 1
 	call set_uart_joystick
 	; Read value
-	xor a :	in a,(4)
+	xor a :	in a,(7)
 	nop ; TEST ASSERTION a == 10100000b
 
 	; Joy port 2
 	MEMSETBYTE uart_joyport_selection, 2
 	call set_uart_joystick
 	; Read value
-	xor a :	in a,(4)
+	xor a :	in a,(7)
 	nop ; TEST ASSERTION a == 10110000b
 
 	; No joy port
 	MEMSETBYTE uart_joyport_selection, 0
 	call set_uart_joystick
 	; Read value
-	xor a :	in a,(4)
+	xor a :	in a,(7)
 	nop ; TEST ASSERTION a == 0
 
 	; Pathologic case
 	MEMSETBYTE uart_joyport_selection, 3
 	call set_uart_joystick
 	; Read value
-	xor a :	in a,(4)
+	xor a :	in a,(7)
 	nop ; TEST ASSERTION a == 0
 
  TC_END
