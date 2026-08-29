@@ -145,6 +145,8 @@ slot_backup:	SLOT_BACKUP
 ;===========================================================================
 ; Used by main.asm
 
+settings_data:	; Can be saved to/read from a file
+
 ; Stores the current UART selection:
 ; 0 = no joy port
 ; 1 = joy 1
@@ -162,6 +164,7 @@ slow_border_change:	defb 1
 ; 1=on, 0=off
 copper_break_enabled:	defb 1
 
+settings_data.end:
 
 ;===========================================================================
 ; Used by: text.asm

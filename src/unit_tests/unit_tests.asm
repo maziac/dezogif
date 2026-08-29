@@ -27,6 +27,7 @@ LOADED_BANK:    EQU 92
     include "macros.asm"
     include "zx/zx.inc"
     include "zx/zxnext_regs.inc"
+    include "zx/esxdos.inc"
     include "breakpoints.asm"
     include "data_const.asm"
     include "mf.asm"

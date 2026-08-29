@@ -24,6 +24,7 @@
     include "macros.asm"
     include "zx/zx.inc"
     include "zx/zxnext_regs.inc"
+    include "zx/esxdos.inc"
     include "breakpoints.asm"
     include "data_const.asm"
     include "mf.asm"
@@ -180,9 +181,9 @@ main_loop:
     call check_key_save
     call check_key_reset
     call check_key_border
-    jp z,main   ; Jump if "B" pressed
-    ; The "A" key: async break on/off.
+    jp z,main   ; Redraw UI if "B" pressed
     call check_key_copper
+    jp z,main   ; Redraw UI if "A" pressed
     call read_key_joyport
     inc e
     jr z,.no_keyboard

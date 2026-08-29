@@ -19,6 +19,7 @@ ERROR_WRONG_FUNC_NUMBER:	equ 4
 ERROR_WRITE_MAIN_BANK:	    equ 5
 ERROR_CORE_VERSION_NOT_SUPPORTED:  equ 6
 ERROR_CMD_NOT_SUPPORTED:    equ 7
+ERROR_FILE_WRITE:           equ 8
 
 
 ;===========================================================================
@@ -34,7 +35,53 @@ check_key_save:
     ; Wait on key release
 .wait_on_release:
     call wait_on_key_release
-    ; Reset
+    ; Save
+    jp save_settings
+
+
+; Save the settings (Async Break and Border flashing) to a file.
+save_settings:
+    ld ix,SETTINGS_FILE_PATH
+    ld b,FA_WRITE | FA_CREATE
+    ld a,'$'  ; Drive
+    rst $08
+    defb F_OPEN
+    jr c,.write_error      ; Carry = Error, (A = Errorcode)
+
+    ; A is file handle
+    push af         ; Remember the file handle
+
+    ld ix,settings_data         ; Pointer to settings data
+    ld bc,settings_data.end-settings_data ; Count of bytes
+    rst $08
+    defb F_WRITE
+    jr c,.write_error      ; Carry = Error, (A = Errorcode)
+
+    pop af          ; Retrieve file handle
+    rst $08
+    defb F_CLOSE
+    jr nc,flash_border ; nc = no error
+
+.write_error:
+    ; Error
+    ld a,ERROR_FILE_WRITE
+    ld (last_error),a
+    jp drain_main
+
+; Flash the border colors as confirmation of an action.
+flash_border:
+    ; Wait and flash the border
+    ld bc,0x0000 ; 65536
+.wait:
+    ld a,c
+    srl a : srl a : srl a
+    and 0x07
+    out (BORDER),a
+    dec bc
+    ld a,c
+    or b
+    jr nz,.wait
+    out (BORDER),a  ; a is 0 = BLACK
     ret
 
 
@@ -89,6 +136,9 @@ check_key_border:
 ; poll costs ~1288 T-states a frame, which is 0.230% of a frame at 28 MHz but
 ; 1.84% at 3.5 MHz, and a program that owns the Copper may want the debugger to
 ; keep its hands off it.
+; Returns:
+;   Z = A pressed
+;   NZ = A not pressed
 ;===========================================================================
 check_key_copper:
     ; Read port
@@ -103,6 +153,7 @@ check_key_copper:
     ld a,(copper_break_enabled)
     xor 1
     ld (copper_break_enabled),a
+    xor a   ; Z
     ret
 
 
@@ -173,9 +224,9 @@ show_ui:
     ; Clear the screen
     MEMCLEAR SCREEN, SCREEN_SIZE
     ; Black on white
-    MEMFILL COLOR_SCREEN, WHITE+(BLACK<<3), COLOR_SCREEN_SIZE+18*COLOR_SCREEN_WIDTH
+    MEMFILL COLOR_SCREEN, WHITE+(BLACK<<3), COLOR_SCREEN_SIZE+19*COLOR_SCREEN_WIDTH
     ; Red on black for a probable error report
-    MEMFILL COLOR_SCREEN+18*COLOR_SCREEN_WIDTH, RED+BRIGHT, 6*COLOR_SCREEN_WIDTH
+    MEMFILL COLOR_SCREEN+19*COLOR_SCREEN_WIDTH, RED+BRIGHT, 6*COLOR_SCREEN_WIDTH
 
     ; Print text
     ld de,INTRO_TEXT

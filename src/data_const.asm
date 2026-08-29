@@ -31,6 +31,9 @@ magic_number_d:     equ 0x0067
 build_time_abs: defw BUILD_TIME16
 build_time_rel = build_time_abs-MAIN_ADDR;
 
+; File path for the settings file
+SETTINGS_FILE_PATH:
+    defb "/machines/next/dezogif.cfg", 0
 
 ; UI
 INTRO_TEXT:
@@ -70,7 +73,9 @@ INTRO_TEXT:
     defb "B = Border"
     defb AT, 0, 16*8
     defb "A = Async break"
-    defb AT, 0, 17*8, 0
+    defb AT, 0, 17*8
+    defb "S = Save settings"
+    defb 0
 
 JOY1_SELECTED_TEXT:
     defb AT, 6*8, 6*8, "Joy 1 (left)", 0
@@ -99,7 +104,7 @@ COPPER_ON_TEXT:
 
 ; Error texts
 TEXT_LAST_ERROR:
-    defb AT, 0, 18*8, "Last Error:", AT, 0, 19*8, 0
+    defb AT, 0, 19*8, "Last Error:", AT, 0, 20*8, 0
 
 TEXT_ERROR_RX_TIMEOUT: defb "RX Timeout", 0
 TEXT_ERROR_RX_OVERFLOW: defb "RX Buffer overflow", 0
@@ -113,6 +118,8 @@ TEXT_ERROR_CORE_VERSION_NOT_SUPPORTED: ; Core not supported
 TEXT_CMD_NOT_SUPPORTED: ; Core not supported
     defb "Command not supported", 0
 
+TEXT_ERROR_FILE_WRITE: defb "File write error", 0
+
 ERROR_TEXT_TABLE:
     defw TEXT_ERROR_RX_TIMEOUT
     defw TEXT_ERROR_RX_OVERFLOW
@@ -121,3 +128,4 @@ ERROR_TEXT_TABLE:
     defw TEXT_ERROR_WRITE_MAIN_BANK
     defw TEXT_ERROR_CORE_VERSION_NOT_SUPPORTED
     defw TEXT_CMD_NOT_SUPPORTED
+    defw TEXT_ERROR_FILE_WRITE
