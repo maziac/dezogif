@@ -177,12 +177,12 @@ main_loop:
 
 .no_uart_byte:
     ; Check keyboard
+    call check_key_save
     call check_key_reset
     call check_key_border
     jp z,main   ; Jump if "B" pressed
     ; The "A" key: async break on/off.
     call check_key_copper
-    jp z,main   ; Jump if "A" pressed
     call read_key_joyport
     inc e
     jr z,.no_keyboard

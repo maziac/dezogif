@@ -84,7 +84,7 @@ end		defb	; For the RET
 
 ;===========================================================================
 ; Starts the command loop. I.e. backups all registers.
-; Interpretes the last received message.
+; Interprets the last received message.
 ; Stays in command loop waiting for the next message until
 ; receiving a CONTINUE message.
 ; Changes:

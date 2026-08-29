@@ -22,6 +22,23 @@ ERROR_CMD_NOT_SUPPORTED:    equ 7
 
 
 ;===========================================================================
+; Checks key "S".
+; If pressed the setting values (async break, border flashing) are saved to a file.
+;===========================================================================
+check_key_save:
+    ; Read port
+    ld bc,PORT_KEYB_GFDSA
+    in a,(c)
+    bit 1,a ; "S"
+    ret nz
+    ; Wait on key release
+.wait_on_release:
+    call wait_on_key_release
+    ; Reset
+    ret
+
+
+;===========================================================================
 ; Checks key "R".
 ; If pressed a reset is done.
 ;===========================================================================
@@ -72,9 +89,6 @@ check_key_border:
 ; poll costs ~1288 T-states a frame, which is 0.230% of a frame at 28 MHz but
 ; 1.84% at 3.5 MHz, and a program that owns the Copper may want the debugger to
 ; keep its hands off it.
-; Returns:
-;   Z = A pressed
-;   NZ = A not pressed
 ;===========================================================================
 check_key_copper:
     ; Read port
@@ -89,13 +103,6 @@ check_key_copper:
     ld a,(copper_break_enabled)
     xor 1
     ld (copper_break_enabled),a
-    jr z,.off
-    call copper.break_install
-    jr .ret
-.off:
-    COPPER_BREAK_STOP
-.ret:
-    xor a   ; Z
     ret
 
 
