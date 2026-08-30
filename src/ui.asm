@@ -113,19 +113,29 @@ check_key_help:
     ld ix,HELP_TEXT_1
     call show_help
     ; Wait on next "H" key press
-.wait_on_key_press1:
-    call .key
-    jr nz,.wait_on_key_press1
+    call .wait_on_key_press
 
     ; Show help page 2
     ld ix,HELP_TEXT_2
     call show_help
     ; Wait on next "H" key press
-.wait_on_key_press2:
-    call .key
-    jr nz,.wait_on_key_press2
+    call .wait_on_key_press
 
     jp main ; Show main UI with cls
+
+.wait_on_key_press:
+    ; Check if something received at UART
+    call check_uart_byte_available
+    jr z,.wait_continue
+    ; If uart byte received, leave help page
+    pop af  ; Pop return address
+    ret ; Leave check_key_help
+
+.wait_continue:
+    ; Check for key
+    call .key
+    jr nz,.wait_on_key_press
+    ret
 
 ; Returns with NZ if "H" was not pressed, Z if it was pressed.
 .key:
