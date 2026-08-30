@@ -1734,4 +1734,25 @@ UT_23_cmd_interrupt_on_off:
 	defb 0
 .cmd_data_end
 
+
+
+; Test cmd_get_supported_commands:
+UT_24_cmd_get_supported_commands:
+	SET_PRGM_STATE_RUNNING
+	; Test data = asm program
+	TEST_EMPTY_COMMAND
+	; Test
+	call cmd_get_supported_commands
+	; Get response
+	call test_get_response
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 5
+	; Check returned commands
+	TEST_MEMORY_BYTE test_memory_payload+1, 1111_1110b	; CMD_INIT - CMD_PAUSE
+	TEST_MEMORY_BYTE test_memory_payload+2, 1111_1111b	; CMD_READ_MEM - CMD_LOOPBACK
+	TEST_MEMORY_BYTE test_memory_payload+3, 1111_0011b	; CMD_GET_SPRITES_PALETTE - CMD_INTERRUPT_ON_OFF
+	TEST_MEMORY_BYTE test_memory_payload+4, 0000_0001b	; CMD_GET_SUPPORTED_COMMANDS
+ TC_END
+
+
     ENDMODULE

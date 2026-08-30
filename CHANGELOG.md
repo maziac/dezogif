@@ -1,5 +1,13 @@
 # Changelog
 
+# 2.3.0
+- Added "Async-break" support through Copper interrupt.
+- Removed border coloring change.
+- Added help texts.
+- Colorized UI.
+- Option to save the settings (UART and async-break).
+- Support for DZRP 2.2.0.
+
 # 2.2.1
 - Fixed support for command 23 (cmd_interrupt_on_off).
 

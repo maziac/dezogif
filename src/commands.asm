@@ -23,9 +23,9 @@ tmp_slot:	defb	; Normally SWAP_SLOT but could be also other.
 ; Const data.
 ;===========================================================================
 
-; DZRP version 2.1.0
+; DZRP version 2.2.0
 DZRP_VERSION.MAJOR:		equ 2
-DZRP_VERSION.MINOR:		equ 1
+DZRP_VERSION.MINOR:		equ 2
 DZRP_VERSION.PATCH:		equ 0
 
 
@@ -63,6 +63,7 @@ cmd_jump_table:
 .write_port:		defw cmd_write_port	; 21
 .exec_asm:			defw cmd_exec_asm	; 22
 .interrupt_on_off:	defw cmd_interrupt_on_off	; 23
+.get_supported_commands: defw cmd_get_supported_commands	; 24
 .end
 
 ;.get_sprites:			defw 0	; not supported on a ZX Next
@@ -132,7 +133,7 @@ cmd_not_supported:
 
 ;===========================================================================
 ; CMD_INIT
-; Sends a response with the supported features.
+; Sends a response with the DZRP version.
 ; Changes:
 ;  NA
 ;===========================================================================
@@ -207,6 +208,30 @@ cmd_init:
 	or a
 	jr nz,.read_loop
 	ret
+
+
+;===========================================================================
+; CMD_GET_SUPPORTED_COMMANDS
+; Sends a response with the supported commands.
+; Changes:
+;  NA
+;===========================================================================
+cmd_get_supported_commands:
+	; LOGPOINT [CMD] cmd_get_supported_commands
+	; Send response
+	ld de,5
+	call send_length_and_seqno
+	; Send supported commands
+	ld a,1111_1110b	; CMD_INIT - CMD_PAUSE
+	call write_uart_byte
+	ld a,1111_1111b	; CMD_READ_MEM - CMD_LOOPBACK
+	call write_uart_byte
+	ld a,1111_0011b	; CMD_GET_SPRITES_PALETTE - CMD_INTERRUPT_ON_OFF
+	call write_uart_byte
+	ld a,0000_0001b	; CMD_GET_SUPPORTED_COMMANDS
+	call write_uart_byte
+	ret
+
 
 
 ;===========================================================================
@@ -602,11 +627,6 @@ cmd_set_slot:
 	call send_length_and_seqno
 	xor a	; no error
 	jp write_uart_byte
-
-;.error:
-;	call read_uart_byte	; read dummy value
-;	ld a,1	; error
-;	jp write_uart_byte
 
 
 ;===========================================================================
