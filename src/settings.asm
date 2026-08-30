@@ -27,9 +27,10 @@ save_settings:
     ld bc,settings_data.end-settings_data ; Count of bytes
     rst $08
     defb F_WRITE
+	pop bc
     ret c      ; Carry = Error, (A = Errorcode)
 
-    pop af          ; Retrieve file handle
+    ld a,b          ; Recover file handle
     rst $08
     defb F_CLOSE
     ret        ; Carry = Error, (A = Errorcode)
@@ -60,16 +61,10 @@ load_settings:
     ld bc,settings_data.end-settings_data ; Count of bytes
     rst $08
     defb F_READ
-    jr c,.read_error      ; Carry = Error, (A = Errorcode)
+	pop bc
+    ret c      ; Carry = Error, (A = Errorcode)
 
-    pop af          ; Retrieve file handle
+    ld a,b          ; Recover file handle
     rst $08
     defb F_CLOSE
-    ret nc   ; Return if no error occurred
-
-    ; Flow through
-
-.read_error:
-    ; Error
-    ld a,ERROR_FILE_READ
-    jp drain_main
+    ret        ; Carry = Error, (A = Errorcode)
