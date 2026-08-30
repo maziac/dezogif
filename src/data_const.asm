@@ -219,6 +219,7 @@ TEXT_CMD_NOT_SUPPORTED: ; Core not supported
     defb "Command not supported", 0
 
 TEXT_ERROR_FILE_WRITE: defb "File write error", 0
+TEXT_ERROR_FILE_READ: defb "File read error", 0
 
 ERROR_TEXT_TABLE:
     defw TEXT_ERROR_RX_TIMEOUT
@@ -229,3 +230,4 @@ ERROR_TEXT_TABLE:
     defw TEXT_ERROR_CORE_VERSION_NOT_SUPPORTED
     defw TEXT_CMD_NOT_SUPPORTED
     defw TEXT_ERROR_FILE_WRITE
+    defw TEXT_ERROR_FILE_READ

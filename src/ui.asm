@@ -20,6 +20,7 @@ ERROR_WRITE_MAIN_BANK:	    equ 5
 ERROR_CORE_VERSION_NOT_SUPPORTED:  equ 6
 ERROR_CMD_NOT_SUPPORTED:    equ 7
 ERROR_FILE_WRITE:           equ 8
+ERROR_FILE_READ:            equ 9
 
 
 ;===========================================================================
@@ -36,39 +37,14 @@ check_key_save:
 .wait_on_release:
     call wait_on_key_release
     ; Save
-    jp save_settings
+    call save_settings
+
+    ; Flow through
 
 
-; Save the settings (Async Break and Border flashing) to a file.
-save_settings:
-    ld ix,SETTINGS_FILE_PATH
-    ld b,FA_WRITE | FA_CREATE
-    ld a,'$'  ; Drive
-    rst $08
-    defb F_OPEN
-    jr c,.write_error      ; Carry = Error, (A = Errorcode)
-
-    ; A is file handle
-    push af         ; Remember the file handle
-
-    ld ix,settings_data         ; Pointer to settings data
-    ld bc,settings_data.end-settings_data ; Count of bytes
-    rst $08
-    defb F_WRITE
-    jr c,.write_error      ; Carry = Error, (A = Errorcode)
-
-    pop af          ; Retrieve file handle
-    rst $08
-    defb F_CLOSE
-    jr nc,flash_border ; nc = no error
-
-.write_error:
-    ; Error
-    ld a,ERROR_FILE_WRITE
-    ld (last_error),a
-    jp drain_main
-
+;===========================================================================
 ; Flash the border colors as confirmation of an action.
+;===========================================================================
 flash_border:
     ; Wait and flash the border
     ld bc,0x0000 ; 65536

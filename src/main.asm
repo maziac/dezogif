@@ -36,6 +36,7 @@
     include "backup.asm"
     include "text.asm"
     include "ui.asm"
+    include "settings.asm"
     include "altrom.asm"
     include "debug.asm"
 
@@ -88,22 +89,36 @@ main_bank_entry:
     ; Init text printing
     call text.init
 
-    ; The main program has been copied into MAIN_BANK
-    ld a,2  ; Joy 2 selected
-    ld (uart_joyport_selection),a
 
     ; Enable flashing border
     call uart_flashing_border.enable
 
-    ; Enable slow border change
-    ld a,1
-    ld (slow_border_change),a
 
     ; Return from NMI (Interrupts are disabled)
     call nmi_return
 
-    ; No error
-    xor a
+
+    ; Load settings
+    xor a   ; No error
+    ld (last_error),a
+    call load_open
+    jr c,.default_values  ; File not found
+    call load_settings
+    jr nc,drain_main.skip_store
+    ; Read error
+    ld a,ERROR_FILE_READ
+    ld (last_error),a
+
+.default_values:
+    ; Load default values
+    ld a,2  ; Joy 2 selected
+    ld (uart_joyport_selection),a
+    ; Enable slow border change
+    dec a ; A=1
+    ld (slow_border_change),a
+    ; Enable slow async break
+    ld (copper_break_enabled),a
+    jr drain_main.skip_store
 
 ;===========================================================================
 ; main entry - Jump here in case of an error.
@@ -112,6 +127,7 @@ main_bank_entry:
 drain_main:
     ; Store error
     ld (last_error),a
+drain_main.skip_store:
     ; Drain
     call drain_rx_buffer
 

@@ -40,6 +40,7 @@ LOADED_BANK:    EQU 92
     include "text.asm"
     include "data.asm"
     include "ui.asm"
+    include "settings.asm"
     include "altrom.asm"
     include "debug.asm"
 
