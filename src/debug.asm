@@ -3,33 +3,34 @@
 ;
 ; Include this for a few rudimentary debug functions for output on the
 ; ZX Spectrum ULA screen.
-; Note: These functions are meant for debugging dezogit itself.
+; Note: These functions are meant for debugging dezogif itself.
 ;
 ; Basic functionality:
 ; - debug.clear: start logging, clear the logged lines
 ; - debug.log: log a single character
-; - debug.log_number: log a number
+; - debug.log_number: log a number in hl
+; - debug.log_number_a: log a number in a
 ; - debug.print: print all (not yet printed) logs to the screen.
 ;
 ; Do not use these function directly but the macros defined
-; in marcro.asm.
+; in macro.asm.
 ; Example:
 ; DBG_CLEAR
 ; DBG_LOG 'A'
 ; DBG_LOG 'B'
+; ld c,5
+; DBG_LOG_NUMBER8
 ; ld hl,32123
-; DBG_LOG_NUMBER hl
+; DBG_LOG_NUMBER16 hl
 ; DBG_PRINT
 ;
-; Output: "AB#32123_"
+; Output: "AB#005_#32123_"
 ;
-; Note: The output functions do not set any colors.
-; The output defaults to the last 3 lines of the screen.
-; Make sure that the corresponding color screen
-; attributes are set to somethign visible.
 ; ===========================================================================
 
 
+
+ IFDEF DEBUG
 
 	MODULE debug
 
@@ -40,25 +41,19 @@ TEXT_START_POSITION_CLMN:	equ 0
 TEXT_START_POSITION_LINE:	equ 21
 
 text:
+	AT 0, 21
+	COLOR GREEN
+.start:
     defb "................................"
     defb "................................"
     defb "................................"
-text_end:
+.end:
 
     defb 0  ; End
 
 ; Points to the next location the next 'log' will insert the character.
 text_next_ptr:
-    defw text
-
-; Points after the lasted printed character.
-text_last_printed_ptr:
-    defw text
-
-; Stores the last screen address, after the last print call.
-; Used for the next print location.
-text_last_printed_screen_addr:
-    defw text
+    defw text.start
 
 
 ;===========================================================================
@@ -68,29 +63,13 @@ text_last_printed_screen_addr:
 ; Changes:
 ;  -
 ;===========================================================================
-clear:
+clear: ; TODO: REMOVE
 	push af, hl, de, bc
-	ld hl,text
+	ld hl,text.start
 	ld (text_next_ptr),hl
 	; Fill with '-'
-	MEMFILL text, '-', text_end-text
-	; Caclulate screen address
-	ld de,256*8*TEXT_START_POSITION_LINE + 8*TEXT_START_POSITION_CLMN
-	call text.ula.calc_address
-	ld (text_last_printed_screen_addr),hl	; store screen start address
-	push hl
-	; Print "----" line
-	ld hl,text_end
-	ld (text_next_ptr),hl
-	ld hl,text
-	ld (text_last_printed_ptr),hl
+	MEMFILL text.start, '.', text.end-text.start
 	call print
-	; Start for next character
-	pop hl
-	ld (text_last_printed_screen_addr),hl	; store screen start address
-	ld hl,text
-	ld (text_next_ptr),hl
-	ld (text_last_printed_ptr),hl
 	pop bc, de, hl, af
 	ret
 
@@ -105,7 +84,7 @@ clear:
 log:
 	push af, hl, de
 	ld hl,(text_next_ptr)
-	ld de,text_end
+	ld de,text.end
 	or a
 	sbc hl,de	; Check if too big
 	jr z,.skip
@@ -135,17 +114,25 @@ log_number:
 
 	; Number
 	ld de,(text_next_ptr)
+	ld hl,text.end-5-1
+	or a
+	sbc hl,de	; Check if too big
+	jr c,.ret
+
+	pop hl
+	push hl
 	call itoa_5digits
 	inc de
 	ld (text_next_ptr),de
 
 	; Suffix
+.ret:
 	ld a,'_'
 	call debug.log
 	pop hl, de, bc, af
 	ret
 
-; Logs the nnumber in A
+; Logs the number in A
 log_number_a:
 	push af, bc, de, hl
 	; Store to hl
@@ -158,11 +145,19 @@ log_number_a:
 
 	; Number
 	ld de,(text_next_ptr)
+	ld hl,text.end-3-1
+	or a
+	sbc hl,de	; Check if too big
+	jr c,.ret
+
+	pop hl
+	push hl
 	call itoa_5digits.three_digits
 	inc de
 	ld (text_next_ptr),de
 
 	; Suffix
+.ret:
 	ld a,'_'
 	call debug.log
 	pop hl, de, bc, af
@@ -170,70 +165,14 @@ log_number_a:
 
 
 ;===========================================================================
-; Prints all log characters that have not been printed yet.
+; Prints all log characters.
 ; Changes:
 ;  -
 ;===========================================================================
 print:
-	push af, bc, de, hl, ix
-	ld de,(text_last_printed_ptr)
-	ld hl,(text_last_printed_screen_addr)
-
-.loop:
-	; Check for end
-	push hl
-	ld hl,(text_next_ptr)
-	or a
-	sbc hl,de
-	pop hl
-	jr z,.end
-
-	; print
-	ld a,(de)
-    call .print_char
-	inc l	; Next x-position
-
-	; increment read pointer
-	ld de,(text_last_printed_ptr)
-	inc de
-	ld (text_last_printed_ptr),de
-	jr .loop
-
-.end:
-	; Remember
-	ld (text_last_printed_screen_addr),hl
-	pop ix, hl, bc, de, af
-	ret
-
-; Prints A by replacing, not XORing.
-.print_char:
-    push hl
-    push hl
-    ; Calculate offset of character in font
-    ld e,a
-    ld d,8  ; 8 byte per character
-    mul d,e
-    ; Add to font start address
-    ld hl,(font_address)
-    add hl,de
-    ld ix,hl    ; ix points to character in font
-    ; Now copy the character to the screen
-    pop hl
-
-    ld c,8  ; 8 byte per character
-.char_loop:
-    ldi a,(ix)  ; Load from font
-    ld (hl),a	; Place on screen
-    ; Next line
-    PIXELDN
-    ; Next
-    dec c
-    jr nz,.char_loop
-
-    ; Restore screen address
-    pop hl
-    ret
+	ld ix,text
+	jp text.ula.print_string
 
 	ENDMODULE
 
-
+ ENDIF

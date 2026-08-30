@@ -154,6 +154,35 @@ divisor = divisor / 10
 	ENDM
 
 
+;===========================================================================
+; For text output. Macro to set the position.
+; Usage example: AT 2, 4
+; AT column, line
+; clmn: 0..31
+; line: 0..23
+;===========================================================================
+	MACRO AT clmn?, line?
+	defb AT, 8*clmn?, 8*line?
+	ENDM
+
+;===========================================================================
+; For text output. Macro to set the color.
+; COLOR foreground. (Background defaults to 0=BLACK)
+; COLOR_WITH_BCKG foreground, background.
+; Usage examples:
+;  COLOR YELLOW
+;  COLOR BRIGHT+YELLOW
+;  COLOR_WITH_BCKG RED, WHITE
+;  COLOR_WITH_BCKG BRIGHT+GREEN, RED
+;===========================================================================
+
+	MACRO COLOR fgnd?
+		defb COLOR, fgnd?
+	ENDM
+	MACRO COLOR_WITH_BCKG fgnd?, bgnd?
+		defb COLOR, fgnd? + 8*bgnd?
+	ENDM
+
 
 ; Debug macros:
  IFDEF DEBUG
@@ -196,20 +225,22 @@ divisor = divisor / 10
 ; Changes:
 ;   -
 ;===========================================================================
-	MACRO DBG_LOG_NUMBER number?
+	MACRO DBG_LOG_NUMBER16 number?
 	push hl
 	ld hl,number?
 	call debug.log_number
 	pop hl
 	ENDM
-	MACRO DBG_LOG_NUMBER_A
+	MACRO DBG_LOG_NUMBER8 number?
+	push af
+	ld a,number?
 	call debug.log_number_a
+	pop af
 	ENDM
 
 
 ;===========================================================================
 ; Prints the logged values.
-; Only prints new values.
 ; Parameters:
 ;   -
 ; Changes:
@@ -225,7 +256,9 @@ divisor = divisor / 10
 	ENDM
 	MACRO DBG_LOG val?
 	ENDM
-	MACRO DBG_LOG_NUMBER number?
+	MACRO DBG_LOG_NUMBER16 number?
+	ENDM
+	MACRO DBG_LOG_NUMBER8 number?
 	ENDM
 	MACRO DBG_PRINT
 	ENDM

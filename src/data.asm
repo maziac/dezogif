@@ -183,12 +183,12 @@ prgm_state:	defb PRGM_IDLE
 ;===========================================================================
 ; Used by: ui.asm
 text_one_char:
-    defb AT, 14*8, 4*8
+    AT 14, 4
 .char:
 	defb 0, 0
 
 text_core_version:
-    defb AT, 6*8, 2*8
+    AT 6, 2
 .major:
 	defb '00'
 	defb '.'

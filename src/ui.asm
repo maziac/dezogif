@@ -222,14 +222,10 @@ show_ui:
     nextreg REG_CLIP_WINDOW_ULA, 191
 
     ; Clear the screen
-    MEMCLEAR SCREEN, SCREEN_SIZE
-    ; Black on white
-    MEMFILL COLOR_SCREEN, WHITE+(BLACK<<3), COLOR_SCREEN_SIZE+19*COLOR_SCREEN_WIDTH
-    ; Red on black for a probable error report
-    MEMFILL COLOR_SCREEN+19*COLOR_SCREEN_WIDTH, RED+BRIGHT, 6*COLOR_SCREEN_WIDTH
+    MEMCLEAR SCREEN, SCREEN_SIZE+COLOR_SCREEN_SIZE
 
     ; Print text
-    ld de,INTRO_TEXT
+    ld ix,INTRO_TEXT
 	call text.ula.print_string
 
     ; Show core version
@@ -270,7 +266,7 @@ show_ui:
 
 .core_version_continue:
     ; Print
-    ld de,text_core_version
+    ld ix,text_core_version
 	call text.ula.print_string
 
     ; Get display timing
@@ -280,7 +276,7 @@ show_ui:
     ; Print the number
     add '0' ; convert to ASCII
     ld (text_one_char.char),a
-    ld de,text_one_char
+    ld ix,text_one_char
 	call text.ula.print_string
 
     ; Show right selected joy port option
@@ -289,35 +285,30 @@ show_ui:
     add a   ; *2
     add hl,a
     ld de,(hl)
+    ld ix,de
 	call text.ula.print_string
 
     ; Show border option
-    ld de,BORDER_OFF_TEXT
+    ld ix,BORDER_OFF_TEXT
     ld a,(slow_border_change)
     or a
     jr z,.print_border
-    ld de,BORDER_ON_TEXT
+    ld ix,BORDER_ON_TEXT
 .print_border:
 	call text.ula.print_string
 
     ; Show the async break option. Row 14, which was the one free row on this
     ; screen.
-    ld de,COPPER_OFF_TEXT
+    ld ix,COPPER_OFF_TEXT
     ld a,(copper_break_enabled)
     or a
     jr z,.print_copper
-    ld de,COPPER_ON_TEXT
+    ld ix,COPPER_ON_TEXT
 .print_copper:
     call text.ula.print_string
 
     ; Print 3 lines debugging
- IFDEF DEBUG
-    ; Caclulate screen address
-	ld de,256*8*debug.TEXT_START_POSITION_LINE + 8*debug.TEXT_START_POSITION_CLMN
-	call text.ula.calc_address
-	ld de,debug.text
-	call text.ula.print_string
- ENDIF
+    DBG_PRINT
 
 	; Show possibly error
 	ld a,(last_error)
@@ -325,7 +316,7 @@ show_ui:
 	ret z	; 0 = no error
 
 	; Print "Last error:"
-    ld de,TEXT_LAST_ERROR
+    ld ix,TEXT_LAST_ERROR
 	call text.ula.print_string
 	push hl	; Save pointer to screen
 
@@ -336,5 +327,7 @@ show_ui:
 	ld hl,ERROR_TEXT_TABLE
 	add hl,a
     ld de,(hl)
+    ld ix,de
 	pop hl	; Restore pointer to screen
-    jp text.ula.print_string
+    ld c,BRIGHT+RED+WHITE*8
+    jp text.ula.print_string_with_color

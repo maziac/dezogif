@@ -37,52 +37,57 @@ SETTINGS_FILE_PATH:
 
 ; UI
 INTRO_TEXT:
-    defb AT, 0, 0
+    AT 0, 0
+    COLOR BRIGHT+YELLOW
     defb "ZX Next UART DeZog Interface"
-    defb AT, 0, 1*8
+    defb COLOR, WHITE
+    AT 0, 1
     PRG_VERSION
     defb " (DZRP v"
     defb DZRP_VERSION.MAJOR+'0', '.', DZRP_VERSION.MINOR+'0', '.', DZRP_VERSION.PATCH+'0'
     defb ")"
-    defb AT, 0, 2*8
+    AT 0, 2
     defb "Core: "
-    defb AT, 0, 3*8
+    AT 0, 3
     defb "ESP UART Baudrate: "
     STRINGIFY BAUDRATE
-    defb AT, 0, 4*8
+    AT 0, 4
     defb "Video timing:"
 
-    defb AT, 0, 6*8
+    AT 0, 6
     defb "UART:"
-    defb AT, 0, 7*8
+    AT 0, 7
     defb "Async break:"
-    defb AT, 0, 8*8
+    AT 0, 8
     defb "Border:"
 
-    defb AT, 0, 10*8
+    AT 0, 10
     defb "Keys:"
-    defb AT, 0, 11*8
+    AT 0, 11
     defb "1 = Joy 1"
-    defb AT, 0, 12*8
+    AT 0, 12
     defb "2 = Joy 2"
-    defb AT, 0, 13*8
+    AT 0, 13
     defb "3 = CN9 ESP"
-    defb AT, 0, 14*8
+    AT 0, 14
     defb "R = Reset"
-    defb AT, 0, 15*8
+    AT 0, 15
     defb "B = Border"
-    defb AT, 0, 16*8
+    AT 0, 16
     defb "A = Async break"
-    defb AT, 0, 17*8
+    AT 0, 17
     defb "S = Save settings"
     defb 0
 
 JOY1_SELECTED_TEXT:
-    defb AT, 6*8, 6*8, "Joy 1 (left)", 0
+    AT 6, 6
+    defb "Joy 1 (left)", 0
 JOY2_SELECTED_TEXT:
-    defb AT, 6*8, 6*8, "Joy 2 (right)", 0
+    AT 6, 6
+    defb "Joy 2 (right)", 0
 CN9_SELECTED_TEXT:
-    defb AT, 6*8, 6*8, "CN9 ESP", 0
+    AT 6, 6
+    defb "CN9 ESP", 0
 
 SELECTED_TEXT_TABLE:
     defw CN9_SELECTED_TEXT
@@ -91,20 +96,28 @@ SELECTED_TEXT_TABLE:
 
 
 BORDER_OFF_TEXT:
-    defb AT, 8*8, 8*8, "black", 0
+    AT 8, 8
+    defb "black", 0
 BORDER_ON_TEXT:
-    defb AT, 8*8, 8*8, "changing", 0
+    AT 8, 8
+    defb "changing", 0
 
 ; Async break text:
 COPPER_OFF_TEXT:
-    defb AT, 13*8, 7*8, "off", 0
+    AT 13, 7
+    defb "off", 0
 COPPER_ON_TEXT:
-    defb AT, 13*8, 7*8, "on", 0
+    AT 13, 7
+    defb "on", 0
 
 
 ; Error texts
 TEXT_LAST_ERROR:
-    defb AT, 0, 19*8, "Last Error:", AT, 0, 20*8, 0
+    AT 0, 19
+    COLOR_WITH_BCKG BRIGHT+RED, WHITE
+    defb "Last Error:"
+    AT 0, 20
+    defb 0
 
 TEXT_ERROR_RX_TIMEOUT: defb "RX Timeout", 0
 TEXT_ERROR_RX_OVERFLOW: defb "RX Buffer overflow", 0
