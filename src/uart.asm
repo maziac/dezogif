@@ -127,21 +127,6 @@ drain_rx_buffer_with_timeout:
 
 
 ;===========================================================================
-; Just changes the border color.
-;===========================================================================
-change_border_color:
-    ld a,(slow_border_change)
-    or a
-    ret z   ; Don't change color if off
-    ld a,(border_color)
-    inc a
-    and 0x07
-    ld (border_color),a
-    out (BORDER),a
-    ret
-
-
-;===========================================================================
 ; Waits until an RX byte is available.
 ; Note: This runs when possibly the layer 2 read/write is set. I.e. it is not
 ; allowed to read/write data.

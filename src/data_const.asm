@@ -63,27 +63,23 @@ INTRO_TEXT:
     defb "UART:"
     AT 0, 7
     defb "Async-break:"
-    AT 0, 8
-    defb "Border:"
 
     COLOR WHITE
-    AT 0, 10
+    AT 0, 9
     defb "Keys:"
-    AT 0, 11
+    AT 0, 10
     defb "1=Joy 1"
-    AT 0, 12
+    AT 0, 11
     defb "2=Joy 2"
-    AT 0, 13
+    AT 0, 12
     defb "3=CN9 ESP"
-    AT 0, 14
-    defb "B=Border"
-    AT 0, 15
+    AT 0, 13
     defb "A=Async-break"
-    AT 16, 11
+    AT 16, 10
     defb "R=Reset"
-    AT 16, 12
+    AT 16, 11
     defb "S=Save settings"
-    AT 16, 13
+    AT 16, 12
     defb "H=Help"
     defb 0
 
@@ -104,16 +100,6 @@ SELECTED_TEXT_TABLE:
     defw CN9_SELECTED_TEXT
     defw JOY1_SELECTED_TEXT
     defw JOY2_SELECTED_TEXT
-
-
-BORDER_OFF_TEXT:
-    STATUS_COL
-    AT 8, 8
-    defb "black   ", 0
-BORDER_ON_TEXT:
-    STATUS_COL
-    AT 8, 8
-    defb "changing", 0
 
 ; Async break text:
 COPPER_OFF_TEXT:
@@ -145,23 +131,18 @@ HELP_TEXT_1:
     defb "Next and solder RX/TX to the ", COLOR, MAGENTA, "CN9"
     defb "header", COLOR, WHITE, "."
     AT 0, 11
-    defb COLOR, YELLOW, "Border:", COLOR, WHITE
-    AT 0, 12
-    defb "The border color will change    "
-    defb "slowly. You can turn it off."
-
-    AT 0, 15
     defb COLOR, YELLOW, "Save settings:", COLOR, WHITE
-    AT 0, 16
+    AT 0, 12
     defb "Will save your current settings "
-    defb "(UART, Border, Async-break) in  "
-    defb COLOR, MAGENTA, "dezogif.cfg", COLOR, WHITE, " near ", COLOR, MAGENTA, "enNextMf.rom", COLOR, WHITE, "   "
-    defb "The settings will be loaded     "
+    defb "(UART, Async-break) in          "
+    defb COLOR, MAGENTA, "dezogif.cfg", COLOR, WHITE, " near ", COLOR, MAGENTA, "enNextMf.rom", COLOR, WHITE, ".  "
+    defb "The settings will be loaded"
+    AT 0, 16
     defb "automatically on next startup."
 
-    AT 0, 22
+    AT 0, 18
     defb COLOR, YELLOW, "Reset:", COLOR, WHITE
-    AT 0, 23
+    AT 0, 19
     defb "Will reset the ZX Next."
 
     defb 0
@@ -200,10 +181,10 @@ HELP_TEXT_2:
 
 ; Error texts
 TEXT_LAST_ERROR:
-    AT 0, 19
+    AT 0, 15
     COLOR_WITH_BCKG BRIGHT+RED, WHITE
     defb "Last Error:"
-    AT 0, 20
+    AT 0, 16
     defb 0
 
 TEXT_ERROR_RX_TIMEOUT: defb "RX Timeout", 0

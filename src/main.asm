@@ -113,10 +113,8 @@ main_bank_entry:
     ; Load default values
     ld a,2  ; Joy 2 selected
     ld (uart_joyport_selection),a
-    ; Enable slow border change
+    ; Enable async break
     dec a ; A=1
-    ld (slow_border_change),a
-    ; Enable slow async break
     ld (copper_break_enabled),a
     jr drain_main.skip_store
 
@@ -180,12 +178,7 @@ main:
     ; Show the text
     call init_and_show_ui
 
-    ; Border color timer
-    ld c,1
-    ld de,0
 main_loop:
-    push bc, de
-
     ; Check if byte available.
     call check_uart_byte_available
     ; If so leave loop and enter command loop
@@ -195,25 +188,11 @@ main_loop:
 .no_uart_byte:
     ; Check keyboard
     call read_key_joyport
-    call check_key_border
     call check_key_copper
     call check_key_reset
     call check_key_save
     call check_key_help
 
-.no_keyboard:
-    pop de, bc
-    ; Check border color timer
-    dec de
-    ld a,d
-    or e
-    jr nz,main_loop
-    dec c
-    jr nz,main_loop
-
-    ; Change color of the border
-    call change_border_color
-    ld c,4
     jr main_loop
 
 

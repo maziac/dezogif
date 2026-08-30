@@ -82,25 +82,6 @@ check_key_reset:
 
 
 ;===========================================================================
-; Checks key "B".
-; For turning slow border change on/off.
-;===========================================================================
-check_key_border:
-    ; Read port
-    ld bc,PORT_KEYB_BNMSHIFTSPACE
-    in a,(c)
-    bit 4,a ; "B"
-    ret nz
-    ; Wait on key release
-    call wait_on_key_release
-    ; Toggle
-    ld a,(slow_border_change)
-    xor 1
-    ld (slow_border_change),a
-    jp show_ui
-
-
-;===========================================================================
 ; Checks key "A".
 ; Turns async break on and off. Off is worth having for two reasons: the
 ; poll costs ~1288 T-states a frame, which is 0.230% of a frame at 28 MHz but
@@ -294,15 +275,6 @@ show_ui:
     add hl,a
     ld de,(hl)
     ld ix,de
-	call text.ula.print_string
-
-    ; Show border option
-    ld ix,BORDER_OFF_TEXT
-    ld a,(slow_border_change)
-    or a
-    jr z,.print_border
-    ld ix,BORDER_ON_TEXT
-.print_border:
 	call text.ula.print_string
 
     ; Show the async break option. Row 14, which was the one free row on this

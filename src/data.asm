@@ -153,11 +153,6 @@ settings_data:	; Can be saved to/read from a file
 ; 2 = UART_PORT_JOY2
 uart_joyport_selection: defb 0
 
-; Selection if border is slowly changing or not.
-; 0 = off
-; 1 = on
-slow_border_change:	defb 1
-
 ; Whether the DEBUGGER installs the Copper list that drives the break poll. On
 ; by default, so a program that does not use the Copper is breakable from the PC
 ; with no source change at all. The  "A" key turns it off.
