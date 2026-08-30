@@ -149,12 +149,22 @@ check_key_copper:
 check_key_help:
     call .key
     ret nz
-    ; Show help page
+    ; Show help page 1
+    ld ix,HELP_TEXT_1
     call show_help
     ; Wait on next "H" key press
-.wait_on_key_press:
+.wait_on_key_press1:
     call .key
-    jr nz,.wait_on_key_press
+    jr nz,.wait_on_key_press1
+
+    ; Show help page 2
+    ld ix,HELP_TEXT_2
+    call show_help
+    ; Wait on next "H" key press
+.wait_on_key_press2:
+    call .key
+    jr nz,.wait_on_key_press2
+
     jp main ; Show main UI with cls
 
 ; Returns with NZ if "H" was not pressed, Z if it was pressed.
@@ -355,10 +365,10 @@ show_ui:
 
 ;===========================================================================
 ; Shows the help text.
+; INPUT: IX = pointer to help text
 ;===========================================================================
 show_help:
     call cls
-    ld ix,HELP_TEXT_1
 	jp text.ula.print_string
 
 

@@ -168,38 +168,32 @@ HELP_TEXT_1:
 
 HELP_TEXT_2:
     AT 0, 0
-    defb COLOR, GREEN, "Help:                     ", COLOR, BLUE, "H=Next"
+    defb COLOR, GREEN, "Help 2/2:"
+    AT 26, 0
+    defb COLOR, BLUE, "H=Next"
     AT 0, 2
-    defb COLOR, YELLOW, "UART:", COLOR, WHITE
-    AT 0, 3
-    defb "Select here which port to use for UART communication. Either one of the 2 joystick ports or the CN9 ESP port can be used. "
-    defb "For CN9 you need to open your ZX Next"
-    AT 0, 8
-    defb "and solder RX/TX to the CN9 header."
-    AT 0, 11
     defb COLOR, YELLOW, "Async-break:", COLOR, WHITE
-    AT 0, 12
-    defb "Enabling async-break allows to break execution of your debugged program by pressing PAUSE in DeZog."
+    AT 0, 3
+    defb "Enabling async-break allows to  "
+    defb "break execution of your debugged"
+    defb "program by pressing ", COLOR, MAGENTA, "PAUSE in    "
+    defb "DeZog", COLOR, WHITE, ". If ", COLOR, MAGENTA, "not enabled", COLOR, WHITE, " you need  "
+    defb "to break your program by        "
+    AT 0, 8
+    defb "pressing the ", COLOR, MAGENTA, "NMI button", COLOR, WHITE, ".        "
+    defb "The async-break features comes  "
+    defb "with a few small ", COLOR, MAGENTA, "limitations:", COLOR, WHITE
+    AT 0, 11
+    defb "- it uses < 1% of the ", COLOR, MAGENTA, "CPU time", COLOR, WHITE, "  "
+    defb "- if you use the UART through   "
+    defb " joystick port 1 or 2 you cannot"
+    defb " use the additional buttons of  "
+    defb " an ", COLOR, MAGENTA, "MD joystick", COLOR, WHITE
     AT 0, 16
-    defb "If not enabled you need to break your program by pressing the NMI button. "
-    defb "The async-break features comes with a few small limitations:"
-    ; AT 0, 9
-    ; defb "- it uses < 1% of the CPU time"
-    ; AT 0, 10
-    ; defb "- if you use the UART through joystick port 1 or 2 you cannot use the additional buttons of an MD joystick"
-    ; AT 0, 11
-    ; defb "- to use async-break with Copper you need to enable it in your program (not here), refer to the documentation"
-
-    ; AT 0, 15
-    ; defb "Border:"
-    ; AT 0, 16
-    ; defb "Normally the border color changes slowly."
-    ; defb "If this is disturbing to you, you can turn it off."
-
-    ; AT 0, 18
-    ; defb "Save settings:"
-    ; AT 0, 19
-    ; defb "This will save your current settings in file dezogif.cfg next to enNextMf.rom."
+    defb "- to use async-break with a     "
+    defb " program that uses the Copper   "
+    defb " itself please ", COLOR, MAGENTA, "refer to the     "
+    defb " documentation"
 
     defb 0
 
