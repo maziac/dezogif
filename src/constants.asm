@@ -40,6 +40,11 @@ BAUDRATE:   equ 921600
 ;BAUDRATE:   equ 460800
 ;BAUDRATE:   equ 230400
 
+; UART port
+UART_PORT_CN9:  equ 0
+UART_PORT_JOY1: equ 1
+UART_PORT_JOY2: equ 2
+
 
 ; Program states
 PRGM_IDLE:		equ 1	; Waiting for a new program (at program start and after CMD_CLOSE)

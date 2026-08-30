@@ -167,7 +167,7 @@ cmd_init:
     ; Enable flashing border
     call uart_flashing_border.enable
 	; Afterwards start all over again / show	; Afterwards start all over again / show the "UI"
-    call show_ui
+    call init_and_show_ui
 
 .response:
 	; Send length and seq-no

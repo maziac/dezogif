@@ -162,7 +162,7 @@ main:
     call set_uart_joystick
 
     ; Show the text
-    call show_ui
+    call init_and_show_ui
 
     ; Border color timer
     ld c,1
@@ -178,21 +178,12 @@ main_loop:
 
 .no_uart_byte:
     ; Check keyboard
-    call check_key_save
-    call check_key_reset
-    call check_key_border
-    jp z,main   ; Redraw UI if "B" pressed
-    call check_key_copper
-    jp z,main   ; Redraw UI if "A" pressed
     call read_key_joyport
-    inc e
-    jr z,.no_keyboard
-
-    ; Key pressed
-    dec e
-    ld a,e
-    ld (uart_joyport_selection),a
-    jp main
+    call check_key_border
+    call check_key_copper
+    call check_key_reset
+    call check_key_save
+    call check_key_help
 
 .no_keyboard:
     pop de, bc

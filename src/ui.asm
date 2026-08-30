@@ -105,9 +105,6 @@ check_key_reset:
 ;===========================================================================
 ; Checks key "B".
 ; For turning slow border change on/off.
-; Returns:
-;   Z = B pressed
-;   NZ = B not pressed
 ;===========================================================================
 check_key_border:
     ; Read port
@@ -121,13 +118,7 @@ check_key_border:
     ld a,(slow_border_change)
     xor 1
     ld (slow_border_change),a
-    jr nz,.ret
-    ; Turn border black
-    xor a
-    out (BORDER),a
-.ret:
-    xor a   ; Z
-    ret
+    jp show_ui
 
 
 ;===========================================================================
@@ -136,9 +127,6 @@ check_key_border:
 ; poll costs ~1288 T-states a frame, which is 0.230% of a frame at 28 MHz but
 ; 1.84% at 3.5 MHz, and a program that owns the Copper may want the debugger to
 ; keep its hands off it.
-; Returns:
-;   Z = A pressed
-;   NZ = A not pressed
 ;===========================================================================
 check_key_copper:
     ; Read port
@@ -146,15 +134,38 @@ check_key_copper:
     in a,(c)
     bit 0,a ; "A"
     ret nz
-    ; Wait on key release. BC still holds the port, as check_key_border relies
-    ; on too.
+    ; Wait on key release. BC still holds the port.
     call wait_on_key_release
     ; Toggle
     ld a,(copper_break_enabled)
     xor 1
     ld (copper_break_enabled),a
-    xor a   ; Z
-    ret
+    jp show_ui
+
+
+;===========================================================================
+; Checks key "H" to display the help page.
+;===========================================================================
+check_key_help:
+    call .key
+    ret nz
+    ; Show help page
+    call show_help
+    ; Wait on next "H" key press
+.wait_on_key_press:
+    call .key
+    jr nz,.wait_on_key_press
+    jp main ; Show main UI with cls
+
+; Returns with NZ if "H" was not pressed, Z if it was pressed.
+.key:
+    ; Read port
+    ld bc,PORT_KEYB_HJKLENTER
+    in a,(c)
+    bit 4,a ; "H"
+    ret nz
+    ; Wait on key release. BC still holds the port.
+    jr wait_on_key_release ; Returns always with Z
 
 
 ;===========================================================================
@@ -172,20 +183,22 @@ read_key_joyport:
     ld e,0xFF   ; Default
     bit 0,a ; "1"
     jr nz,.no_key_1
-    ld e,0x01
+    ld a,UART_PORT_JOY1
     jr .cont
 .no_key_1:
     bit 1,a ; "2"
     jr nz,.no_key_2
-    ld e,0x02
+    ld a,UART_PORT_JOY2
     jr .cont
 .no_key_2:
     bit 2,a ; "3"
     ret nz
-    ld e,0x00
+    ld a,UART_PORT_CN9
 
 .cont:
-    ; Flow through wait_on_key_release
+    ld (uart_joyport_selection),a
+    call wait_on_key_release
+    jp show_ui
 
 
 ;===========================================================================
@@ -194,6 +207,8 @@ read_key_joyport:
 ;   BC = the port to usefor the keys.
 ; Changes:
 ;   AF
+; Returns:
+;   Z
 ;===========================================================================
 wait_on_key_release:
     in a,(c)
@@ -204,10 +219,9 @@ wait_on_key_release:
 
 
 ;===========================================================================
-; Switches to ULA mode and shows the intro text.
-; Displaying which keys can be used to change the joy port.
+; Switches to ULA mode and shows the UI.
 ;===========================================================================
-show_ui:
+init_and_show_ui:
     ; Switch to ULA
     nextreg REG_ULA_X_OFFSET, 0
     nextreg REG_ULA_Y_OFFSET, 0
@@ -222,8 +236,13 @@ show_ui:
     nextreg REG_CLIP_WINDOW_ULA, 191
 
     ; Clear the screen
-    MEMCLEAR SCREEN, SCREEN_SIZE+COLOR_SCREEN_SIZE
+    call cls
 
+;===========================================================================
+; Shows the intro text and the state.
+; Displays also the keys to use to change the settings.
+;===========================================================================
+show_ui:
     ; Print text
     ld ix,INTRO_TEXT
 	call text.ula.print_string
@@ -331,3 +350,21 @@ show_ui:
 	pop hl	; Restore pointer to screen
     ld c,BRIGHT+RED+WHITE*8
     jp text.ula.print_string_with_color
+
+
+
+;===========================================================================
+; Shows the help text.
+;===========================================================================
+show_help:
+    call cls
+    ld ix,HELP_TEXT_1
+	jp text.ula.print_string
+
+
+;===========================================================================
+; Clears the screen and attribute colors with zeroes.
+;===========================================================================
+cls:
+    MEMCLEAR SCREEN, SCREEN_SIZE+COLOR_SCREEN_SIZE
+    ret

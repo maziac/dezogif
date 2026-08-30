@@ -148,9 +148,9 @@ slot_backup:	SLOT_BACKUP
 settings_data:	; Can be saved to/read from a file
 
 ; Stores the current UART selection:
-; 0 = no joy port
-; 1 = joy 1
-; 2 = joy 2
+; 0 = UART_PORT_CN9
+; 1 = UART_PORT_JOY1
+; 2 = UART_PORT_JOY2
 uart_joyport_selection: defb 0
 
 ; Selection if border is slowly changing or not.
