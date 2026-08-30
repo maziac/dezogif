@@ -38,8 +38,11 @@ check_key_save:
     call wait_on_key_release
     ; Save
     call save_settings
+    jr nc,flash_border
 
-    ; Flow through
+    ; An write error occurred
+    ld a,ERROR_FILE_WRITE
+    jp drain_main
 
 
 ;===========================================================================

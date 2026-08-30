@@ -8,6 +8,9 @@
 
 ;===========================================================================
 ; Save the settings (Async Break and Border flashing) to a file.
+; Returns:
+; C: File/write error
+; NC: no error
 ;===========================================================================
 save_settings:
     ld b,FA_WRITE | FA_CREATE
@@ -15,7 +18,7 @@ save_settings:
     ld ix,SETTINGS_FILE_PATH
     rst $08
     defb F_OPEN
-    jr c,.write_error      ; Carry = Error, (A = Errorcode)
+    ret c      ; Carry = Error, (A = Errorcode)
 
     ; A is file handle
     push af         ; Remember the file handle
@@ -24,19 +27,12 @@ save_settings:
     ld bc,settings_data.end-settings_data ; Count of bytes
     rst $08
     defb F_WRITE
-    jr c,.write_error      ; Carry = Error, (A = Errorcode)
+    ret c      ; Carry = Error, (A = Errorcode)
 
     pop af          ; Retrieve file handle
     rst $08
     defb F_CLOSE
-    ret nc   ; Return if no error occurred
-
-    ; Flow through
-
-.write_error:
-    ; Error
-    ld a,ERROR_FILE_WRITE
-    jp drain_main
+    ret        ; Carry = Error, (A = Errorcode)
 
 
 ;===========================================================================
