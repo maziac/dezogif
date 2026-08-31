@@ -295,6 +295,7 @@ send_4bytes_length_and_seqno:
 	call write_uart_byte
 	; Sequence number
 	ld a,(receive_buffer.seq_no)
+	and 0x0F	; Only 4 bits, upper 4 bits are reserved
 	jp write_uart_byte
 
 
