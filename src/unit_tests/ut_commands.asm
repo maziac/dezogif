@@ -72,7 +72,7 @@ test_prepare_header:
 	ld (receive_buffer.length+2),a	; a = 0
 	ld (receive_buffer.length+3),a
 	; Store seq_no
-	ld a,100
+	ld a,12 ; Range: 1-15
 	ld (receive_buffer.seq_no),a
 	ret
 
