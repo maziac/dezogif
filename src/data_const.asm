@@ -62,7 +62,7 @@ INTRO_TEXT:
     AT 0, 6
     defb "UART:"
     AT 0, 7
-    defb "Async-break:"
+    defb "Async-Break:"
 
     COLOR WHITE
     AT 0, 9
@@ -74,7 +74,7 @@ INTRO_TEXT:
     AT 0, 12
     defb "3=CN9 ESP"
     AT 0, 13
-    defb "A=Async-break"
+    defb "A=Async-Break"
     AT 16, 10
     defb "R=Reset"
     AT 16, 11
@@ -155,14 +155,14 @@ HELP_TEXT_2:
     AT 0, 2
     defb COLOR, YELLOW, "Async-break:", COLOR, WHITE
     AT 0, 3
-    defb "Enabling async-break allows to  "
+    defb "Enabling Async-Break allows to  "
     defb "break execution of your debugged"
     defb "program by pressing ", COLOR, MAGENTA, "PAUSE in    "
     defb "DeZog", COLOR, WHITE, ". If ", COLOR, MAGENTA, "not enabled", COLOR, WHITE, " you need  "
     defb "to break your program by        "
     AT 0, 8
     defb "pressing the ", COLOR, MAGENTA, "NMI button", COLOR, WHITE, ".        "
-    defb "The async-break features comes  "
+    defb "The Async-Break features comes  "
     defb "with a few small ", COLOR, MAGENTA, "limitations:", COLOR, WHITE
     AT 0, 11
     defb "- it uses < 1% of the ", COLOR, MAGENTA, "CPU time", COLOR, WHITE, "  "
@@ -171,7 +171,7 @@ HELP_TEXT_2:
     defb " use the additional buttons of  "
     defb " an ", COLOR, MAGENTA, "MD joystick", COLOR, WHITE
     AT 0, 16
-    defb "- to use async-break with a     "
+    defb "- to use Async-Break with a     "
     defb " program that uses the Copper   "
     defb " itself please ", COLOR, MAGENTA, "refer to the     "
     defb " documentation"
