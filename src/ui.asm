@@ -207,13 +207,32 @@ init_and_show_ui:
     nextreg REG_ULA_Y_OFFSET, 0
     nextreg REG_ULA_CONTROL, 0
     nextreg REG_DISPLAY_CONTROL, 0
-    nextreg REG_SPRITE_LAYER_SYSTEM, 00010000b   ; USL
+    nextreg REG_SPRITE_LAYER_SYSTEM, RSLS_LAYER_PRIORITY_SLU
+
     ; Turn off clipping (might have been used by screensaver)
-    nextreg REG_CLIP_WINDOW_CONTROL, RCWC_RESET_ULA_CLIP_INDEX
+    nextreg REG_CLIP_WINDOW_CONTROL, RCWC_RESET_ULA_CLIP_INDEX | RCWC_RESET_SPRITE_CLIP_INDEX | RCWC_RESET_LAYER_2_CLIP_INDEX
     nextreg REG_CLIP_WINDOW_ULA, 0
     nextreg REG_CLIP_WINDOW_ULA, 255
     nextreg REG_CLIP_WINDOW_ULA, 0
     nextreg REG_CLIP_WINDOW_ULA, 191
+
+    ; Init
+    nextreg REG_LAYER_2_RAM_BANK, 0x08
+    nextreg REG_LAYER_2_SHADOW_RAM_BANK, 0x0B
+    nextreg REG_LAYER_2_OFFSET_X, 0
+    nextreg REG_LAYER_2_OFFSET_Y, 0
+    nextreg REG_LAYER_2_CONTROL, 0
+    nextreg REG_LORES_OFFSET_X, 0
+    nextreg REG_LORES_OFFSET_Y, 0
+    nextreg REG_TILEMAP_CONTROL, 0
+    nextreg REG_DEFAULT_TILEMAP_ATTRIBUTE, 0
+    nextreg REG_GLOBAL_TRANSPARENCY_COLOR, 0xE3
+    nextreg REG_FALLBACK_COLOR, 0xE3
+    nextreg REG_SPRITE_TRANSPARENCY_COLOR_INDEX, 0xE3
+    nextreg REG_TILEMAP_TRANSPARENCY_INDEX, 0x0F
+    nextreg REG_PALETTE_INDEX, 0
+    nextreg REG_ULANEXT_PALETTE_FORMAT, 0x07
+    nextreg REG_PALETTE_CONTROL, 0
 
     ; Clear the screen
     call cls

@@ -431,3 +431,25 @@ NMI_STACKLESS_MODE_BIT:		equ 3	; bit 3
 
 REG_NMI_RETURN_ADDRESS_LSB:	equ 194	; 0xC2
 REG_NMI_RETURN_ADDRESS_MSB:	equ 195	; 0xC3
+
+
+;-----------------------------------------------------------------------------
+; Some more tile map registers
+;-----------------------------------------------------------------------------
+REG_TILEMAP_CONTROL:              equ 107
+
+REG_DEFAULT_TILEMAP_ATTRIBUTE:    equ 108
+
+REG_TILEMAP_BASE_ADDRESS:         equ 110
+
+REG_TILE_DEFINITIONS_BASE_ADDRESS: equ 111
+
+REG_LAYER_2_CONTROL:              equ 112
+
+REG_LAYER_2_X_SCROLL_MSB:         equ 113
+
+REG_LAYER_2_X_SCROLL_LSB:         equ 114
+
+REG_LAYER_2_Y_SCROLL:             equ 115
+
+REG_TILEMAP_TRANSPARENCY_INDEX:   equ 76

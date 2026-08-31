@@ -158,16 +158,15 @@ cmd_init:
 	; Program state
 	ld a,PRGM_LOADING
 	ld (prgm_state),a
-    ; A client has opened a session, so the program it is about to push has not
-    ; run yet and cannot own the Copper. That is the one safe moment to install
-    ; the asynchronous-break list, and it is why this is here and not on the
-    ; resume path - see ui.asm's copper_break_arm.
+    ; A client has opened a session, so the program it is about to be loaded.
+	; It has not run yet and therefore does not own the Copper yet.
+	; So here we might install the asynchronous-break copper list safely.
     ld a,(copper_break_enabled)
 	or a
     call nz,copper.break_install
     ; Enable flashing border
     call uart_flashing_border.enable
-	; Afterwards start all over again / show	; Afterwards start all over again / show the "UI"
+	; Afterwards start all over again / show the "UI"
     call init_and_show_ui
 
 .response:
