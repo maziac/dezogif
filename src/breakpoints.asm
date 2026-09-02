@@ -257,7 +257,7 @@ enter_debugger:
 
     ; Send pause notification
 	ld hl,(backup.pc)	; breakpoint address
-	call send_ntf_pause
+	call send_ntf_pause ; Also changes prgm_state to PRGM_STOPPED
 
 	; Clear temporary breakpoints
 	call clear_tmp_breakpoints

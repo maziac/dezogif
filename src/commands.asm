@@ -484,8 +484,8 @@ cmd_continue:
 
 ;===========================================================================
 ; CMD_PAUSE
-; Acknowledges, and does nothing else.
-; Note: This command reaches dezogif only if async break is enabled.
+; Acknowledges and send the pause notification to DeZog.
+; Program state is set to PRGM_STOPPED.
 ; Changes:
 ;  NA
 ;===========================================================================
@@ -493,7 +493,12 @@ cmd_pause:
 	; LOGPOINT [CMD] cmd_pause
 	; Send response: the sequence number alone
 	ld de,1
-	jp send_length_and_seqno
+	call send_length_and_seqno
+
+	; Send pause notification
+	ld d,BREAK_REASON.MANUAL_BREAK
+	ld hl,0 ; bp address
+	jp send_ntf_pause ; Also changes prgm_state to PRGM_STOPPED
 
 
 ;===========================================================================

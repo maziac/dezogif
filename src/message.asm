@@ -97,11 +97,16 @@ cmd_loop:
 	ld hl,receive_buffer
 	ld de,receive_buffer.payload-receive_buffer
 	call receive_bytes
-	;ld a,BLUE
-	;out (BORDER),a
 	; Handle command
 	call cmd_call
-	jr cmd_loop
+
+	; Check if debugged program is running
+	ld a,(prgm_state)
+	cp PRGM_RUNNING
+	jr nz,cmd_loop
+
+	; Program is running, leave the command loop/continue debugged program execution
+	jp restore_registers
 
 
 /*

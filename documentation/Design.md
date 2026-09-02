@@ -264,50 +264,81 @@ If the "Symbol Shift" (or CTRL) key is pressed while the user presses the NMI ex
 
 MF ROM is 0x0000-0x1FFF. MF RAM is 0x2000-0x3FFF.
 
-### NMI / Breakpoint Entry Flowchart
-The Multiface NMI (0x0066) has two causes: the M1 button and the Copper's once-per-frame Async-Break poll (which itself only breaks in if a UART message has arrived). A SW breakpoint (RST 0) is a separate, third entry point that does not go through the NMI at all. All three end up in the same debug loop:
+### NMI / Breakpoint Entry Flowcharts
+#### NMI
+The Multiface NMI (0x0066) has two causes: the M1 button and the Copper's once-per-frame Async-Break poll (which itself only breaks in if a UART message has arrived).
 
 ```mermaid
 flowchart TD
-    NMI[["NMI at 0x0066"]] --> Cause{Cause?}
+    NMI[["NMI at 0x0066"]] --> PrgState{prgm_state == PRGM_RUNNING?}
+    PrgState -->|No| End1((Return))
+	PrgState --> |YES| Cause{Cause?}
+
     Cause -->|M1 button pressed| Button[".is_button_cause"]
     Cause -->|Copper poll bit set| Poll[".software_cause: async-break poll"]
-    Cause -->|other, e.g. DivMMC/I/O trap| Decline
+    Cause -->|other, e.g. DivMMC/I/O trap| End2((Return))
 
-    Button --> BtnState{Debugged program running?}
-    BtnState -->|No, e.g. dezogif GUI shown| Decline
-    BtnState -->|Yes| Pause1["send_ntf_pause(MANUAL_BREAK)"]
+    Button -->|Yes| ntf_pause["prgm_state:=PRGM_STOPPED\nsend_ntf_pause(MANUAL_BREAK)"]
 
     Poll --> UartByte{UART message received?}
-    UartByte -->|No| Decline
-    UartByte -->|Yes| PrgState{prgm_state == RUNNING?}
-    PrgState -->|No| Decline
-    PrgState -->|Yes| Pause2["send_ntf_pause(MANUAL_BREAK)"]
+    UartByte -->|No| End3((Return))
+    UartByte -->|Yes| CmdLoop
 
-    RST[["RST 0 executed (breakpoint reached)"]] --> Enter["enter_debugger: save registers, backup PC/SP"]
-    Enter --> TmpBp{Temporary stepping breakpoint?}
-    TmpBp -->|Yes| Reason1["reason = NO_REASON"]
-    TmpBp -->|No, real breakpoint| Reason2["reason = BREAKPOINT_HIT"]
-    Reason1 --> Pause3["send_ntf_pause(reason)"]
-    Reason2 --> Pause3
+    ntf_pause --> CmdLoop
 
-    Pause1 --> CmdLoop["cmd_loop: wait for DeZog commands"]
-    Pause2 --> CmdLoop
-    Pause3 --> CmdLoop
-    CmdLoop --> Continue["DeZog sends CMD_CONTINUE"] --> Resume["Resume debugged program"]
+    CmdLoop[cmd_loop] --> ReceiveCmd["Receive Cmd"] --> ExecCmd["Execute Cmd (cmd_call).\nNote: an executed CMD_PAUSE will change prgm_state to PRGM_STOPPED"]
+	ExecCmd --> PrgStateLoop{prgm_state == PRGM_RUNNING?} --> |YES| End4((Return))
+	PrgStateLoop --> |NO| CmdLoop
 
-    Decline["Return to interrupted program (RETN)"]
-
-    classDef entry fill:#ffd54f,stroke:#7a5c00,stroke-width:2px,color:#000
+    classDef entry_return fill:#ffd54f,stroke:#7a5c00,stroke-width:2px,color:#000
     classDef decision fill:#81d4fa,stroke:#01579b,stroke-width:2px,color:#000
     classDef action fill:#a5d6a7,stroke:#1b5e20,stroke-width:2px,color:#000
-    classDef decline fill:#ef9a9a,stroke:#b71c1c,stroke-width:2px,color:#000
-    class NMI,RST entry
-    class Cause,BtnState,UartByte,PrgState,TmpBp decision
-    class Button,Poll,Pause1,Pause2,Pause3,Enter,Reason1,Reason2,CmdLoop,Continue,Resume action
-    class Decline decline
+    class Cause,UartByte,PrgState,PrgStateLoop decision
+    class Button,Poll,ntf_pause,CmdLoop,ReceiveCmd,ExecCmd action
+    class NMI,End1,End2,End3,End4 entry_return
     linkStyle default stroke:#888888,stroke-width:2px
 ```
+
+If the debugged program is running and DeZog sends a CMD_PAUSE:
+in the next (copper poll) NMI the `.softwarecause` branch is taken. Since the message was sent over UART we end up in the `cmd_loop`.
+The CMD_PAUSE is executed which sets the prgm_state to PRGM_STOPPED and we stay in the cmd_loop waiting for the next command to execute.
+
+If the debugged program is running and some other command (e.g. CMD_READ_MEM) arrives, again the `.softwarecause` branch is taken ending again in the `cmd_loop`. The command is executed but the pgm_state stays at PRGM_RUNNING. So the `cmd_loop` is immediately left.
+
+Notes:
+- The flowchart is simplified for ease of understanding, some decisions are done in a different order in reality e.g. for performance reasons.
+
+
+#### Breakpoint
+A SW breakpoint (RST 0) is a separate, third entry point that does not go through the NMI at all.
+
+```mermaid
+flowchart TD
+    RST[["RST 0 executed (breakpoint reached)"]] --> Enter["enter_debugger: save registers, backup PC/SP,\nprgm_state:=PRGM_STOPPED"]
+    Enter --> TmpBp{Temporary stepping breakpoint?}
+    TmpBp -->|Yes| ReasonTmp["send_ntf_pause(NO_REASON)"]
+    TmpBp -->|No| ReasonBp["send_ntf_pause(BREAKPOINT_HIT)"]
+    ReasonTmp --> CmdLoop[cmd_loop]
+    ReasonBp --> CmdLoop
+
+    CmdLoop --> ReceiveCmd["Receive Cmd"] --> ExecCmd["Execute Cmd (cmd_call)"]
+	ExecCmd --> PrgStateLoop{prgm_state == PRGM_RUNNING?} --> |YES| End((Return))
+	PrgStateLoop --> |NO| CmdLoop
+
+    classDef entry_return fill:#ffd54f,stroke:#7a5c00,stroke-width:2px,color:#000
+    classDef decision fill:#81d4fa,stroke:#01579b,stroke-width:2px,color:#000
+    classDef action fill:#a5d6a7,stroke:#1b5e20,stroke-width:2px,color:#000
+    class RST,End entry_return
+    class Cause,TmpBp,PrgStateLoop decision
+    class Enter,ReasonTmp,ReasonBp,CmdLoop,ReceiveCmd,ExecCmd, action
+    linkStyle default stroke:#888888,stroke-width:2px
+```
+
+If a breakpoint/RST 0 is hit, it is checked if it was a temporary or a real breakoint.
+In any case a pause notification is sent.
+Then the `cmd_loop` is entered and not left because the prgm_state was set to PRGM_STOPPED before.
+So we stay in the `cmd_loop` and process received commands until a CMD_CONTINUE is received.
+When it is executed the prgm_state is set to PRGM_RUNNING, the routine is left and the debugged program continues to run.
 
 
 # Memory Bank Switching - Multiface

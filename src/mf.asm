@@ -93,16 +93,14 @@ mf_hide:
 
 
 ;===========================================================================
-; Is called from the Multiface ROM when the NMI button was pressed.
-; This will send a pause notification and afterwards handle all "queued"
-; commands from DeZog.
-; Then the NMI is left.
+; Is called from the Multiface ROM when the NMI interrupt
+; for button or copper poll happened.
 ; When entered:
 ;   SP is pointing to the MF.stack.
 ;   All other registers are from the debugged program.
 ;   The debugged program SP is in MF.backup_sp.
 ; ===========================================================================
-mf_nmi_button_pressed:
+mf_nmi_happened:
 	; Save registers
 	push hl
 	ld hl,.save_registers_continue
@@ -130,21 +128,20 @@ mf_nmi_button_pressed:
 	; Make sure the joyport is configured for the UART
 	call set_uart_joystick
 
-	; First drain receive message queue - UNLESS this break was the poll's.
-	; See MF.nmi_poll_break: for a button press the drain is right, for a poll
-	; break it would eat the very command that asked for the break.
-	; Read and cleared in one place, so a button press after a poll break drains
-	; normally. "call z" because a zero flag from "or a" means "not a poll".
-	ld hl,MF.nmi_poll_break
-	ld a,(hl)
-	ld (hl),0
-	or a
-	call z,drain_rx_buffer
+	; Check the cause of the NMI
+	ld a,(MF.nmi_cause)
+	dec a  ; 1 = NMI_CAUSE_BUTTON
+	jr nz,.not_copper_poll_break
 
+	; It was a NMI button press so drain the receive buffer
+	; to throw away possible garbage (if Async-Break was off)
+	call drain_rx_buffer
 	; Send pause notification
 	ld d,BREAK_REASON.MANUAL_BREAK
 	ld hl,0 ; bp address
 	call send_ntf_pause
+
+.not_copper_poll_break:
 
 	; L2 backup
 	call save_layer2_rw
@@ -220,8 +217,8 @@ mf_nmi_poll:
 
 	; Tell mf_nmi_button_pressed not to drain: the command that caused this
 	; break is in the RX FIFO and the drain would eat it. See there.
-	ld a,1
-	ld (MF.nmi_poll_break),a
+	ld a,MF.NMI_CAUSE_COPPER_POLL
+	ld (MF.nmi_cause),a
 
 	; The clock is switched HERE and nowhere else, which is the difference
 	; between this and the button path: nmi66h speeds up before it has decided
@@ -242,7 +239,7 @@ mf_nmi_poll:
 	; the stack state it expects.
 	pop bc
 	pop af
-	jp mf_nmi_button_pressed
+	jp mf_nmi_happened
 
 
 ;===========================================================================

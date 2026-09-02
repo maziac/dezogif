@@ -207,6 +207,10 @@ nmi66h:
     out (BORDER),a
     ENDIF
 
+    ; Save cause
+	ld a,NMI_CAUSE_BUTTON
+	ld (MF.nmi_cause),a
+
     ; IO_NEXTREG_REG was backed up at the top of nmi66h - see there.
     ld a,(MF.nmi_io_next_reg)
     ld (backup.io_next_reg),a
@@ -284,7 +288,7 @@ nmi66h:
     ; Restore registers from MF stack
     pop af
 
-    jp mf_nmi_button_pressed
+    jp mf_nmi_happened
 
 
 ;===========================================================================
@@ -369,22 +373,12 @@ nmi_slot7:      defb 0
 ; Same scope as the two above.
 nmi_io_next_reg: defb 0
 
-; Non-zero when this break was caused by the poll rather than by the M1 button,
-; so that mf_nmi_button_pressed can skip its drain_rx_buffer. The drain discards
-; everything until 100ms of quiet, which is right for a button press - nobody
-; sent anything, and junk on the link should go - and wrong for a poll break,
-; whose whole cause is a command sitting in the RX FIFO. Draining would throw
-; that command away and leave DeZog blocked on a response that can never come.
-;
-; A byte rather than a register: the pops in mf_nmi_poll and save_registers
-; between here and there consume every one of them. It is read AND cleared by
-; mf_nmi_button_pressed, so a button press following a poll break drains
-; normally, and main_bank_entry clears it because MF RAM is undefined at
-; power-on.
-;
-; None of these four cost a byte of the 8192-byte ROM image: OUTEND is above, so
-; nothing from here down is emitted.
-nmi_poll_break:  defb 0
+; The reason for the NMI is stored here: either a copper poll or the button press.
+; Is used to decide if the UART should be drained after an NMI and if a pause
+; notification should be sent.
+nmi_cause:  defb 0  ; Undefined
+NMI_CAUSE_BUTTON:       equ 1
+NMI_CAUSE_COPPER_POLL:  equ 2
 
     ENDMODULE
 
