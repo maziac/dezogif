@@ -150,15 +150,16 @@ title Continue
 participant dezog as "DeZog"
 participant zxnext as "ZXNext"
 
-== Add breakpoint ==
+== Add/remove breakpoint ==
 
-note over dezog: add breakpoint\nto list
-note over zxnext: No communication with ZXNext
-'dezog -> zxnext: CMD_READ_MEM(bp_address)
-'dezog <-- zxnext
-'note over dezog: Store opcode along\nbreakpoint
-'dezog -> zxnext: CMD_ADD_BREAKPOINT(bp_address)
-'note over zxnext: Overwrite opcode with RST
+note over dezog: add/remove breakpoint\nto/from list
+alt Debugged program stopped
+	note over dezog, zxnext: No communication with ZXNext
+else Debugged program running
+	note over dezog: Only the one breakpoint is sent,\nnot the complete list.
+	dezog -> zxnext: CMD_SET/REMOVE_BREAKPOINTS(breakpoint)
+	dezog <-- zxnext: Response
+end
 ...
 
 == Continue ==
@@ -262,6 +263,51 @@ So the plan is:
 If the "Symbol Shift" (or CTRL) key is pressed while the user presses the NMI execution continues at step 3. I.e. this can re-initialize the dezogif SW.
 
 MF ROM is 0x0000-0x1FFF. MF RAM is 0x2000-0x3FFF.
+
+### NMI / Breakpoint Entry Flowchart
+The Multiface NMI (0x0066) has two causes: the M1 button and the Copper's once-per-frame Async-Break poll (which itself only breaks in if a UART message has arrived). A SW breakpoint (RST 0) is a separate, third entry point that does not go through the NMI at all. All three end up in the same debug loop:
+
+```mermaid
+flowchart TD
+    NMI[["NMI at 0x0066"]] --> Cause{Cause?}
+    Cause -->|M1 button pressed| Button[".is_button_cause"]
+    Cause -->|Copper poll bit set| Poll[".software_cause: async-break poll"]
+    Cause -->|other, e.g. DivMMC/I/O trap| Decline
+
+    Button --> BtnState{Debugged program running?}
+    BtnState -->|No, e.g. dezogif GUI shown| Decline
+    BtnState -->|Yes| Pause1["send_ntf_pause(MANUAL_BREAK)"]
+
+    Poll --> UartByte{UART message received?}
+    UartByte -->|No| Decline
+    UartByte -->|Yes| PrgState{prgm_state == RUNNING?}
+    PrgState -->|No| Decline
+    PrgState -->|Yes| Pause2["send_ntf_pause(MANUAL_BREAK)"]
+
+    RST[["RST 0 executed (breakpoint reached)"]] --> Enter["enter_debugger: save registers, backup PC/SP"]
+    Enter --> TmpBp{Temporary stepping breakpoint?}
+    TmpBp -->|Yes| Reason1["reason = NO_REASON"]
+    TmpBp -->|No, real breakpoint| Reason2["reason = BREAKPOINT_HIT"]
+    Reason1 --> Pause3["send_ntf_pause(reason)"]
+    Reason2 --> Pause3
+
+    Pause1 --> CmdLoop["cmd_loop: wait for DeZog commands"]
+    Pause2 --> CmdLoop
+    Pause3 --> CmdLoop
+    CmdLoop --> Continue["DeZog sends CMD_CONTINUE"] --> Resume["Resume debugged program"]
+
+    Decline["Return to interrupted program (RETN)"]
+
+    classDef entry fill:#ffd54f,stroke:#7a5c00,stroke-width:2px,color:#000
+    classDef decision fill:#81d4fa,stroke:#01579b,stroke-width:2px,color:#000
+    classDef action fill:#a5d6a7,stroke:#1b5e20,stroke-width:2px,color:#000
+    classDef decline fill:#ef9a9a,stroke:#b71c1c,stroke-width:2px,color:#000
+    class NMI,RST entry
+    class Cause,BtnState,UartByte,PrgState,TmpBp decision
+    class Button,Poll,Pause1,Pause2,Pause3,Enter,Reason1,Reason2,CmdLoop,Continue,Resume action
+    class Decline decline
+    linkStyle default stroke:#888888,stroke-width:2px
+```
 
 
 # Memory Bank Switching - Multiface
@@ -525,8 +571,3 @@ But OK, most people don't use MD anyway and it would still be possible by using 
 
 ## UART
 The TX UART uses a 64 byte buffer (vs 1 byte in 03.01.05).
-There are also some new registers and no need to use the KEMPSTON joystick port anymore.
-
-
-# Flowchart
-The basic flowchart of the `dezogif` program.
