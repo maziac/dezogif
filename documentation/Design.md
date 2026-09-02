@@ -1,5 +1,4 @@
 # dezogif - ZX Next Interface
-
 For implementing the ZX Next Remote in [DeZog](https://github.com/maziac/DeZog) it is necessary to implement a piece of SW, a counterpart, that is running on the ZX Next and communicates with DeZog.
 
 For debugging there is no specific support on the ZX Next so everything, breakpoints, stepping, etc. is done in SW.
@@ -13,7 +12,6 @@ This document deals with the main problems/solutions and design decisions.
 
 
 # Communication
-
 The ZX Next has a UART, e.g. to connect to WiFi.
 It is available at the WiFi connector CN9.
 
@@ -48,7 +46,6 @@ The program is started when DeZog sends a DZRP continue request.
 
 
 # ZX Next SW - dezogif
-
 The ZX Next requires a program to be executed on the Next to communicate with the PC with DeZog.
 The SW has the following main tasks:
 - communication with DeZog
@@ -57,8 +54,8 @@ The SW has the following main tasks:
 - set SW breakpoints
 
 
-## Basic operation - Pressing the NMI button
-
+## Basic operation
+### Pressing the NMI button
 When the yellow NMI button is pressed depending on the current state one of 4 cases can happen:
 
 - If pressed for the first time (after boot) the dezogif program is initializing itself. It copies itself into bank 94. "Returns"/RETN from the NMI to enable maskable interrupts (It not really returns, it stays in a loop).
@@ -67,9 +64,44 @@ It shows the dezogif GUI and stays in a loop, waiting for UART commands from DeZ
 - If pressed while holding the Symbol Shift (or CTRL) key down it re-initializes itself just if pressed for the first time.
 - If pressed while the debugged program is running it sends a notification via UART to DeZog and jumps into loop waiting for further commands from DeZog. (Use this to manually break the debugged program.)
 
+~~~puml
+hide footbox
+title Continue
+participant dezog as "DeZog"
+participant zxnext as "ZXNext"
+
+== NMI button pressed ==
+
+note over zxnext: NMI interrupt arrives.\nCheck if button was pressed.
+alt Button pressed AND\nDebugged program is running
+	dezog <- zxnext: NTF_PAUSE(bp_address)
+else Debugged program not running
+	note over zxnext: No action
+end
+...
+~~~
+
+### Pause from DeZog - Async-Break
+If "Async-Break" is enabled an NMI interrupt is generated regularly every video frame.
+The ZXNext checks if a message from DeZog arrived through the UART.
+If yes it will execute the message, if not it will return to the debugged program.
+
+If "Async-Break" is disabled no NMI interrupt will be generated regularly (only if the NMI button was pressed).
+I.e. the ZXNext ignores the UART message and DeZog shows a timeout warning as it does not receive any response.
+
+~~~puml
+== Pause pressed in DeZog ==
+note over dezog: Is only possible if debugged program is running.
+dezog -> zxnext: CMD_PAUSE
+note over zxnext: Wait until next NMI interrupt arrives.\nCheck if UART message received.
+alt UART message received AND\nDebugged program is running
+	dezog <- zxnext: NTF_PAUSE(bp_address)
+	note over zxnext: Can only happen if states\nmismatch in DeZog and ZX Next:\nNo action
+end
+...
+~~~
 
 ## SW Breakpoints
-
 When a breakpoint is set the opcode at the breakpoint address is saved and instead a one byte opcode RST 0 is added.
 
 So, at the RST position there is code located which jumps into the dezogif-program and informs DeZog via UART, then waits on input from DeZog.
@@ -97,7 +129,6 @@ Complicated but working.
 
 
 ## SW Breakpoints - Even More Complex
-
 In order to reduce complexity on the ZX Next SW side many of the breakpoint functionality is moved to DeZog.
 
 This reduces the need especially for memory at the ZX next part.
@@ -152,13 +183,12 @@ note over zxnext: No communication with ZXNext
 
 == Stop at breakpoint (generally) ==
 dezog <- zxnext: NTF_PAUSE(bp_address)
-note over dezog: If BREAK_REASON==HIT then\nset breakedAddress
 ...
 
 == Continue (from breakpoint) ==
 
-alt oldBreakedAddress != undefined
-	note over dezog: Create list of bp addresses\nwithout the breakedAddress
+alt Current PC is in the list of breakpoints
+	note over dezog: oldPC := Current PC\nCreate list of bp addresses\nwithout oldPC
 	dezog -> zxnext: CMD_SET_BREAKPOINTS(bp_addresses)
 	note over zxnext: Overwrites the\nRST (breakpoint),\ni.e. restores the opcode
 	dezog <-- zxnext: List of opcodes
@@ -170,7 +200,7 @@ alt oldBreakedAddress != undefined
 	note over zxnext: Breakpoint hit:\nRestore the 2 opcodes
 	dezog <- zxnext: NTF_PAUSE(address)
 
-	dezog -> zxnext: CMD_SET_BREAKPOINTS(breakedAddress)
+	dezog -> zxnext: CMD_SET_BREAKPOINTS(oldPC)
 	note over zxnext: Restores the one\nmemory location
 end
 
@@ -180,7 +210,6 @@ dezog <-- zxnext
 
 
 ## Breakpoint conditions
-
 After a breakpoint is hit it needs to be checked if the condition is true.
 
 Conditions like
@@ -194,21 +223,18 @@ DeZog will then check the condition. If not true it will simply continue the exe
 
 
 ## Reverse Debugging
-
 Real reverse debugging, i.e. collecting a trace of instruction on the ZX Next, is not possible because this would run far too slow.
 
 But still the lite history will work in DeZog.
 
 
 ## Code Coverage
-
 Is not possible or would be far to slow in SW.
 
 So code coverage is not available.
 
 
 ## Multiface
-
 [Multiface](https://k1.spdns.de/Vintage/Sinclair/82/Peripherals/Multiface%20I%2C%20128%2C%20and%20%2B3%20(Romantic%20Robot)/) and the NMI interrupt is used for pausing a running program.
 On pressing the NMI button the Multiface memory is swapped in and the NMI at 0x0066 is executed.
 It can be swapped out with
@@ -239,19 +265,18 @@ MF ROM is 0x0000-0x1FFF. MF RAM is 0x2000-0x3FFF.
 
 
 # Memory Bank Switching - Multiface
-
 The table below shows the bank switching in case a breakpoint is hit:
 
-|Slot/L2| Running | BP hit | Enter  | Enter  | Dbg loop | Dbg exec | Dbg loop | Exit    | Running |
-|:------|:--------|:-------|:-------|:-------|:---------|:---------|:---------|:--------|:--------|
-| 0     | **XM**  |**MAIN**|**MAIN**|**MAIN**| XM       | XM       | XM       |**XM**   | **XM**  |
-| 1     | **X**   | X      | X      | X      | X        | X        | X        | X       | **X**   |
-| 2-5   | **X**   | X      | X      | X      | X        | X        | X        | X       | **X**   |
-| 6     | **X**   | X      | X      | X      | X        | SWAP     | X        | X       | **X**   |
-| 7     | **X**   | X      | X      |**MAIN**|**MAIN**  |**MAIN**  |**MAIN**  |**MAIN** | **X**   |
-| L2 RW | 0/1     | 0/1    | 0      | 0      | 0        | 0        | 0        | 0/1     | 0/1     |
-| PC    | 0-7     | 0      | 0      | 0->7   | 7        | 7        | 7        | 7->0    | 0-7     |
-| M1 enabled | 1  | 1->0   | 0      | 0      | 0        | 0        | 0        | 0->1    | 0-7     |
+| Slot/L2    | Running | BP hit   | Enter    | Enter    | Dbg loop | Dbg exec | Dbg loop | Exit     | Running |
+| :--------- | :------ | :------- | :------- | :------- | :------- | :------- | :------- | :------- | :------ |
+| 0          | **XM**  | **MAIN** | **MAIN** | **MAIN** | XM       | XM       | XM       | **XM**   | **XM**  |
+| 1          | **X**   | X        | X        | X        | X        | X        | X        | X        | **X**   |
+| 2-5        | **X**   | X        | X        | X        | X        | X        | X        | X        | **X**   |
+| 6          | **X**   | X        | X        | X        | X        | SWAP     | X        | X        | **X**   |
+| 7          | **X**   | X        | X        | **MAIN** | **MAIN** | **MAIN** | **MAIN** | **MAIN** | **X**   |
+| L2 RW      | 0/1     | 0/1      | 0        | 0        | 0        | 0        | 0        | 0/1      | 0/1     |
+| PC         | 0-7     | 0        | 0        | 0->7     | 7        | 7        | 7        | 7->0     | 0-7     |
+| M1 enabled | 1       | 1->0     | 0        | 0        | 0        | 0        | 0        | 0->1     | 0-7     |
 
 Slot/Banks/L2:
 X = The bank used by the debugged program
@@ -279,22 +304,21 @@ Notes:
 
 This table shows the bank switching in case th M1 MF NMI (yellow) button is pressed:
 
-|Slot/L2| Running | NMI/M1   | Enter    | RETN   | Dbg loop | Dbg exec | Dbg loop | Exit    | Running |
-|:------|:--------|:---------|:---------|:-------|:---------|:---------|:---------|:--------|:--------|
-| 0     | **XM**  |**MF ROM**|**MF ROM**| XM     | XM       | XM       | XM       |**XM**   | **XM**  |
-| 1     | **X**   | MF RAM   | MF RAM   | X      | X        | X        | X        | X       | **X**   |
-| 2-5   | **X**   | X        | X        | X      | X        | X        | X        | X       | **X**   |
-| 6     | **X**   | X        | X        | X      | X        | SWAP     | X        | X       | **X**   |
-| 7     | **X**   | X        | **MAIN** |**MAIN**|**MAIN**  |**MAIN**  |**MAIN**  |**MAIN** | **X**   |
-| L2 RW | 0/1     | 0/1      | 0        | 0      | 0        | 0        | 0        | 0/1     | 0/1     |
-| PC    | 0-7     | 0        | 0->7     | 7      | 7        | 7        | 7        | 7->0    | 0-7     |
-| M1 enabled | 1  | 1->0     | 0        | 0      | 0        | 0        | 0        | 0->1    | 0-7     |
+| Slot/L2    | Running | NMI/M1     | Enter      | RETN     | Dbg loop | Dbg exec | Dbg loop | Exit     | Running |
+| :--------- | :------ | :--------- | :--------- | :------- | :------- | :------- | :------- | :------- | :------ |
+| 0          | **XM**  | **MF ROM** | **MF ROM** | XM       | XM       | XM       | XM       | **XM**   | **XM**  |
+| 1          | **X**   | MF RAM     | MF RAM     | X        | X        | X        | X        | X        | **X**   |
+| 2-5        | **X**   | X          | X          | X        | X        | X        | X        | X        | **X**   |
+| 6          | **X**   | X          | X          | X        | X        | SWAP     | X        | X        | **X**   |
+| 7          | **X**   | X          | **MAIN**   | **MAIN** | **MAIN** | **MAIN** | **MAIN** | **MAIN** | **X**   |
+| L2 RW      | 0/1     | 0/1        | 0          | 0        | 0        | 0        | 0        | 0/1      | 0/1     |
+| PC         | 0-7     | 0          | 0->7       | 7        | 7        | 7        | 7        | 7->0     | 0-7     |
+| M1 enabled | 1       | 1->0       | 0          | 0        | 0        | 0        | 0        | 0->1     | 0-7     |
 
 The debug loop primarily executes the CMD_PAUSE and then stays in the debug loop until DeZog sends a CMD_CONTINUE.
 
 
 ## SP
-
 When entering the debugger the SP can point to any memory location.
 E.g. even slot7 or slot 0.
 If the SP points to memory in the same area as the debugger code is running the wrong values could be pushed/popped.
@@ -304,10 +328,7 @@ So, to access the debugged program's stack it is necessary to map the memory are
 Actually 2 banks/slots are required as the stack could reach over 2 slots. Even one SP address could be on the border so that the low byte is in slot X and the high byte is in slot x+1.
 
 
-
-
 # AltROM
-
 See https://gitlab.com/SpectrumNext/ZX_Spectrum_Next_FPGA/-/blob/master/cores/zxnext/nextreg.txt#L825 .
 
 The Alternate ROM is used so I don't need to copy the ROM, modify/copy it to another bank.
@@ -322,10 +343,7 @@ This also implies that your program cannot use any of the other ROMs.
 When the other ROMs are mapped the dezogif debugging code would be missing and as soon as a breakpoint should be hit or you do simple stepping the debugging would fail.
 
 
-
-
 # Setting Breakpoints
-
 The debugger program resides in the ROM area at 0xE000-0xFFFF.
 If a breakpoint should be set in this area it would be set in the debugger program.
 Setting a breakpoint involves to exchange the opcode at the breakpoint address with RST opcode. I.e. a memory read and write.
@@ -334,15 +352,12 @@ To do this the debugged program memory bank is paged in another slot (slot 6, SW
 
 
 # Reading/Writing Memory
-
 The problem is the same as for breakpoints. It's a little bit more tricky because whole memory areas are involved that can also overlap the bank boundaries. So the memory reading/writing need to be partitioned.
 But the principle is the same as with setting breakpoints.
 
 
 # Stack
-
 ## NMI in Core 03.01.05
-
 In core 03.01.05 an NMI can corrupt the stack in certain circumstances.
 The NMI can occur at anytime and therefore it can also happen during stack manipulation.
 
@@ -374,7 +389,6 @@ See [NMI in Core 03.01.10](#nmi-in-core-030105).
 
 
 ## NMI in Core 03.01.10
-
 In core 03.01.10 the default is to use the NMI stackless mode.
 In this mode the NMI return address is not written to the stack but to a ZXNext register.
 I.e. it will not corrupt the stack in any case.
@@ -386,7 +400,6 @@ The ```dezogif``` SW can cope with both situations dynamically.
 
 
 ## SW Breakpoints
-
 In normal circumstances the user can place the breakpoints wherever he likes.
 But there are some places that would lead to a stack corruption.
 
@@ -422,15 +435,11 @@ Note: The user could change these values after the breakpoint occurred without d
 
 
 # Changes in NextZxOS 3.01.10
-
 ## dezogif
-
 The ```dezogif``` SW does not dynamically adapt to core 03.01.05 or 03.01.10.
 I.e. for each of the cores a different SW has to be built and only the latest one is maintained.
 
-
 ## Stackless NMI
-
 With 3.01.10 the "default" is that stackless NMI is enabled.
 I.e. the NMI return address is not written to the stack but in 2 ZX Next registers.
 
@@ -496,7 +505,6 @@ Answers from AA:
 
 
 ## NMI reason (cause)
-
 In 3.01.10 an NMI can be generated not only by the button but also by IO/FDC (I think this is disk) and by the program itself (by writing to nextreg 2).
 
 In these case bits 2, 3 or 4 will be set when the NMI occurs.
@@ -516,7 +524,9 @@ But OK, most people don't use MD anyway and it would still be possible by using 
 
 
 ## UART
-
 The TX UART uses a 64 byte buffer (vs 1 byte in 03.01.05).
 There are also some new registers and no need to use the KEMPSTON joystick port anymore.
 
+
+# Flowchart
+The basic flowchart of the `dezogif` program.
