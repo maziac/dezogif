@@ -29,7 +29,6 @@ DZRP_VERSION.MINOR:		equ 2
 DZRP_VERSION.PATCH:		equ 0
 
 
-
 ; The own program name and version
 PROGRAM_NAME:	defb "dezogif "
 				PRG_VERSION
@@ -495,11 +494,31 @@ cmd_pause:
 	ld de,1
 	call send_length_and_seqno
 
+
+	; Send log notification
+	ld hl,.log
+	ld de,.logend-.log+1+1+1+2	;  + seqno + id + length of format string + plus data
+	call send_ntf_log
+	; Add data to log message.
+	; A:
+	ld a,17
+	call write_uart_byte
+	; HL:
+	ld hl,65500
+	ld a,l
+	call write_uart_byte
+	ld a,h
+	call write_uart_byte
+	; End of log
+
 	; Send pause notification
 	ld d,BREAK_REASON.MANUAL_BREAK
 	ld hl,0 ; bp address
 	jp send_ntf_pause ; Also changes prgm_state to PRGM_STOPPED
 
+.log:
+	defb "Value of A: $u1 $h2", 0
+.logend
 
 ;===========================================================================
 ; CMD_READ_MEM
