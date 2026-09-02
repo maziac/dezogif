@@ -263,3 +263,65 @@ divisor = divisor / 10
 	MACRO DBG_PRINT
 	ENDM
  ENDIF
+
+
+
+ IFDEF DBG_SEND_LOG
+
+;===========================================================================
+; Send notification log macros.
+;===========================================================================
+	MACRO SEND_NTF_LOG text?
+	jr .text_end
+.text_start:
+	defb text?, 0
+.text_end:
+	ld hl,.text_start
+	ld de,.text_end-.text_start+1+1+1+2	;  + seqno + id + length of format string + plus data
+	call dbg_send_log.log
+	ENDM
+
+	; Logs register A
+	MACRO SEND_NTF_LOG_REG_A
+	call write_uart_byte
+	ENDM
+
+	; Logs register B-L etc.
+	MACRO SEND_NTF_LOG_REG reg?
+	ld a,reg?
+	call write_uart_byte
+	ENDM
+
+	; Logs memory pointed by the pointer (byte).
+	MACRO SEND_NTF_LOG_BYTE pointer?
+	ld a,(pointer?)
+	call write_uart_byte
+	ENDM
+
+	; Logs memory pointed by the pointer (word).
+	MACRO SEND_NTF_LOG_WORD pointer?
+	ld a,(pointer?)
+	call write_uart_byte
+	ld a,(pointer?+1)
+	call write_uart_byte
+	ENDM
+
+ ELSE
+
+	; Define empty macros for when DBG_SEND_LOG is not defined
+	MACRO SEND_NTF_LOG text?
+	ENDM
+
+	MACRO SEND_NTF_LOG_REG_A
+	ENDM
+
+	MACRO SEND_NTF_LOG_REG reg?
+	ENDM
+
+	MACRO SEND_NTF_LOG_BYTE pointer?
+	ENDM
+
+	MACRO SEND_NTF_LOG_WORD pointer?
+	ENDM
+
+ ENDIF

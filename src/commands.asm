@@ -496,29 +496,16 @@ cmd_pause:
 
 
 	; Send log notification
-	ld hl,.log
-	ld de,.logend-.log+1+1+1+2	;  + seqno + id + length of format string + plus data
-	call send_ntf_log
+	SEND_NTF_LOG "Value of A: $u1 and BC $h2"
 	; Add data to log message.
-	; A:
-	ld a,17
-	call write_uart_byte
-	; HL:
-	ld hl,65500
-	ld a,l
-	call write_uart_byte
-	ld a,h
-	call write_uart_byte
+	SEND_NTF_LOG_BYTE prgm_state
+	SEND_NTF_LOG_WORD backup.bc
 	; End of log
 
 	; Send pause notification
 	ld d,BREAK_REASON.MANUAL_BREAK
 	ld hl,0 ; bp address
 	jp send_ntf_pause ; Also changes prgm_state to PRGM_STOPPED
-
-.log:
-	defb "Value of A: $u1 $h2", 0
-.logend
 
 ;===========================================================================
 ; CMD_READ_MEM

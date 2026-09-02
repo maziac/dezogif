@@ -85,6 +85,7 @@ end		defb	; For the RET
 
 
 
+
 ;===========================================================================
 ; Starts the command loop. I.e. backups all registers.
 ; Interprets the last received message.
@@ -362,44 +363,3 @@ send_ntf_pause:
 	xor a
 	jp write_uart_byte
 
-
-;===========================================================================
-; Sends a NTF_LOG notification
-; Parameter:
-; Returns:
-;  -
-; Changes:
-;
-;===========================================================================
-send_ntf_log:
-	; LOGPOINT [CMD] send_ntf_log
-	; Write first byte to recognize message
-	ld a,MESSAGE_START_BYTE
-	call write_uart_byte
-	; First length byte
-	ld a,e
-	call write_uart_byte
-	; Second length byte
-	ld a,d
-	call write_uart_byte
-	; Rest of length + seqno=0
-	xor a
-	ld e,3
-.loop:
-	call write_uart_byte
-	dec e
-	jr nz,.loop
-
-	; Send NTF_LOG id
-	ld a,NTF_LOG
-	call write_uart_byte
-
-	; Send string starting at hl until 0
-.send_string:
-	ldi a,(hl)
-	call write_uart_byte
-	or a	; Check if HL reached the end of string (0)
-	jr nz,.send_string
-
-	; Remaining data (if any) has to be sent by the caller.
-	ret

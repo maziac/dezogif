@@ -20,6 +20,8 @@
 
     ; Define this for some rudimentary debug functionality
     ;DEFINE DEBUG
+    ; Define this for sending debug logs over UART
+    DEFINE DBG_SEND_LOG
 
     include "macros.asm"
     include "zx/zx.inc"
@@ -39,6 +41,7 @@
     include "settings.asm"
     include "altrom.asm"
     include "debug.asm"
+    include "dbg_send_log.asm"
 
 
 ;===========================================================================

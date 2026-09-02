@@ -43,6 +43,7 @@ LOADED_BANK:    EQU 92
     include "settings.asm"
     include "altrom.asm"
     include "debug.asm"
+    include "dbg_send_log.asm"
 
     include "mf_rom.asm"
 
