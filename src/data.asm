@@ -171,8 +171,15 @@ font_address:   defw    ROM_START+ROM_SIZE-ROM_FONT_SIZE-0x20*8
 
 
 ;===========================================================================
-; Used by: mf_rom.asm
+; The main state of dezogif.
+; Used in various places.
 prgm_state:	defb PRGM_IDLE
+
+
+; The current state of the Copper.
+; 0=Disabled and stopped.
+; 1=Enabled and running.
+copper_running:	defb 0
 
 
 ;===========================================================================

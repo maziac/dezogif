@@ -26,10 +26,14 @@
 ; this one - so it keeps its raster effects and carries the two instructions
 ; itself, as the user documentation describes.
 ;
+; Sets the copper_running variable to 1.
+;
 ; Changes:
 ;   AF, BC
 ;===========================================================================
 break_install:
+    SEND_NTF_LOG "Copper break_install", 0
+.for_cmd_loopback:  ; Used to skip the SND_NTF_LOG
     ; NR 0x06 bit 3 gates EVERY Multiface NMI source and its power-on value is
     ; 0. NextZXOS leaves it set, so this is insurance rather than setup - but a
     ; program that had cleared it would otherwise kill the break silently, and
@@ -49,6 +53,10 @@ break_install:
     ; Run from index 0, looping. The mode CHANGING to 01 is what resets the
     ; pointer (device/copper.vhd:69-78), which the stop above guarantees.
     nextreg REG_COPPER_CONTROL_H,RCCH_COPPER_RUN_LOOP_RESET
+
+    ; Set state to enabled and running
+    ld a,1
+    ld (copper_running),a
     ret
 
 
@@ -59,12 +67,17 @@ break_install:
 ; read, so it cannot be edited - stopping the Copper is the only "off" there is,
 ; and it stops the debugged program's OWN list too if it installed one.
 ;
+; Sets the copper_running variable to 0.
+;
 ; Changes:
-;   -
+;   AF (A = 0, Z set)
 ;===========================================================================
-	MACRO COPPER_BREAK_STOP
+break_stop:
 	nextreg REG_COPPER_CONTROL_H,RCCH_COPPER_STOP
-	ENDM
+    ; Set state to disabled and stopped
+    xor a
+    ld (copper_running),a
+    ret
 
 
 	ENDMODULE

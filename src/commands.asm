@@ -77,6 +77,11 @@ cmd_jump_table:
 ;.write_state:			defw 0	; not supported
 
 
+; Used Command definitions
+CMD_INIT:		equ 1
+CMD_LOOPBACK:	equ 15
+
+
 ;===========================================================================
 ; Jumps to the correct command according the jump table.
 ; Parameters:
@@ -92,13 +97,20 @@ get_cmd_pointer:	; For unit tests this is a separate function.
  	ld a,(prgm_state)
 	dec a  ; PRGM_IDLE=1, i.e. Z-flag set if in idle state
 	ld a,(receive_buffer.command)
-	jr nz,.not_idle
-	; Idle state: Only CMD_INIT (1) is allowed
-	dec a
+	jr nz,.allowed
+
+	; Idle state: Only CMD_INIT (1) and CMD_LOOPBACK (15) are allowed
+	cp CMD_INIT
 	ld hl,main
-	ret nz ; Not 1 (CMD_INIT), so jump back to main loop
-	inc a  ; Restore value
-.not_idle:
+	jr z,.allowed ; Is 1 (CMD_INIT), so jump to allowed
+	cp CMD_LOOPBACK
+	ld hl,main
+	jr z,.allowed ; Is 15 (CMD_LOOPBACK), so jump to allowed
+	; Not allowed command in idle state
+	ld hl,cmd_not_allowed
+	ret
+
+.allowed:
 	; Check that command number is in range
 	ld l,(cmd_jump_table.end-cmd_jump_table)/2
 	sub l
@@ -112,6 +124,7 @@ get_cmd_pointer:	; For unit tests this is a separate function.
 	ld h,(hl)
 	ld l,a
 	ret
+
 .not_supported:
 	ld hl,cmd_not_supported
 	ret
@@ -129,6 +142,18 @@ cmd_not_supported:
 	ld a,ERROR_CMD_NOT_SUPPORTED
     jp drain_main
 
+;===========================================================================
+; CMD not allowed.
+; Is called for a command that is not allowed in current mode.
+; Creates an error output.
+; Changes:
+;  NA
+;===========================================================================
+cmd_not_allowed:
+	; LOGPOINT [CMD] cmd_not_allowed
+	ld a,ERROR_CMD_NOT_ALLOWED
+    jp drain_main
+
 
 ;===========================================================================
 ; CMD_INIT
@@ -138,6 +163,8 @@ cmd_not_supported:
 ;===========================================================================
 cmd_init:
 	; LOGPOINT [CMD] cmd_init
+	SEND_NTF_LOG "<<< CMD_INIT", 0
+
 	; DBG_LOG 'i'
 	call .inner
 	; Reset slots to ZX128 default: ROM0, 5, 2, 0 => ROM0, ROM0, 10, 11, 4, 5, 0, 1
@@ -157,16 +184,16 @@ cmd_init:
 	; Program state
 	ld a,PRGM_LOADING
 	ld (prgm_state),a
-    ; A client has opened a session, so the program it is about to be loaded.
+    ; Enable flashing border
+    call uart_flashing_border.enable
+	; Afterwards start all over again / show the "UI"
+    call init_and_show_ui
+    ; A client has opened a session, so the program is about to be loaded.
 	; It has not run yet and therefore does not own the Copper yet.
 	; So here we might install the asynchronous-break copper list safely.
     ld a,(copper_break_enabled)
 	or a
     call nz,copper.break_install
-    ; Enable flashing border
-    call uart_flashing_border.enable
-	; Afterwards start all over again / show the "UI"
-    call init_and_show_ui
 
 .response:
 	; Send length and seq-no
@@ -240,6 +267,8 @@ cmd_get_supported_commands:
 ;===========================================================================
 cmd_close:
 	; LOGPOINT [CMD] cmd_close
+	SEND_NTF_LOG "<<< CMD_CLOSE", 0
+
 	; Send response
 	ld de,1
 	call send_length_and_seqno
@@ -441,6 +470,8 @@ error_write_main_bank:
 ;===========================================================================
 cmd_continue:
 	; LOGPOINT [CMD] cmd_continue
+	SEND_NTF_LOG "<<< CMD_CONTINUE", 0
+
 	; Read breakpoints etc. from message
 	ld hl,receive_buffer.payload
 	ld de,PAYLOAD_CONTINUE
@@ -490,17 +521,11 @@ cmd_continue:
 ;===========================================================================
 cmd_pause:
 	; LOGPOINT [CMD] cmd_pause
+	SEND_NTF_LOG "<<< CMD_PAUSE", 0
+
 	; Send response: the sequence number alone
 	ld de,1
 	call send_length_and_seqno
-
-
-	; Send log notification
-	SEND_NTF_LOG "Value of A: $u1 and BC $h2"
-	; Add data to log message.
-	SEND_NTF_LOG_BYTE prgm_state
-	SEND_NTF_LOG_WORD backup.bc
-	; End of log
 
 	; Send pause notification
 	ld d,BREAK_REASON.MANUAL_BREAK
@@ -842,11 +867,38 @@ cmd_restore_mem:
 ;===========================================================================
 ; CMD_LOOPBACK
 ; The received data is looped back to the sender.
+; If Async break is enabled, the copper will be turned on before the
+; loopback operation.
+; After the loopback operation, the copper will keep running
+; or not depending on the state of copper_break_enabled.
+; It is not turned off afterwards, because more loopback
+; operations may follow.
+;
 ; Changes:
 ;  NA
 ;===========================================================================
 cmd_loopback:
 	; LOGPOINT [CMD] cmd_loopback
+	; Enable the copper if async break is enabled
+	ld a,(copper_running)
+	ld hl,copper_break_enabled
+	xor (hl)
+	; A is not zero if state needs to change
+	jr z,.skip_copper_change
+	; Change the copper state
+	ld a,(hl)	; copper_break_enabled
+	or a	; NZ if copper should be enabled
+	jr nz,.turn_on_copper
+	; Turn copper off
+	call copper.break_stop
+	DBG_LOG '0'
+	jr .skip_copper_change
+.turn_on_copper:
+	; Turn copper on
+	call copper.break_install.for_cmd_loopback
+	DBG_LOG '1'
+.skip_copper_change:
+
 	; Save swap slot
 	call save_swap_slot
 

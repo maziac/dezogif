@@ -19,8 +19,9 @@ ERROR_WRONG_FUNC_NUMBER:	equ 4
 ERROR_WRITE_MAIN_BANK:	    equ 5
 ERROR_CORE_VERSION_NOT_SUPPORTED:  equ 6
 ERROR_CMD_NOT_SUPPORTED:    equ 7
-ERROR_FILE_WRITE:           equ 8
-ERROR_FILE_READ:            equ 9
+ERROR_CMD_NOT_ALLOWED:      equ 8
+ERROR_FILE_WRITE:           equ 9
+ERROR_FILE_READ:            equ 10
 
 
 ;===========================================================================
@@ -197,7 +198,36 @@ wait_on_key_release:
     jr nz,wait_on_key_release
     ret
 
+;===========================================================================
+; Standard ZX Spectrum ULA palette, RGB333 packed into 8 bits (RRRGGGBB,
+; blue truncated to its top 2 bits). Index = color (0-7) | (bright<<3),
+; i.e. entries 0-7 are normal intensity, 8-15 are BRIGHT.
+;===========================================================================
+ULA_DEFAULT_PALETTE:
+    ; Normal: black, blue, red, magenta, green, cyan, yellow, white
+    defb 0x00, 0x02, 0xA0, 0xA2, 0x14, 0x16, 0xB4, 0xB6
+    ; Bright: black, blue, red, magenta, green, cyan, yellow, white
+    defb 0x00, 0x03, 0xE0, 0xE3, 0x1C, 0x1F, 0xFC, 0xFF
 
+
+;===========================================================================
+; Rewrites all 16 ULA palette entries (bank 0) to the standard Sinclair
+; colors. Needed because NR43 select/enable bits only choose which bank is
+; used - they don't restore RGB contents a previous program may have left
+; in bank 0. Assumes autoincrement is enabled (NR43 bit 7 = 0).
+; Changes:
+;   A, BC, HL
+;===========================================================================
+set_ula_default_palette:
+    nextreg REG_PALETTE_INDEX, 0
+    ld hl,ULA_DEFAULT_PALETTE
+    ld b,16
+.loop:
+    ld a,(hl)
+    inc hl
+    nextreg REG_PALETTE_VALUE_8, a
+    djnz .loop
+    ret
 ;===========================================================================
 ; Switches to ULA mode and shows the UI.
 ;===========================================================================
@@ -233,10 +263,13 @@ init_and_show_ui:
     nextreg REG_PALETTE_INDEX, 0
     nextreg REG_ULANEXT_PALETTE_FORMAT, 0x07
     nextreg REG_PALETTE_CONTROL, 0
+    ; Also rewrite default palette
+    call set_ula_default_palette
 
     ; Clear the screen
     call cls
 
+    SEND_NTF_LOG "init_and_show_ui", 0
 ;===========================================================================
 ; Shows the intro text and the state.
 ; Displays also the keys to use to change the settings.

@@ -271,13 +271,17 @@ divisor = divisor / 10
 ;===========================================================================
 ; Send notification log macros.
 ;===========================================================================
-	MACRO SEND_NTF_LOG text?
+
+	; Logs text and data:
+	; text? = the text to send in the log
+	; data_size? = the size of the additional data to send
+	MACRO SEND_NTF_LOG text?, data_size?
 	jr .text_end
 .text_start:
 	defb text?, 0
 .text_end:
 	ld hl,.text_start
-	ld de,.text_end-.text_start+1+1+1+2	;  + seqno + id + length of format string + plus data
+	ld de,1+1+.text_end-.text_start+data_size?	;  seqno + id + length of format string + plus data
 	call dbg_send_log.log
 	ENDM
 
@@ -309,7 +313,7 @@ divisor = divisor / 10
  ELSE
 
 	; Define empty macros for when DBG_SEND_LOG is not defined
-	MACRO SEND_NTF_LOG text?
+	MACRO SEND_NTF_LOG text?, data_size?
 	ENDM
 
 	MACRO SEND_NTF_LOG_REG_A
