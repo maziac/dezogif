@@ -138,6 +138,7 @@ log_number_a:
 	; Store to hl
 	ld l,a
 	ld h,0
+	push hl
 
 	; Prefix
 	ld a,'#'
@@ -151,7 +152,6 @@ log_number_a:
 	jr c,.ret
 
 	pop hl
-	push hl
 	call itoa_5digits.three_digits
 	inc de
 	ld (text_next_ptr),de

@@ -155,7 +155,7 @@ uart_joyport_selection: defb 0
 
 ; Whether the DEBUGGER installs the Copper list that drives the break poll. On
 ; by default, so a program that does not use the Copper is breakable from the PC
-; with no source change at all. The  "A" key turns it off.
+; with no source change at all. The  "A" key turns it off/on.
 ; 1=on, 0=off
 copper_break_enabled:	defb 1
 
@@ -175,11 +175,6 @@ font_address:   defw    ROM_START+ROM_SIZE-ROM_FONT_SIZE-0x20*8
 ; Used in various places.
 prgm_state:	defb PRGM_IDLE
 
-
-; The current state of the Copper.
-; 0=Disabled and stopped.
-; 1=Enabled and running.
-copper_running:	defb 0
 
 
 ;===========================================================================

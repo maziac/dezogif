@@ -98,9 +98,11 @@ check_key_copper:
     ; Wait on key release. BC still holds the port.
     call wait_on_key_release
     ; Toggle
-    ld a,(copper_break_enabled)
-    xor 1
-    ld (copper_break_enabled),a
+    ld hl,copper_break_enabled
+    ld a,(hl)
+    xor 0000_0001b
+    ld (hl),a
+    call copper.set_copper_break
     jp show_ui
 
 
@@ -268,6 +270,9 @@ init_and_show_ui:
 
     ; Clear the screen
     call cls
+
+    ; Set the copper break according to the current state
+    call copper.set_copper_break
 
     SEND_NTF_LOG "init_and_show_ui", 0
 ;===========================================================================

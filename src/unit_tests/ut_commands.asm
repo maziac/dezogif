@@ -251,7 +251,7 @@ UT_02_cmd_close:
  TC_END
 
 ; cmd_close jumps here:
-@main_with_copper_stop:
+@main_with_copper_reinit:
 	ret
 
 ; get_cmd_pointer jumps here:

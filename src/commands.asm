@@ -187,13 +187,7 @@ cmd_init:
     ; Enable flashing border
     call uart_flashing_border.enable
 	; Afterwards start all over again / show the "UI"
-    call init_and_show_ui
-    ; A client has opened a session, so the program is about to be loaded.
-	; It has not run yet and therefore does not own the Copper yet.
-	; So here we might install the asynchronous-break copper list safely.
-    ld a,(copper_break_enabled)
-	or a
-    call nz,copper.break_install
+    call init_and_show_ui  ; Also re-initializes copper break
 
 .response:
 	; Send length and seq-no
@@ -278,7 +272,7 @@ cmd_close:
     ; Enable flashing border
     call uart_flashing_border.enable
 	; Afterwards start all over again / show the "UI"
-	jp main_with_copper_stop
+	jp main
 
 
 ;===========================================================================
@@ -879,26 +873,6 @@ cmd_restore_mem:
 ;===========================================================================
 cmd_loopback:
 	; LOGPOINT [CMD] cmd_loopback
-	; Enable the copper if async break is enabled
-	ld a,(copper_running)
-	ld hl,copper_break_enabled
-	xor (hl)
-	; A is not zero if state needs to change
-	jr z,.skip_copper_change
-	; Change the copper state
-	ld a,(hl)	; copper_break_enabled
-	or a	; NZ if copper should be enabled
-	jr nz,.turn_on_copper
-	; Turn copper off
-	call copper.break_stop
-	DBG_LOG '0'
-	jr .skip_copper_change
-.turn_on_copper:
-	; Turn copper on
-	call copper.break_install.for_cmd_loopback
-	DBG_LOG '1'
-.skip_copper_change:
-
 	; Save swap slot
 	call save_swap_slot
 

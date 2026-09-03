@@ -26,14 +26,14 @@
 ; this one - so it keeps its raster effects and carries the two instructions
 ; itself, as the user documentation describes.
 ;
-; Sets the copper_running variable to 1.
+; Sets the copper_break_enabled variable to 1.
 ;
 ; Changes:
 ;   AF, BC
 ;===========================================================================
 break_install:
+    DBG_LOG '1'
     SEND_NTF_LOG "Copper break_install", 0
-.for_cmd_loopback:  ; Used to skip the SND_NTF_LOG
     ; NR 0x06 bit 3 gates EVERY Multiface NMI source and its power-on value is
     ; 0. NextZXOS leaves it set, so this is insurance rather than setup - but a
     ; program that had cleared it would otherwise kill the break silently, and
@@ -56,7 +56,7 @@ break_install:
 
     ; Set state to enabled and running
     ld a,1
-    ld (copper_running),a
+    ld (copper_break_enabled),a
     ret
 
 
@@ -67,17 +67,29 @@ break_install:
 ; read, so it cannot be edited - stopping the Copper is the only "off" there is,
 ; and it stops the debugged program's OWN list too if it installed one.
 ;
-; Sets the copper_running variable to 0.
+; Sets the copper_break_enabled variable to 0.
 ;
 ; Changes:
 ;   AF (A = 0, Z set)
 ;===========================================================================
 break_stop:
+    DBG_LOG '0'
 	nextreg REG_COPPER_CONTROL_H,RCCH_COPPER_STOP
     ; Set state to disabled and stopped
     xor a
-    ld (copper_running),a
+    ld (copper_break_enabled),a
     ret
+
+
+;===========================================================================
+; Enable or disable the copper break, depending on variable
+; 'copper_break_enabled'.
+;===========================================================================
+set_copper_break:
+    ld a,(copper_break_enabled)
+    or a
+    jr z,copper.break_stop
+    jr copper.break_install
 
 
 	ENDMODULE

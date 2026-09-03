@@ -127,15 +127,6 @@ drain_main.skip_store:
     ; Flow through
 
 
-main_with_copper_stop:
-    ; Stop the copper list if it is running.
-    nextreg REG_COPPER_CONTROL_H, %00000000   ; Copper stoppen (Bits 7-6 = 00)
-    nextreg REG_PALETTE_CONTROL, 0
-    call set_ula_default_palette
-    call copper.break_stop
-    SEND_NTF_LOG "main_with_copper_stop", 0
-
-    ; Flow through
 
 ;===========================================================================
 ; main routine - The main loop of the program.
