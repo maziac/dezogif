@@ -22,6 +22,7 @@ ERROR_CMD_NOT_SUPPORTED:    equ 7
 ERROR_CMD_NOT_ALLOWED:      equ 8
 ERROR_FILE_WRITE:           equ 9
 ERROR_FILE_READ:            equ 10
+ERROR_LOOPBACK_SIZE:        equ 11
 
 
 ;===========================================================================

@@ -873,6 +873,7 @@ cmd_restore_mem:
 ;===========================================================================
 cmd_loopback:
 	; LOGPOINT [CMD] cmd_loopback
+	DBG_LOG 'L'
 	; Save swap slot
 	call save_swap_slot
 
@@ -880,6 +881,11 @@ cmd_loopback:
 	nextreg REG_MMU+SWAP_SLOT,LOOPBACK_BANK
 	; Get length
 	ld de,(receive_buffer.length)
+	DBG_LOG_NUMBER16 de
+	ld hl,0x2000
+	or a
+	sbc hl,de
+	jr c,.size_too_big
 
 	; Read all data in swap slot
 	ld hl,SWAP_ADDR
@@ -931,6 +937,9 @@ cmd_loopback:
 	pop af	; swallow return address
 	jp main_loop.continue
 
+.size_too_big:
+	ld a,ERROR_LOOPBACK_SIZE
+	jp drain_main
 
 ;===========================================================================
 ; CMD_GET_SPRITES_PALETTE

@@ -87,10 +87,12 @@ end		defb	; For the RET
 
 
 ;===========================================================================
-; Starts the command loop. I.e. backups all registers.
+; Starts the command loop.
 ; Interprets the last received message.
 ; Stays in command loop waiting for the next message until
-; receiving a CONTINUE message.
+; receiving a CONTINUE message or leaves immediately if prgm_state is
+; PRGM_RUNNING.
+;
 ; Changes:
 ;  -, At the end the registers are restored.
 ;===========================================================================
