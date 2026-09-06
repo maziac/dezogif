@@ -94,24 +94,8 @@ cmd_call:	; Get pointer to subroutine
 	; jump to subroutine
 	jp (hl)
 get_cmd_pointer:	; For unit tests this is a separate function.
- 	ld a,(prgm_state)
-	dec a  ; PRGM_IDLE=1, i.e. Z-flag set if in idle state
-	ld a,(receive_buffer.command)
-	jr nz,.allowed
-
-	; Idle state: Only CMD_INIT (1) and CMD_LOOPBACK (15) are allowed
-	cp CMD_INIT
-	ld hl,main
-	jr z,.allowed ; Is 1 (CMD_INIT), so jump to allowed
-	cp CMD_LOOPBACK
-	ld hl,main
-	jr z,.allowed ; Is 15 (CMD_LOOPBACK), so jump to allowed
-	; Not allowed command in idle state
-	ld hl,cmd_not_allowed
-	ret
-
-.allowed:
 	; Check that command number is in range
+	ld a,(receive_buffer.command)
 	ld l,(cmd_jump_table.end-cmd_jump_table)/2
 	sub l
 	jr nc,.not_supported
@@ -542,6 +526,9 @@ cmd_read_mem:
 	ld de,PAYLOAD_READ_MEM
 	call receive_bytes
 
+	xor a
+	ld (.tmp),a
+
 	; Send response
 	ld hl,(payload_read_mem.mem_size)
 	ld de,1		; Add 1 for the sequence number
@@ -555,16 +542,24 @@ cmd_read_mem:
 .inner:		; For unit testing
 	ld de,(payload_read_mem.mem_size)
 	ld hl,(payload_read_mem.mem_start)
-	ld bc,cmd_read_mem.read
+	ld bc,.read
 	jp memory_loop
 
 ; The inner call
-cmd_read_mem.read:
+.read:
 	; Get byte
 	ld a,(hl)
+
+ IF 0 ; TODO: Remove, only for testing
+	ld a,(.tmp)
+	inc a
+	ld (.tmp),a
+ ENDIF
 	; Send
 	jp write_uart_byte
 
+.tmp:
+	defb 0
 
 ;===========================================================================
 ; CMD_WRITE_MEM
