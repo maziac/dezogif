@@ -103,7 +103,7 @@ nmi66h:
     ; and on the poll path that would be once a frame.
 	in a,(c)    ; Read again
     and 1000_0000b  ; Preserve esp/expbus bit
-    nextreg REG_RESET,a ; TODO: change to out (c),a to save 8 T-States
+    out (c),a   ; = nextreg REG_RESET,a
 
     pop af      ; the bit 3 answer
     jr nz,.software_cause
