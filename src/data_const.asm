@@ -204,6 +204,7 @@ TEXT_CMD_NOT_ALLOWED: ; Core not supported
 TEXT_ERROR_FILE_WRITE: defb "File write error", 0
 TEXT_ERROR_FILE_READ: defb "File read error", 0
 TEXT_ERROR_LOOPBACK_SIZE: defb "Loopback size > 8192", 0
+TEXT_ERROR_GENERIC: defb "Generic error", 0
 
 ERROR_TEXT_TABLE:
     defw TEXT_ERROR_RX_TIMEOUT
@@ -217,3 +218,4 @@ ERROR_TEXT_TABLE:
     defw TEXT_ERROR_FILE_WRITE
     defw TEXT_ERROR_FILE_READ
     defw TEXT_ERROR_LOOPBACK_SIZE
+    defw TEXT_ERROR_GENERIC ; TODO: REMOVE?

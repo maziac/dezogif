@@ -512,7 +512,7 @@ Note: The user could change these values after the breakpoint occurred without d
 
 
 # UART
-The USB serial converters usually only have small RX buffers and the Zx Next UARTs support no flow control.
+The USB serial converters usually only have small RX buffers and the Zx Next UARTs support no flow control (at least for KS1 and N-Go).
 Therefore it can happen that data sent from the ZX Next is not accepted at the USB serial converter when its buffer is full.
 Usually a PC or mac should be fast enough to retrieve the data but vscode/DeZog runs under node with limited parallizing capabilities. So it can happen rarely that bytes get lost. Especially if a lot of data (e.g. memory read of 32k of data) would be transferred.
 
@@ -521,7 +521,7 @@ If the (RX) buffer size of a USB serial converter is only 256 bytes, at 921600 b
 Ironically the other direction (receiving data at the ZX Next) is not so critical as the Next at 28MHz is fast enough to read the bytes from the UART (the ZX Next can solely operate on this and is not interrupted by other tasks as the PC or mac).
 
 To fix the situation that the RX buffer of the serial converter is overrun one would require a low level flow control.
-HW flow control would be best but is not available at the ZX Next, neither for the joy ports nor for the UART on the CN9 header.
+HW flow control would be best but is not available at the ZX Next (at least for KS1 and N-Go), neither for the joy ports nor for the UART on the CN9 header.
 Software flow control would be possible but my tests showed that one cannot rely on the driver implementation (ixoff).
 
 So the data transmission stays unreliable in general. Although the problem occurs only very seldom with decent mac/PC hardware.
