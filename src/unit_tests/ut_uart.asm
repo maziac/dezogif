@@ -21,13 +21,13 @@ sp_backup:  defw    0
 UT_read_uart_byte_timeout:
 	ld (sp_backup),sp
 	; Redirect timeout jump
-	ld hl,read_uart_byte.timeout
+	ld hl,uart.read_rx_byte.timeout
 	ldi (hl),0xC3	; JP
 	ldi (hl),.timeout&0xFF
 	ld (hl),.timeout>>8
 
 	; Test
-	call read_uart_byte
+	call uart.read_rx_byte
 	; Should never return
 	TEST_FAIL		; So FAIL if it returns
 
@@ -41,28 +41,28 @@ UT_read_uart_byte_timeout:
 UT_set_uart_joystick:
 	; Joy port 1
 	MEMSETBYTE uart_joyport_selection, 1
-	call set_uart_joystick
+	call uart.set_joystick
 	; Read value
 	xor a :	in a,(7)
 	nop ; TEST ASSERTION a == 10100000b
 
 	; Joy port 2
 	MEMSETBYTE uart_joyport_selection, 2
-	call set_uart_joystick
+	call uart.set_joystick
 	; Read value
 	xor a :	in a,(7)
 	nop ; TEST ASSERTION a == 10110000b
 
 	; No joy port
 	MEMSETBYTE uart_joyport_selection, 0
-	call set_uart_joystick
+	call uart.set_joystick
 	; Read value
 	xor a :	in a,(7)
 	nop ; TEST ASSERTION a == 0
 
 	; Pathologic case
 	MEMSETBYTE uart_joyport_selection, 3
-	call set_uart_joystick
+	call uart.set_joystick
 	; Read value
 	xor a :	in a,(7)
 	nop ; TEST ASSERTION a == 0

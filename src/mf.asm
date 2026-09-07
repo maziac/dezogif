@@ -126,7 +126,7 @@ mf_nmi_happened:
 	ld (backup.interrupt_state),a
 
 	; Make sure the joyport is configured for the UART
-	call set_uart_joystick
+	call uart.set_joystick
 
 	; Check the cause of the NMI
 	ld a,(MF.nmi_cause)
@@ -135,7 +135,7 @@ mf_nmi_happened:
 
 	; It was a NMI button press so drain the receive buffer
 	; to throw away possible garbage (if Async-Break was off)
-	call drain_rx_buffer
+	call uart.drain_rx_buffer
 	; Send pause notification
 	ld d,BREAK_REASON.MANUAL_BREAK
 	ld hl,0 ; bp address
@@ -201,7 +201,7 @@ mf_nmi_poll:
 	; Optimized to leave as early as possible if no break is needed. I.e.
 	; for the common case.
 	; 1. Has the PC said anything?
-	call check_uart_byte_available
+	call uart.check_rx_byte_available
 	jp z,MF.nmi66h.poll_decline
 
 	; 2. Is there a debugged program to break into?

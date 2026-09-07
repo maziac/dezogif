@@ -30,29 +30,29 @@ log:
 	; LOGPOINT [CMD] send_ntf_log
 	; Write first byte to recognize message
 	ld a,MESSAGE_START_BYTE
-	call write_uart_byte
+	call uart.write_tx_byte
 	; First length byte
 	ld a,e
-	call write_uart_byte
+	call uart.write_tx_byte
 	; Second length byte
 	ld a,d
-	call write_uart_byte
+	call uart.write_tx_byte
 	; Rest of length + seqno=0
 	xor a
 	ld e,3
 .loop:
-	call write_uart_byte
+	call uart.write_tx_byte
 	dec e
 	jr nz,.loop
 
 	; Send NTF_LOG id
 	ld a,NTF_LOG
-	call write_uart_byte
+	call uart.write_tx_byte
 
 	; Send string starting at hl until 0
 .send_string:
 	ldi a,(hl)
-	call write_uart_byte
+	call uart.write_tx_byte
 	or a	; Check if HL reached the end of string (0)
 	jr nz,.send_string
 

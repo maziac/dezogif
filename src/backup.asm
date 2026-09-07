@@ -57,7 +57,7 @@ save_registers:
 ; ===========================================================================
 restore_registers:
     ; Wait for TX ready. (This is to make sure everything is transmitted before the joyport configuration is changed.)
-    call wait_for_uart_tx_empty
+    call uart.wait_for_tx_empty
 
 	; Disable joy port IO mode to enable the joysticks
     ld a,(copper_break_enabled)

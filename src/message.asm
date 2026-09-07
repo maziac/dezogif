@@ -98,7 +98,7 @@ end		defb	; For the RET
 ;===========================================================================
 cmd_loop:
 	; Wait on next command
-	call wait_for_uart_rx
+	call uart.wait_for_rx
 	; Receive length sequence number and command
 	ld hl,receive_buffer
 	ld de,receive_buffer.payload-receive_buffer
@@ -164,7 +164,7 @@ receive_bytes:
 .loop:
 	push de
 	; Get byte
-	call read_uart_byte
+	call uart.read_rx_byte
 	; Store
 	ldi (hl),a
 	;out (BORDER),a
@@ -190,7 +190,7 @@ receive_message:
 	ld hl,receive_buffer
 	; Receive the length, 2 bytes:
 	; Get first byte
-	call read_uart_byte
+	call uart.read_rx_byte
 	; Store
 	ldi (hl),a
 	; Get second byte
@@ -290,27 +290,27 @@ send_4bytes_length_and_seqno:
     ld (uart_write_counter),a
 	; Write first byte to recognize message
 	ld a,MESSAGE_START_BYTE
-	call write_uart_byte
+	call uart.write_tx_byte
 	; First length byte
 	ld a,e
 	; Write to UART
-	call write_uart_byte
+	call uart.write_tx_byte
 	; Second length byte
 	ld a,d
 	; Write to UART
-	call write_uart_byte
+	call uart.write_tx_byte
 	; Third length byte
 	ld a,l
 	; Write to UART
-	call write_uart_byte
+	call uart.write_tx_byte
 	; Fourth length byte
 	ld a,h
 	; Write to UART
-	call write_uart_byte
+	call uart.write_tx_byte
 	; Sequence number
 	ld a,(receive_buffer.seq_no)
 	and 0x0F	; Only 4 bits, upper 4 bits are reserved
-	jp write_uart_byte
+	jp uart.write_tx_byte
 
 
 ;===========================================================================
@@ -336,36 +336,36 @@ send_ntf_pause:
 	ld (prgm_state),a
 	; Write first byte to recognize message
 	ld a,MESSAGE_START_BYTE
-	call write_uart_byte
+	call uart.write_tx_byte
 	; First length byte
 	ld a,7
-	call write_uart_byte
+	call uart.write_tx_byte
 	; Rest of length + seqno=0
 	xor a
 	ld e,4
 .loop:
-	call write_uart_byte
+	call uart.write_tx_byte
 	dec e
 	jr nz,.loop
 	; NTF_PAUSE id
 	ld a,1	; NTF_PAUSE
-	call write_uart_byte
+	call uart.write_tx_byte
 	; Breakpoint reason
 	ld a,d
-	call write_uart_byte
+	call uart.write_tx_byte
 	; Breakpoint
 	ld a,l
-	call write_uart_byte
+	call uart.write_tx_byte
 	ld a,h
-	call write_uart_byte
+	call uart.write_tx_byte
 	; Bank
 	rlca : rlca : rlca ; Get slot
 	and 0111b
 	add REG_MMU
 	call read_tbblue_reg
 	inc a	; bank+1
-	call write_uart_byte
+	call uart.write_tx_byte
 	; Empty reason string
 	xor a
-	jp write_uart_byte
+	jp uart.write_tx_byte
 

@@ -79,13 +79,13 @@ main_bank_entry:
     ;nextreg REG_MMU+SWAP_SLOT,a
 
     ; Set baudrate
-    call set_uart_baudrate
+    call uart.set_baudrate
 
     ; Init text printing
     call text.init
 
     ; Enable flashing border
-    call uart_flashing_border.enable
+    call uart.flashing_border.enable
 
     ; Return from NMI (Interrupts are disabled)
     call nmi_return
@@ -123,7 +123,7 @@ drain_main:
     ld (last_error),a
 drain_main.skip_store:
     ; Drain
-    call drain_rx_buffer
+    call uart.drain_rx_buffer
 
     ; Flow through
 
@@ -164,14 +164,14 @@ main:
     ld (slot_backup.slot0),a
 
     ; Set UART
-    call set_uart_joystick
+    call uart.set_joystick
 
     ; Show the text
     call init_and_show_ui
 
 main_loop:
     ; Check if byte available.
-    call check_uart_byte_available
+    call uart.check_rx_byte_available
     ; If so leave loop and enter command loop
     jp nz,cmd_loop
 .continue:

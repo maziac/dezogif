@@ -247,12 +247,12 @@ enter_debugger:
 .no_reason:
 
 	; Make sure the joyport is configured for the UART
-	call set_uart_joystick
+	call uart.set_joystick
 
 	; Drain receive message queue
 	ld h,d	; Save break reason
 	ld de,526	; Drain buffer with timeout of 1 ms (=526)
-	call drain_rx_buffer_with_timeout
+	call uart.drain_rx_buffer_with_timeout
 	ld d,h	; Restore break reason
 
     ; Send pause notification

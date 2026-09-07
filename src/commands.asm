@@ -169,7 +169,7 @@ cmd_init:
 	ld a,PRGM_LOADING
 	ld (prgm_state),a
     ; Enable flashing border
-    call uart_flashing_border.enable
+    call uart.flashing_border.enable
 	; Afterwards start all over again / show the "UI"
     call init_and_show_ui  ; Also re-initializes copper break
 
@@ -179,23 +179,23 @@ cmd_init:
 	call send_length_and_seqno
 	; No error
 	xor a
-	call write_uart_byte
+	call uart.write_tx_byte
 	; Send config
 	; DZRP version
 	ld a,DZRP_VERSION.MAJOR
-	call write_uart_byte
+	call uart.write_tx_byte
 	ld a,DZRP_VERSION.MINOR
-	call write_uart_byte
+	call uart.write_tx_byte
 	ld a,DZRP_VERSION.PATCH
-	call write_uart_byte
+	call uart.write_tx_byte
 	; Machine type: 4 = ZX Next
 	ld a,4
-	call write_uart_byte
+	call uart.write_tx_byte
 	; Send own program name and version
 	ld hl,PROGRAM_NAME
 .write_prg_name_loop:
 	ldi a,(hl)
-	call write_uart_byte
+	call uart.write_tx_byte
 	or a
 	jr nz,.write_prg_name_loop
 	ret
@@ -207,7 +207,7 @@ cmd_init:
 	call receive_bytes
 	; Read remote program name
 .read_loop
-	call read_uart_byte
+	call uart.read_rx_byte
 	or a
 	jr nz,.read_loop
 	ret
@@ -226,13 +226,13 @@ cmd_get_supported_commands:
 	call send_length_and_seqno
 	; Send supported commands
 	ld a,1111_1110b	; CMD_INIT - CMD_PAUSE
-	call write_uart_byte
+	call uart.write_tx_byte
 	ld a,1111_1111b	; CMD_READ_MEM - CMD_LOOPBACK
-	call write_uart_byte
+	call uart.write_tx_byte
 	ld a,1111_0011b	; CMD_GET_SPRITES_PALETTE - CMD_INTERRUPT_ON_OFF
-	call write_uart_byte
+	call uart.write_tx_byte
 	ld a,0000_0001b	; CMD_GET_SUPPORTED_COMMANDS
-	call write_uart_byte
+	call uart.write_tx_byte
 	ret
 
 
@@ -254,7 +254,7 @@ cmd_close:
 	ld a,PRGM_IDLE
 	ld (prgm_state),a
     ; Enable flashing border
-    call uart_flashing_border.enable
+    call uart.flashing_border.enable
 	; Afterwards start all over again / show the "UI"
 	jp main
 
@@ -278,9 +278,9 @@ cmd_get_registers:
 .loop:
 	push bc
 	ldi a,(hl)
-	call write_uart_byte
+	call uart.write_tx_byte
 	ld a,(hl)
-	call write_uart_byte
+	call uart.write_tx_byte
 	; Next
 	add hl,de
 	pop bc
@@ -288,7 +288,7 @@ cmd_get_registers:
 
 	; Now the slot values
 	ld a,8	; 8 slots
-	call write_uart_byte
+	call uart.write_tx_byte
 
 	; Send the first 7 slots
 	ld de,256*REG_MMU+7	; Load D and E at the same time
@@ -297,7 +297,7 @@ cmd_get_registers:
 	ld a,d
 	call read_tbblue_reg	; Result in A
 	; Send
-	call write_uart_byte
+	call uart.write_tx_byte
 	inc d
 	dec e
 	jr nz,.slot_loop
@@ -305,7 +305,7 @@ cmd_get_registers:
 	; Get and send slot 7
 	ld a,(slot_backup.slot7)
 	; LOGPOINT cmd_get_slots slot0: ${A}
-	jp write_uart_byte
+	jp uart.write_tx_byte
 
 
 ;===========================================================================
@@ -403,14 +403,14 @@ cmd_write_bank:
 	call send_length_and_seqno
 	; No error
 	xor a
-	call write_uart_byte
+	call uart.write_tx_byte
 	; No error string
-	jp write_uart_byte
+	jp uart.write_tx_byte
 
 
 .inner:
 	; Read bank number of message
-	call read_uart_byte
+	call uart.read_rx_byte
 
 	; Check if it is own bank
 	cp MAIN_BANK
@@ -484,7 +484,7 @@ cmd_continue:
 	ld a,(backup.border_color)
 	out (BORDER),a
     ; Disable flashing border
-    call uart_flashing_border.disable
+    call uart.flashing_border.disable
 .not_loading:
 	; Continue
 	jp restore_registers
@@ -547,7 +547,7 @@ cmd_read_mem:
 	; Get byte
 	ld a,(hl)
 	; Send
-	jp write_uart_byte
+	jp uart.write_tx_byte
 
 
 ;===========================================================================
@@ -587,7 +587,7 @@ cmd_write_mem:
 .write:
 	; Get byte
 	push de
-	call read_uart_byte
+	call uart.read_rx_byte
 	; Write
 	ld (hl),a
 	pop de
@@ -604,10 +604,10 @@ cmd_set_slot:
 	; LOGPOINT [CMD] cmd_set_slot
 
 	; Get slot
-	call read_uart_byte
+	call uart.read_rx_byte
 	ld l,a
 	; Get bank
-	call read_uart_byte
+	call uart.read_rx_byte
 	cp 0xFE
 	jr nz,.no_fe
 	inc a	; Change 0xFE to 0xFF
@@ -639,7 +639,7 @@ cmd_set_slot:
 	ld de,2
 	call send_length_and_seqno
 	xor a	; no error
-	jp write_uart_byte
+	jp uart.write_tx_byte
 
 
 ;===========================================================================
@@ -654,10 +654,10 @@ cmd_get_tbblue_reg:
 	ld de,2
 	call send_length_and_seqno
 	; Read register number
-	call read_uart_byte	; Register number
+	call uart.read_rx_byte	; Register number
 	call read_tbblue_reg	; Result in A
 	; Send
-	jp write_uart_byte
+	jp uart.write_tx_byte
 
 
 ;===========================================================================
@@ -669,7 +669,7 @@ cmd_get_tbblue_reg:
 cmd_set_border:
 	; LOGPOINT [CMD] cmd_set_border
 	; Read border color
-	call read_uart_byte
+	call uart.read_rx_byte
 	ld (backup.border_color),a
 	; Send response
 	ld de,1
@@ -705,12 +705,12 @@ cmd_set_breakpoints:
 	; Loop
 	push de
 	; Get breakpoint address
-	call read_uart_byte
+	call uart.read_rx_byte
 	ld l,a
-	call read_uart_byte
+	call uart.read_rx_byte
 	ld h,a
 	; Get bank+1
-	call read_uart_byte
+	call uart.read_rx_byte
 	or a
 	jr z,.handle_64k_address
 
@@ -755,7 +755,7 @@ cmd_set_breakpoints:
 
 .next:
 	; Send memory
-	call write_uart_byte
+	call uart.write_tx_byte
 	pop de
 	dec de
 	jr .loop
@@ -788,12 +788,12 @@ cmd_restore_mem:
 	; Loop
 	push de
 	; Get memory address
-	call read_uart_byte
+	call uart.read_rx_byte
 	ld l,a
-	call read_uart_byte
+	call uart.read_rx_byte
 	ld h,a
 	; Get bank+1
-	call read_uart_byte
+	call uart.read_rx_byte
 	or a
 	jr z,.handle_64k_address
 
@@ -816,7 +816,7 @@ cmd_restore_mem:
 	add HIGH SWAP_ADDR	; 0xC0
 	ld h,a
 	; Get value
-	call read_uart_byte
+	call uart.read_rx_byte
 	; Set memory
 	ld (hl),a
 
@@ -830,7 +830,7 @@ cmd_restore_mem:
 
 .normal:
 	; Get value
-	call read_uart_byte
+	call uart.read_rx_byte
 	; Set memory
 	ld (hl),a
 
@@ -879,7 +879,7 @@ cmd_loopback:
 	; Loop
 	push de
 	; Get value
-	call read_uart_byte
+	call uart.read_rx_byte
 	; Store
 	ldi (hl),a
 	; Next
@@ -906,7 +906,7 @@ cmd_loopback:
 	; Get value
 	ldi a,(hl)
 	; Send
-	call write_uart_byte
+	call uart.write_tx_byte
 	; Next
 	dec de
 .send_check_end:
@@ -959,7 +959,7 @@ cmd_get_sprites_palette:
 	or 00100000b
 	ld l,a
 	; Get palette index
-	call read_uart_byte
+	call uart.read_rx_byte
 	bit 0,a
 	ld a,l
  	jr z,.palette_0
@@ -991,10 +991,10 @@ cmd_get_sprites_palette:
 	// Read color
 	ld a,REG_PALETTE_VALUE_8
 	call read_tbblue_reg ; Result in A
-	call write_uart_byte
+	call uart.write_tx_byte
 	ld a,REG_PALETTE_VALUE_16  ; color9th
 	call read_tbblue_reg ; Result in A
-	call write_uart_byte
+	call uart.write_tx_byte
 	inc d
 	jr nz,.loop		; Loop 256x
 
@@ -1085,14 +1085,14 @@ cmd_get_sprites_clip_window_and_control:
 	ld hl,tmp_clip_window
 .send_loop:
 	ldi a,(hl)
-	call write_uart_byte 	; Send xl, xr, yt or yb
+	call uart.write_tx_byte 	; Send xl, xr, yt or yb
 	dec d
 	jr nz,.send_loop
 
 	; Get sprite control byte
 	ld a,REG_SPRITE_LAYER_SYSTEM
 	call read_tbblue_reg
-	jp write_uart_byte 	; Send sprite control byte
+	jp uart.write_tx_byte 	; Send sprite control byte
 
 
 
@@ -1105,10 +1105,10 @@ cmd_get_sprites_clip_window_and_control:
 cmd_read_port:
 	; LOGPOINT [CMD] cmd_write_port
 	; Read port (low byte)
-	call read_uart_byte
+	call uart.read_rx_byte
 	ld l,a
 	; Read port (high byte)
-	call read_uart_byte
+	call uart.read_rx_byte
 	ld b,a
 	; Read value from the port
 	ld c,l
@@ -1120,7 +1120,7 @@ cmd_read_port:
 	call send_length_and_seqno
 	; Write port value
 	pop af
-	jp write_uart_byte
+	jp uart.write_tx_byte
 
 
 ;===========================================================================
@@ -1132,13 +1132,13 @@ cmd_read_port:
 cmd_write_port:
 	; LOGPOINT [CMD] cmd_write_port
 	; Read port (low byte)
-	call read_uart_byte
+	call uart.read_rx_byte
 	ld l,a
 	; Read port (high byte)
-	call read_uart_byte
+	call uart.read_rx_byte
 	ld h,a
 	; Read value
-	call read_uart_byte
+	call uart.read_rx_byte
 	; Write to the port
 	ld bc,hl
 	out (c),a
@@ -1190,7 +1190,7 @@ cmd_exec_asm:
 	call send_length_and_seqno
 	; Send error code (=no error)
 	pop af	; error code
-	call write_uart_byte
+	call uart.write_tx_byte
 	; Send AF
 	pop hl	; H=A, L=F
 	call .write_reg
@@ -1206,9 +1206,9 @@ cmd_exec_asm:
 
 .write_reg:
 	ld a,l
-	call write_uart_byte	; low byte
+	call uart.write_tx_byte	; low byte
 	ld a,h
-	jp write_uart_byte	; high byte
+	jp uart.write_tx_byte	; high byte
 
 
 
@@ -1221,7 +1221,7 @@ cmd_exec_asm:
 cmd_interrupt_on_off:
 	; LOGPOINT [CMD] cmd_exec_asm
 	; Read: off=0 or on
-	call read_uart_byte
+	call uart.read_rx_byte
 	ld hl,backup.interrupt_state
 	or a
 	jr z,.disable

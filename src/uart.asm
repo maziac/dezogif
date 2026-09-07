@@ -18,6 +18,8 @@
 ;
 ;===========================================================================
 
+    MODULE uart
+
  ; TODO: Make module out of uart
 
  ;define TX_FLOW_CONTROL
@@ -137,7 +139,7 @@ drain_rx_buffer_with_timeout:
 ; Changes:
 ;   A, DE, BC
 ;===========================================================================
-wait_for_uart_rx:
+wait_for_rx:
     ; Write layer 2 previous value
     ld a,(backup.layer_2_port)
     ld bc,LAYER_2_PORT
@@ -166,7 +168,7 @@ wait_for_uart_rx:
 ; Changes:
 ;   AF
 ;===========================================================================
-check_uart_byte_available:
+check_rx_byte_available:
 	ld a,HIGH UART_TX
 	in a,(LOW UART_TX)	; Read status bits
     bit UART_RX_FIFO_EMPTY,a
@@ -180,7 +182,7 @@ check_uart_byte_available:
 ; Changes:
 ;   BC, DE
 ;===========================================================================
-read_uart_byte:
+read_rx_byte:
     ; Decode special sequences (because of Flow Control)
  IFDEF TX_FLOW_CONTROL
     call .read_one_byte
@@ -194,9 +196,9 @@ read_uart_byte:
     ; flow through
 
 .flow_continue:
-    call check_uart_byte_available
+    call check_rx_byte_available
     jr z,.flow_continue
-    jr read_uart_byte   ; Read next byte
+    jr read_rx_byte   ; Read next byte
 
 .decode_special_character:
     ; Special character
@@ -274,27 +276,27 @@ tx_timeout: ; The receive timeout handler
 ;===========================================================================
 ; Enables flashing of the border while receiving data.
 ;===========================================================================
-uart_flashing_border.enable:
+flashing_border.enable:
     ld a,0x3E   ; LD A,n
-    ld (read_uart_byte.flash1),a
-    ld (read_uart_byte.flash2),a
+    ld (read_rx_byte.flash1),a
+    ld (read_rx_byte.flash2),a
     ld a,BLUE
-    ld (read_uart_byte.flash1+1),a
+    ld (read_rx_byte.flash1+1),a
     ld a,YELLOW
-    ld (read_uart_byte.flash2+1),a
+    ld (read_rx_byte.flash2+1),a
     ret
 
 
 ;===========================================================================
 ; Disables flashing of the border while receiving data.
 ;===========================================================================
-uart_flashing_border.disable:
+flashing_border.disable:
     ld a,0x18   ; JR 2
-    ld (read_uart_byte.flash1),a
-    ld (read_uart_byte.flash2),a
+    ld (read_rx_byte.flash1),a
+    ld (read_rx_byte.flash2),a
     ld a,2
-    ld (read_uart_byte.flash1+1),a
-    ld (read_uart_byte.flash2+1),a
+    ld (read_rx_byte.flash1+1),a
+    ld (read_rx_byte.flash2+1),a
     ret
 
 
@@ -307,10 +309,10 @@ uart_flashing_border.disable:
 ; Changes:
 ;  BC
 ;===========================================================================
-write_uart_byte:
+write_tx_byte:
 	push de, af
     ; Wait for TX ready
-    call wait_for_uart_tx
+    call wait_for_tx
 
     ; Check if already 256 bytes were written
     ld a,(uart_write_counter)
@@ -341,7 +343,7 @@ write_uart_byte:
 ; Changes:
 ;  AF, BC (=PORT_UART_TX), E
 ;===========================================================================
-wait_for_uart_tx:
+wait_for_tx:
     ; Send response back
     ld bc,UART_TX
     ; Check if ready for transmit
@@ -357,7 +359,7 @@ wait_for_uart_tx:
     dec e
     jr nz,.wait_tx
 
-    nop ; LOGPOINT wait_for_uart_tx: ERROR=TIMEOUT
+    nop ; LOGPOINT wait_for_tx: ERROR=TIMEOUT
     jp tx_timeout   ; ASSERTION
 
 
@@ -367,7 +369,7 @@ wait_for_uart_tx:
 ; Changes:
 ;  AF, BC (=PORT_UART_TX), E
 ;===========================================================================
-wait_for_uart_tx_empty:
+wait_for_tx_empty:
     ; Send response back
     ld bc,UART_TX
     ; Check if ready for transmit
@@ -382,7 +384,7 @@ wait_for_uart_tx_empty:
     or e
     jr nz,.wait_tx
 
-    nop ; LOGPOINT wait_for_uart_tx_empty: ERROR=TIMEOUT
+    nop ; LOGPOINT wait_for_tx_empty: ERROR=TIMEOUT
     jp tx_timeout   ; ASSERTION
 
 
@@ -399,7 +401,7 @@ wait_for_uart_tx_empty:
 ; Changes:
 ;  A, BC, DE, HL
 ;===========================================================================
-set_uart_baudrate:
+set_baudrate:
     ; Select UART and clear prescaler MSB
     ld bc,UART_SELECT
 	ld a,00010000b
@@ -450,7 +452,7 @@ set_uart_baudrate:
 ; Changed:
 ;  AF, BC, HL
 ;===========================================================================
-set_uart_joystick:
+set_joystick:
     ; Core 3.01.10
     ld a,(uart_joyport_selection)
     dec a
@@ -497,3 +499,5 @@ wait_scan_lines:
     jr nz,.loop
     ret
  ENDIF
+
+    ENDMODULE
