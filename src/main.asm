@@ -84,17 +84,18 @@ main_bank_entry:
     ; Init text printing
     call text.init
 
-
     ; Enable flashing border
     call uart_flashing_border.enable
-
 
     ; Return from NMI (Interrupts are disabled)
     call nmi_return
 
+    ; Init flow control
+    xor a
+    ld (uart_write_counter),a
 
     ; Load settings
-    xor a   ; No error
+    ;xor a   ; No error
     ld (last_error),a
     call load_open
     jr c,.default_values  ; File not found

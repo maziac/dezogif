@@ -285,6 +285,9 @@ send_length_and_seqno:
 ;  A, DE, BC
 ;===========================================================================
 send_4bytes_length_and_seqno:
+	; Reset write counter (flow control)
+    xor a
+    ld (uart_write_counter),a
 	; Write first byte to recognize message
 	ld a,MESSAGE_START_BYTE
 	call write_uart_byte
@@ -327,6 +330,7 @@ send_4bytes_length_and_seqno:
 ;===========================================================================
 send_ntf_pause:
 	; LOGPOINT [CMD] send_ntf_pause: reason=${D}, breakpoint=${HL:hex16}h (${HL})
+	; Note: Don't reset uart_write_counter.
 	; Change main state
 	ld a,PRGM_STOPPED
 	ld (prgm_state),a

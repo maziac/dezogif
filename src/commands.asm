@@ -526,9 +526,6 @@ cmd_read_mem:
 	ld de,PAYLOAD_READ_MEM
 	call receive_bytes
 
-	xor a
-	ld (.tmp),a
-
 	; Send response
 	ld hl,(payload_read_mem.mem_size)
 	ld de,1		; Add 1 for the sequence number
@@ -549,17 +546,9 @@ cmd_read_mem:
 .read:
 	; Get byte
 	ld a,(hl)
-
- IF 0 ; TODO: Remove, only for testing
-	ld a,(.tmp)
-	inc a
-	ld (.tmp),a
- ENDIF
 	; Send
 	jp write_uart_byte
 
-.tmp:
-	defb 0
 
 ;===========================================================================
 ; CMD_WRITE_MEM

@@ -13,8 +13,11 @@
 ;===========================================================================
 
 
-; If an error occures it is stored here for display.
+; If an error occurs it is stored here for display.
 last_error: defb 0
+
+; UART flow control
+uart_write_counter:	defb 0
 
 
 ;===========================================================================

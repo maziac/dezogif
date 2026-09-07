@@ -18,6 +18,9 @@
 ;
 ;===========================================================================
 
+ ; TODO: Make module out of uart
+
+ ;define TX_FLOW_CONTROL
 
 ;===========================================================================
 ; Constants
@@ -165,8 +168,7 @@ wait_for_uart_rx:
 ;===========================================================================
 check_uart_byte_available:
 	ld a,HIGH UART_TX
-	in a,(LOW UART_TX)
-	; Read status bits
+	in a,(LOW UART_TX)	; Read status bits
     bit UART_RX_FIFO_EMPTY,a
     ret
 
@@ -179,6 +181,33 @@ check_uart_byte_available:
 ;   BC, DE
 ;===========================================================================
 read_uart_byte:
+    ; Decode special sequences (because of Flow Control)
+ IFDEF TX_FLOW_CONTROL
+    call .read_one_byte
+    cp 0x10
+    jr z,.decode_special_character
+    ; Swallow 0x11 and 0x13 for now
+    cp 0x11
+    jr z,.flow_continue
+    cp 0x13
+    ret nz
+    ; flow through
+
+.flow_continue:
+    call check_uart_byte_available
+    jr z,.flow_continue
+    jr read_uart_byte   ; Read next byte
+
+.decode_special_character:
+    ; Special character
+    call .read_one_byte
+    or 0x10     ; decode characters 0x10, 0x11, and 0x13
+    ret
+ ENDIF
+
+
+
+.read_one_byte:
     ; Change border
 .flash1:
     ld a,BLUE
@@ -282,8 +311,25 @@ write_uart_byte:
 	push de, af
     ; Wait for TX ready
     call wait_for_uart_tx
+
+    ; Check if already 256 bytes were written
+    ld a,(uart_write_counter)
+    inc a
+    ld (uart_write_counter),a
+    jr nz,.dont_wait
+
+    ; Wait
+    ld de,4000     ; 26 T-states => 4000*26/28000 ~ 4ms
+.wait:   ; 26 clock cycles
+    dec de
+    ld a,d
+    or e
+    jr nz,.wait
+
+.dont_wait:
     ; Transmit byte
 	pop af, de
+    ld bc,UART_TX
     out (c),a
     ret
 
