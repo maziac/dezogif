@@ -20,10 +20,6 @@
 
     MODULE uart
 
- ; TODO: Make module out of uart
-
- ;define TX_FLOW_CONTROL
-
 ;===========================================================================
 ; Constants
 ;===========================================================================
@@ -183,33 +179,6 @@ check_rx_byte_available:
 ;   BC, DE
 ;===========================================================================
 read_rx_byte:
-    ; Decode special sequences (because of Flow Control)
- IFDEF TX_FLOW_CONTROL
-    call .read_one_byte
-    cp 0x10
-    jr z,.decode_special_character
-    ; Swallow 0x11 and 0x13 for now
-    cp 0x11
-    jr z,.flow_continue
-    cp 0x13
-    ret nz
-    ; flow through
-
-.flow_continue:
-    call check_rx_byte_available
-    jr z,.flow_continue
-    jr read_rx_byte   ; Read next byte
-
-.decode_special_character:
-    ; Special character
-    call .read_one_byte
-    or 0x10     ; decode characters 0x10, 0x11, and 0x13
-    ret
- ENDIF
-
-
-
-.read_one_byte:
     ; Change border
 .flash1:
     ld a,BLUE

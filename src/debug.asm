@@ -63,7 +63,7 @@ text_next_ptr:
 ; Changes:
 ;  -
 ;===========================================================================
-clear: ; TODO: REMOVE
+clear:
 	push af, hl, de, bc
 	ld hl,text.start
 	ld (text_next_ptr),hl
