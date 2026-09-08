@@ -765,6 +765,12 @@ cmd_set_breakpoints:
 ;===========================================================================
 ; CMD_RESTORE_MEM
 ; Restores the memory at the addresses.
+; Note: memory is only overwritten if the value is BP_INSTRUCTION
+; (RST 0). For the case that the debugged program overwrites the
+; breakpoint (self-modifying code).
+; Of course, it is anyhow no good idea to modify code at a
+; breakpoint, but dezogif tries to do its best to be as unintrusive
+; as possible.
 ; Changes:
 ;  NA
 ;===========================================================================
@@ -815,24 +821,15 @@ cmd_restore_mem:
 	and 0x1F
 	add HIGH SWAP_ADDR	; 0xC0
 	ld h,a
-	; Get value
-	call uart.read_rx_byte
-	; Set memory
-	ld (hl),a
+	; Restore
+	call .read_and_restore
 
 	; Restore slot/bank
-	ld e,a
 	call restore_swap_slot
-
-	; Restore a
-	ld a,e
 	jr .next
 
 .normal:
-	; Get value
-	call uart.read_rx_byte
-	; Set memory
-	ld (hl),a
+	call .read_and_restore
 
 .next:
 	; Next address
@@ -840,6 +837,16 @@ cmd_restore_mem:
 	add de,-4
 	jr .loop
 
+.read_and_restore:
+	; Get value
+	call uart.read_rx_byte
+	; Set memory
+	ld e,a
+	ld a,(hl)
+	cp BP_INSTRUCTION
+	ret nz	; Skip restore if not BP_INSTRUCTION (RST 0)
+	ld (hl),e
+	ret
 
 
 ;===========================================================================
