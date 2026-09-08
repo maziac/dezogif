@@ -5,7 +5,7 @@
 ; in macro.asm.
 ;
 ; E.g. use:
-;   SEND_NTF_LOG "Value of A: $u1 and BC $h2"
+;   SEND_NTF_LOG "Value of A: $u1 and BC $h2", 3
 ;	SEND_NTF_LOG_BYTE a
 ;	SEND_NTF_LOG_WORD de
 ; Note as byte and word parameter you can use registers like A, B, C, D, E, H, L, BC, DE, HL

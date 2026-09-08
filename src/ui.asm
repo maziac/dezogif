@@ -201,6 +201,7 @@ wait_on_key_release:
     jr nz,wait_on_key_release
     ret
 
+/*
 ;===========================================================================
 ; Standard ZX Spectrum ULA palette, RGB333 packed into 8 bits (RRRGGGBB,
 ; blue truncated to its top 2 bits). Index = color (0-7) | (bright<<3),
@@ -231,10 +232,15 @@ set_ula_default_palette:
     nextreg REG_PALETTE_VALUE_8, a
     djnz .loop
     ret
+*/
+
 ;===========================================================================
 ; Switches to ULA mode and shows the UI.
 ;===========================================================================
 init_and_show_ui:
+    ; Set the copper break according to the current state
+    call copper.set_copper_break
+
     ; Switch to ULA
     nextreg REG_ULA_X_OFFSET, 0
     nextreg REG_ULA_Y_OFFSET, 0
@@ -266,16 +272,16 @@ init_and_show_ui:
     nextreg REG_PALETTE_INDEX, 0
     nextreg REG_ULANEXT_PALETTE_FORMAT, 0x07
     nextreg REG_PALETTE_CONTROL, 0
+
     ; Also rewrite default palette
-    call set_ula_default_palette
+    ;call set_ula_default_palette
 
     ; Clear the screen
     call cls
 
-    ; Set the copper break according to the current state
-    call copper.set_copper_break
-
     SEND_NTF_LOG "init_and_show_ui", 0
+    DBG_LOG 'U'
+
 ;===========================================================================
 ; Shows the intro text and the state.
 ; Displays also the keys to use to change the settings.

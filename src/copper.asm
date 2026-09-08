@@ -6,6 +6,17 @@
 	MODULE copper
 
 ;===========================================================================
+; Enable or disable the copper break, depending on variable
+; 'copper_break_enabled'.
+;===========================================================================
+set_copper_break:
+    ld a,(copper_break_enabled)
+    or a
+    jr z,copper.break_stop
+   ; Flow through
+
+
+;===========================================================================
 ; Installs the two-instruction Copper list that raises a Multiface NMI once per
 ; frame - the clock the break poll rides on, and therefore the whole of
 ; async break.
@@ -54,6 +65,10 @@ break_install:
     ; pointer (device/copper.vhd:69-78), which the stop above guarantees.
     nextreg REG_COPPER_CONTROL_H,RCCH_COPPER_RUN_LOOP_RESET
 
+    ; Wait on line that will never come (511), i.e. stop the Copper from progressing
+    nextreg REG_COPPER_DATA, HIGH (0x8000 + 511)
+    nextreg REG_COPPER_DATA, LOW  (0x8000 + 511)
+
     ; Set state to enabled and running
     ld a,1
     ld (copper_break_enabled),a
@@ -79,17 +94,5 @@ break_stop:
     xor a
     ld (copper_break_enabled),a
     ret
-
-
-;===========================================================================
-; Enable or disable the copper break, depending on variable
-; 'copper_break_enabled'.
-;===========================================================================
-set_copper_break:
-    ld a,(copper_break_enabled)
-    or a
-    jr z,copper.break_stop
-    jr copper.break_install
-
 
 	ENDMODULE

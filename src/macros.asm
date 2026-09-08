@@ -287,27 +287,27 @@ divisor = divisor / 10
 
 	; Logs register A
 	MACRO SEND_NTF_LOG_REG_A
-	call write_tx_byte
+	call uart.write_tx_byte
 	ENDM
 
 	; Logs register B-L etc.
 	MACRO SEND_NTF_LOG_REG reg?
 	ld a,reg?
-	call write_tx_byte
+	call uart.write_tx_byte
 	ENDM
 
 	; Logs memory pointed by the pointer (byte).
 	MACRO SEND_NTF_LOG_BYTE pointer?
 	ld a,(pointer?)
-	call write_tx_byte
+	call uart.write_tx_byte
 	ENDM
 
 	; Logs memory pointed by the pointer (word).
 	MACRO SEND_NTF_LOG_WORD pointer?
 	ld a,(pointer?)
-	call write_tx_byte
+	call uart.write_tx_byte
 	ld a,(pointer?+1)
-	call write_tx_byte
+	call uart.write_tx_byte
 	ENDM
 
  ELSE
