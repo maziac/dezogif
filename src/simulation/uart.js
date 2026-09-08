@@ -61,7 +61,7 @@ API.readPort = (port) => {
 		return value;
 	}
 
-	// Simulate reading REG_RESET, REG_SUB_VERSION and REG_VERSION
+	// Simulate reading REG_RESET, REG_SUB_VERSION, REG_VERSION and REG_BOARD_ID
 	if (port == 0x253B /*IO_NEXTREG_DAT*/) {
 		API.log("  Reading from port IO_NEXTREG_DAT=0x253B.");
 		if (whichNextReg == 1 /*REG_VERSION*/) {
@@ -73,6 +73,11 @@ API.readPort = (port) => {
 			const subminor = 10;
 			API.log("    Reading register REG_VERSION=14: " + subminor);
 			return subminor;
+		}
+		if (whichNextReg == 15 /*REG_BOARD_ID*/) {
+			const boardId = 0
+			API.log("    Reading register REG_BOARD_ID=15: " + boardId);
+			return boardId;
 		}
 		if (whichNextReg == 2 /*REG_RESET*/) {
 			API.log("    Reading register REG_RESET=2: " + portRegReset);

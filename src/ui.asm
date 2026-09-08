@@ -279,6 +279,23 @@ init_and_show_ui:
     ; Clear the screen
     call cls
 
+/* Display all colors
+    ld hl,COLOR_SCREEN+5*COLOR_SCREEN_WIDTH
+    ld a,0
+    ld b,8
+.loop:
+    ld (hl),a
+    add a,8
+    inc hl
+    djnz .loop
+    ld a,0100_0000b
+    ld b,8
+.loop2:
+    ld (hl),a
+    add a,8
+    inc hl
+    djnz .loop2
+*/
     SEND_NTF_LOG "init_and_show_ui", 0
     DBG_LOG 'U'
 
@@ -332,14 +349,22 @@ show_ui:
     ld ix,text_core_version
 	call text.ula.print_string
 
+    ; Board ID + 2 = Issue
+    ld a,REG_BOARD_ID
+    call read_tbblue_reg
+    add '2'
+    ld (text_issue.char),a
+    ld ix,text_issue
+	call text.ula.print_string
+
     ; Get display timing
     ld a,REG_VIDEO_TIMING
     call read_tbblue_reg
 	and 0111b			;video timing is in bottom 3 bits, e.g. HDMI=111b
     ; Print the number
     add '0' ; convert to ASCII
-    ld (text_one_char.char),a
-    ld ix,text_one_char
+    ld (text_video_timing.char),a
+    ld ix,text_video_timing
 	call text.ula.print_string
 
     ; Show right selected joy port option

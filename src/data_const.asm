@@ -51,7 +51,9 @@ INTRO_TEXT:
     defb DZRP_VERSION.MAJOR+'0', '.', DZRP_VERSION.MINOR+'0', '.', DZRP_VERSION.PATCH+'0'
     defb ")"
     AT 0, 2
-    defb "Core: "
+    defb "Core:"
+    AT 14, 2
+    defb ", Issue"
     AT 0, 3
     defb "ESP UART Baudrate: "
     STRINGIFY BAUDRATE
