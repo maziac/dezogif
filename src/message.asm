@@ -358,14 +358,27 @@ send_ntf_pause:
 	call uart.write_tx_byte
 	ld a,h
 	call uart.write_tx_byte
+
 	; Bank
 	rlca : rlca : rlca ; Get slot
 	and 0111b
+
+	; Check if in main slot
+	cp MAIN_SLOT	; 7 = 0xE000
+	jr z,.main_slot
+
+	; Not main slot
 	add REG_MMU
 	call read_tbblue_reg
+
+.send_bank:
 	inc a	; bank+1
 	call uart.write_tx_byte
 	; Empty reason string
 	xor a
 	jp uart.write_tx_byte
 
+.main_slot:
+	; Use bank from saved slot instead
+	ld a,(slot_backup.slot7)
+	jr .send_bank

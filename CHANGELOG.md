@@ -8,6 +8,7 @@
 - Option to save the settings (UART and async-break).
 - Support for DZRP 2.2.0.
 - Changed video initialization. E.g. layer priorization. Should be more similar to a reset ZX Next.
+- Fixed bug which prevented breakpoints in slot 7, 0xE000-0xFFFF (!)
 
 # 2.2.1
 - Fixed support for command 23 (cmd_interrupt_on_off).
