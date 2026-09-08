@@ -52,8 +52,3 @@ PRGM_LOADING:	equ 2	; After CMD_INIT until the first CMD_CONTINUE
 PRGM_STOPPED:	equ 3	; After breakpoint or NMI
 PRGM_RUNNING:	equ 4	; After CMD_CONTINUE
 
-
-; The raster line at which the asynchronous-break Copper list raises its
-; Multiface NMI. Any line works; 0 is the first line just after the
-; vertical blank.
-COPPER_BREAK_LINE:	equ 0

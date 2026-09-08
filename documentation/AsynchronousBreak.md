@@ -24,7 +24,7 @@ below.
 # What to add to the program
 
 **Nothing at all, if your program does not use the Copper.** The debugger
-installs the two-instruction Copper list itself, when a debug session opens. An
+installs the Copper list itself, when a debug session opens. An
 ordinary program is breakable from the PC with no source change whatsoever.
 
 That works for one reason, and it is worth knowing because the rest of this page
@@ -36,30 +36,18 @@ let alone run — and it is still running once your program is.
 
 ## If the program already uses the Copper
 
-If your program uses the Copper already, add the two instructions to your own list. Add `WAIT <line>,0` and `MOVE $02,$08` **to the existing list**, at any raster
+If your program uses the Copper already, add this instructions to your own list. Add `MOVE $02,$08` **to the existing list**, at any raster
 position, and leave the rest of it alone. That is all the debugger needs — it
 does not care where in the list the two instructions sit or what else the list
 does.
 
 ```asm
-BREAK_LINE:     equ 0         ; any raster line; see "choosing a line"
-
-
     ; The list, MSB first:
-    ;   WAIT line,0   = 0x8000 | (hpos<<9) | line
     ;   MOVE $02,$08  -> NR 0x02 bit 3, the Multiface NMI
-    nextreg 0x60,(0x8000 + BREAK_LINE) >> 8
-    nextreg 0x60,(0x8000 + BREAK_LINE) & 0xFF
     nextreg 0x60,0x02
     nextreg 0x60,0x08
 ```
 
-## Choosing a line
-
-Any line works. `0` is at the start, just after a vertical blank. The NMI
-arrives at that raster position every frame, so a program with raster-timed
-effects should put the break somewhere it does not care about: the interruption
-is short, but it is not free and it is always in the same place.
 
 ## Turning it off
 
@@ -97,7 +85,6 @@ Anyway, if you want don't want to add this small performance penalty you'd need 
 If "Async Break" is turned on and the UART is used through joystick port 1 or 2 the "normal" joystick functionality will still work, but the MD joystick functionality, e.g. the START button, will not work.
 
 If you need that functionality either use the UART on the CN9 header (soldering required) or turn "Async Break" off. Of course, if you turn "Async Break" off you need to break via the NMI button.
-
 
 
 

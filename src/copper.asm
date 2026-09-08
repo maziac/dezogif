@@ -17,11 +17,8 @@ set_copper_break:
 
 
 ;===========================================================================
-; Installs the two-instruction Copper list that raises a Multiface NMI once per
-; frame - the clock the break poll rides on, and therefore the whole of
-; async break.
-;
-;   WAIT line,0    = 0x8000 | (hpos<<9) | line
+; Installs the Copper list that raises a Multiface NMI once
+; per frame.
 ;   MOVE $02,$08   = (reg<<8) | value   -> NR 0x02 bit 3, the Multiface NMI
 ;
 ; Encoding from device/copper.vhd:91-104.
@@ -56,18 +53,15 @@ break_install:
     nextreg REG_COPPER_CONTROL_L,0
 
     ; The list, MSB first.
-    nextreg REG_COPPER_DATA,HIGH (0x8000+COPPER_BREAK_LINE)
-    nextreg REG_COPPER_DATA,LOW (0x8000+COPPER_BREAK_LINE)
     nextreg REG_COPPER_DATA,REG_RESET
     nextreg REG_COPPER_DATA,00001000b
-
-    ; Run from index 0, looping. The mode CHANGING to 01 is what resets the
-    ; pointer (device/copper.vhd:69-78), which the stop above guarantees.
-    nextreg REG_COPPER_CONTROL_H,RCCH_COPPER_RUN_LOOP_RESET
 
     ; Wait on line that will never come (511), i.e. stop the Copper from progressing
     nextreg REG_COPPER_DATA, HIGH (0x8000 + 511)
     nextreg REG_COPPER_DATA, LOW  (0x8000 + 511)
+
+    ; Restart the list when a vertical blank occurs
+    nextreg REG_COPPER_CONTROL_H,RCCH_COPPER_RUN_VBI
 
     ; Set state to enabled and running
     ld a,1
