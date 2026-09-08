@@ -17,7 +17,7 @@
 last_error: defb 0
 
 ; UART flow control
-uart_write_counter:	defb 0
+uart.write_counter:	defb 0
 
 
 ;===========================================================================

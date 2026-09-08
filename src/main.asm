@@ -19,9 +19,9 @@
 ;===========================================================================
 
     ; Define this for some rudimentary debug functionality
-    DEFINE DEBUG
+    ;DEFINE DEBUG
     ; Define this for sending debug logs over UART
-    DEFINE DBG_SEND_LOG
+    ;DEFINE DBG_SEND_LOG
 
     include "macros.asm"
     include "zx/zx.inc"
@@ -92,7 +92,7 @@ main_bank_entry:
 
     ; Init flow control
     xor a
-    ld (uart_write_counter),a
+    ld (uart.write_counter),a
 
     ; Load settings
     ;xor a   ; No error

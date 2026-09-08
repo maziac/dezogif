@@ -284,9 +284,10 @@ write_tx_byte:
     call wait_for_tx
 
     ; Check if already 256 bytes were written
-    ld a,(uart_write_counter)
+    ld a,(uart.write_counter)
     inc a
-    ld (uart_write_counter),a
+    ld (uart.write_counter),a
+    jr .dont_wait ; TODO: Probably remove the write_counter and waiting. It slows donw CMD_READ by half. 32k use 0,35 secs without and 0,8 secs with.
     jr nz,.dont_wait
 
     ; Wait

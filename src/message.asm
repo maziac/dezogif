@@ -287,7 +287,7 @@ send_length_and_seqno:
 send_4bytes_length_and_seqno:
 	; Reset write counter (flow control)
     xor a
-    ld (uart_write_counter),a
+    ld (uart.write_counter),a
 	; Write first byte to recognize message
 	ld a,MESSAGE_START_BYTE
 	call uart.write_tx_byte
@@ -309,7 +309,7 @@ send_4bytes_length_and_seqno:
 	call uart.write_tx_byte
 	; Sequence number
 	ld a,(receive_buffer.seq_no)
-	and 0x0F	; Only 4 bits, upper 4 bits are reserved
+	;and 0x0F	; Only 4 bits, upper 4 bits are reserved ; TODO: decide if it should be used
 	jp uart.write_tx_byte
 
 
