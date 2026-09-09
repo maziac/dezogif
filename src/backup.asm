@@ -327,6 +327,7 @@ write_debugged_prgm_mem:
 memory_loop:
 	; Phase 1: memory in range 0xE000-0xFFFF
 	ld (.inner_call+1),bc	; function pointer
+	; Remember current bank for slot
 	call save_swap_slot
 .inner:	; Beginning from here BC is not touched anymore
 	ld a,h

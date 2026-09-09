@@ -59,14 +59,14 @@ range_end	defw
 
 ; CMD_READ_MEM
 	STRUCT PAYLOAD_READ_MEM
-reserved	defb
+bankp1   	defb
 mem_start	defw
 mem_size	defw
 	ENDS
 
 ; CMD_WRITE_MEM
 	STRUCT PAYLOAD_WRITE_MEM
-reserved	defb
+bankp1		defb
 mem_start	defw
 	ENDS
 

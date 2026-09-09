@@ -22,7 +22,7 @@ LOOPBACK_BANK:  EQU 91 ; Used for the loopback test. Could be any bank as the lo
 ; The address that correspondends to the main bank.
 MAIN_ADDR:      EQU MAIN_SLOT*0x2000
 
-; The address that correspondends to the swap slot bank.
+; The address that correspondents to the swap slot bank.
 SWAP_ADDR:      EQU SWAP_SLOT*0x2000
 
 ; Use the build time
