@@ -1316,7 +1316,7 @@ UT_14_cmd_restore_mem.UT_2_values:
 	TEST_PREPARE_COMMAND
 
 	; Test
-	ld a,0xFF
+	ld a,0xC7 ; RST0
 	ld (0xC000),a
 	ld (0xC0FF),a
 	call cmd_restore_mem
@@ -1340,6 +1340,38 @@ UT_14_cmd_restore_mem.UT_2_values:
 	defb 0x55	; Value
 .cmd_data_end
 
+; Test cmd_restore_mem.
+; 2 values.
+UT_14_cmd_restore_mem.UT_not_RST0:
+	SET_PRGM_STATE_RUNNING
+	TEST_PREPARE_COMMAND
+
+	; Test
+	ld a,0xC7 ; RST0
+	ld (0xC000),a
+	ld a,0xBB ; not RST0
+	ld (0xC001),a
+	call cmd_restore_mem
+	; Check response
+ 	call test_get_response
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 1
+
+	; Test
+	TEST_MEMORY_BYTE 0xC000, 0xAA
+	TEST_MEMORY_BYTE 0xC001, 0xBB  ; Unchanged
+ TC_END
+
+.cmd_data:
+	defw 0xC000	; Address
+	defb 0		; No bank
+	defb 0xAA	; Value
+
+	defw 0xC001	; Address
+	defb 0		; No bank
+	defb 0x55	; Value
+.cmd_data_end
+
 
 ; Test cmd_restore_mem.
 ; Restore slots.
@@ -1353,7 +1385,7 @@ UT_14_cmd_restore_mem.UT_restore_slots:
 	nextreg REG_MMU+SWAP_SLOT,72
 
 	; Test
-	ld a,0xFF
+	ld a,0xC7	; RST0
 	ld (0x0200),a
 	ld (0x3FFF),a
 	call cmd_restore_mem
@@ -1400,7 +1432,7 @@ UT_14_cmd_restore_mem.UT_long_addresses:
 	nextreg REG_MMU+SWAP_SLOT,72
 
 	; Test
-	ld a,0xFF
+	ld a,0xC7	; RST0
 	ld (0xCF00&0x1FFF),a
 	ld ((0xC0FF&0x1FFF)+0x2000),a
 	call cmd_restore_mem
@@ -1748,7 +1780,7 @@ UT_24_cmd_get_supported_commands:
 	; Test size
 	TEST_MEMORY_WORD test_memory_payload.length, 5
 	; Check returned commands
-	TEST_MEMORY_BYTE test_memory_payload+1, 1111_1110b	; CMD_INIT - CMD_PAUSE
+	TEST_MEMORY_BYTE test_memory_payload+1, 1101_1110b	; CMD_INIT - CMD_PAUSE
 	TEST_MEMORY_BYTE test_memory_payload+2, 1111_1111b	; CMD_READ_MEM - CMD_LOOPBACK
 	TEST_MEMORY_BYTE test_memory_payload+3, 1111_0011b	; CMD_GET_SPRITES_PALETTE - CMD_INTERRUPT_ON_OFF
 	TEST_MEMORY_BYTE test_memory_payload+4, 0000_0001b	; CMD_GET_SUPPORTED_COMMANDS

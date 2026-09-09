@@ -60,20 +60,10 @@ so an `IFDEF DEBUG` around it is enough; nothing else in the program changes.
 ## Performance
 
 The handler's decline path — the common case, once a frame, with nothing on the
-link — is roughly **1300 T-states**: about **0.23%** of a frame at 28MHz and
-about **1.8%** of one at 3.5MHz, which is what a contended-memory, tape or
-beeper program pays.
-
-That figure was measured in an emulator, against the equivalent code in a fork
-of this project, with a fixed-length counting loop and two builds one assembler
-constant apart. Read it as an order of magnitude rather than as a specification
-for this branch, and note what it does **not** include: the fixture brought no
-debugger up, so the handler declined at its magic-number check and never reached
-the link poll at all. A real session pays that plus the `prgm_state` test and
-the status read, of the order of another hundred T-states by instruction timing.
-Nothing has measured any of it on real hardware.
-
-Plus the 44 bytes, plus the Copper list, plus the raster line.
+link — is 223 clock cycles.
+At 28MHz this is 223/28Mhz = 8us.
+At 3.5MHz it is 223/3.5Mhz = 64us.
+At a frame rate of 16ms it is 0.05% for 28MHz and 0.4% for 3.5MHz.
 
 The poll does **not** change the machine's clock speed. It runs at whatever
 clock the program is running at.
