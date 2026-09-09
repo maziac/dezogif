@@ -275,7 +275,7 @@ flowchart TD
 	PrgState --> |YES| Cause{Cause?}
 
     Cause -->|M1 button pressed| Button[".is_button_cause"]
-    Cause -->|Copper poll bit set| Poll[".software_cause: async-break poll"]
+    Cause -->|Copper poll bit set| Poll[".copper_cause: async-break poll"]
     Cause -->|other, e.g. DivMMC/I/O trap| End2((Return))
 
     Button -->|Yes| ntf_pause["prgm_state:=PRGM_STOPPED\nsend_ntf_pause(MANUAL_BREAK)"]

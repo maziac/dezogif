@@ -30,7 +30,7 @@
 
 
 ; UART TX. Write=transmit data, Read=status
-UART_TX:   equ 0x133b
+UART_TX:   equ 0x133b   ; TODO: Rename to uart.TX for consistency
 
 ; UART RX. Read data.
 UART_RX:   equ 0x143b

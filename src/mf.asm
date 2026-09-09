@@ -163,7 +163,7 @@ mf_nmi_happened:
 ;===========================================================================
 ; The asynchronous-break poll.
 ;
-; Reached by JP from mf_rom.asm's .software_cause, which has already cleared the
+; Reached by JP from mf_rom.asm's .copper_cause, which has already cleared the
 ; NR 0x02 cause latch, saved the debugged program's bank in MF.nmi_slot7, paged
 ; MAIN_BANK into MAIN_SLOT and checked that the image there is ours. Nothing may
 ; be called in this bank before that check, which is why the check is in MF ROM
@@ -198,12 +198,6 @@ mf_nmi_happened:
 ; any byte.
 ;===========================================================================
 mf_nmi_poll:
-	; Optimized to leave as early as possible if no break is needed. I.e.
-	; for the common case.
-	; 1. Has the PC said anything?
-	call uart.check_rx_byte_available
-	jp z,MF.nmi66h.poll_decline
-
 	; 2. Is there a debugged program to break into?
 	ld a,(prgm_state)
 	cp PRGM_RUNNING

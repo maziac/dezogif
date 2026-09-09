@@ -42,7 +42,7 @@ MF_DIFF_TO_RAM:  equ MF_ORIGIN_ROM+0x2000-MF.main_prg_copy ; At 0x2000
 ;
 ; Three ways out, each with its own tail:
 ;   .is_button_cause    the M1 button
-;   .software_cause     the asynchronous-break poll, see there
+;   .copper_cause     the asynchronous-break poll, see there
 ;   fall through        a DivMMC NMI or an I/O trap: not ours, decline
 ;===========================================================================
 nmi66h:
@@ -127,7 +127,31 @@ nmi66h:
     ; (:5891), so a read-modify-write of this register resets the machine -
     ; and on the poll path that would be once a frame.
     and 1000_0000b  ; Preserve esp/expbus bit
-    out (c),a   ; = nextreg REG_RESET,a
+    out (c),a   ; = nextreg REG_RESET,a ; BC = IO_NEXTREG_DAT
+
+    ; Check if UART TX bytes available
+	ld a,HIGH uart.UART_TX
+	in a,(LOW uart.UART_TX)	; Read status bits
+    bit uart.UART_RX_FIFO_EMPTY,a
+    jp nz,.uart_rx_received
+
+    ; This is the fastest path out of the NMI handler: copper-caused && no UART RX activity.
+
+    ; Immediately return if it is not copper and not a button press.
+    ; Shared with .poll_decline below, which arrives with the latch cleared too.
+    ; Nothing pages the Multiface out here: RETN does it in hardware, which is
+    ; what the decline has always relied on.
+.return_to_interrupted:
+	ld bc,IO_NEXTREG_REG
+    ; Restore the debugged program's IO_NEXTREG_REG selection
+	ld a,(MF.nmi_io_next_reg)
+	out (c),a
+    ; RETN
+    pop bc, af
+    ld sp,(MF.backup_sp)
+    retn
+
+.uart_rx_received:
     ; The cause latch was cleared above, where both non-button causes share it.
     ; Save what MAIN_SLOT held and page MAIN_BANK in over it.
     ; BC is IO_NEXTREG_DAT here.
@@ -152,35 +176,19 @@ nmi66h:
     or a
     sbc hl,bc
     pop hl
-    jr nz,.poll_decline
 
     ; Ours. The rest of the decision needs no MF ROM bytes and lives in the
     ; debugger's own bank: mf.asm's mf_nmi_poll, which comes back to
     ; .poll_decline or leaves through .break_into_debuggee.
-    jp mf_nmi_poll
+    jp z,mf_nmi_poll
 
 .poll_decline:
     ; Put MAIN_SLOT back before returning, or the debugged program gets its
     ; machine back with the debugger's bank at 0xE000.
     ld a,(MF.nmi_slot7)
     nextreg REG_MMU+MAIN_SLOT,a
-
-	ld bc,IO_NEXTREG_REG
-    ; Flow through
-
-    ; Immediately return if it is not copper and not a button press.
-    ; Shared with .poll_decline below, which arrives with the latch cleared too.
-    ; Nothing pages the Multiface out here: RETN does it in hardware, which is
-    ; what the decline has always relied on.
-.return_to_interrupted:
-    ; Restore the debugged program's IO_NEXTREG_REG selection
-	ld a,(MF.nmi_io_next_reg)
-	out (c),a
-
-    ; RETN
-    pop bc, af
-    ld sp,(MF.backup_sp)
-    retn
+    ; Return
+    jr .return_to_interrupted
 
     ; It was not the copper, so check if it was caused by a button press
 .not_copper_cause:
@@ -192,7 +200,6 @@ nmi66h:
     in a,(c)    ; BC is still pointing to IO_NEXTREG_DAT
     and 1000_0000b  ; Preserve esp/expbus bit
     out (c),a   ; = nextreg REG_RESET,a
-    dec b   ; IO_NEXTREG_REG
     jr .return_to_interrupted    ; Jump if not copper and not button
 
     ; Button was pressed
