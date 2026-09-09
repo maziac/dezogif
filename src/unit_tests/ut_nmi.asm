@@ -60,7 +60,7 @@ UT_nmi_cause_button:
 ; Check that in case of a copper generated interrupt the NMI function is executed.
 UT_nmi_cause_copper:
 	; Redirect (modify) NMI ISR.
-    MEMCOPY MF.nmi66h.software_cause, .jmp, 3
+    MEMCOPY MF.nmi66h.copper_cause, .jmp, 3
 
 	; Simulate copper cause
 	ld a,0000_1000b

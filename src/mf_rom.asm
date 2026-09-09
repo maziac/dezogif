@@ -71,57 +71,16 @@ nmi66h:
 	; Read register
     inc b ; IO_NEXTREG_DAT (0x253B)
 	in a,(c)
-    and 0001_1100b
-    jr z,.is_button_cause
 
-    ; Not a button press. The three bits kept by the mask are, from
-    ; zxnext.vhd:5891:
+    ; The three bits are, from zxnext.vhd:5891:
     ;   bit 4  nr_02_iotrap              the I/O trap on 0x2FFD/0x3FFD
     ;   bit 3  nr_02_generate_mf_nmi     a CPU or Copper write of NR 0x02 bit 3
     ;   bit 2  nr_02_generate_divmmc_nmi the DivMMC (drive) button
     ; Bit 3 is the asynchronous-break poll and is served below. The other two
     ; are not ours: an I/O trap fires on a port access rather than on a raster
     ; line, so it is not the Copper's.
-    ; The answer is taken now and carried in F across the latch clear, which
-    ; both non-button causes need.
     bit 3,a
-    push af
-
-    IF 0
-	; Change border to blue
-	ld a,BLUE
-    out (BORDER),a
-	ENDIF
-
-    ; Clear reason bits.
-    ; Not to re-arm the NMI - RETN does that in hardware - but so that the NEXT
-    ; NMI reports its cause correctly: leave bit 3 set and a genuine button
-    ; press reads a non-zero mask above and is misrouted down the poll path.
-    ; "and 10000000b" is load bearing: bits 1:0 WRITTEN trigger a soft/hard
-    ; reset (zxnext.vhd:6369-6370) while READ they are the reset type
-    ; (:5891), so a read-modify-write of this register resets the machine -
-    ; and on the poll path that would be once a frame.
-	in a,(c)    ; Read again
-    and 1000_0000b  ; Preserve esp/expbus bit
-    out (c),a   ; = nextreg REG_RESET,a
-
-    pop af      ; the bit 3 answer
-    jr nz,.software_cause
-
-    ; Immediately return if there is some other reason than a button press.
-    ; Shared with .poll_decline below, which arrives with the latch cleared too.
-    ; Nothing pages the Multiface out here: RETN does it in hardware, which is
-    ; what the decline has always relied on.
-.return_to_interrupted:
-    ; Restore the debugged program's IO_NEXTREG_REG selection
-	ld bc,IO_NEXTREG_REG
-	ld a,(MF.nmi_io_next_reg)
-	out (c),a
-
-    ; RETN
-    pop bc, af
-    ld sp,(MF.backup_sp)
-    retn
+    jr z,.not_copper_cause ; If bit 3 is set, it is a software NMI = Copper
 
 
 ;===========================================================================
@@ -158,7 +117,17 @@ nmi66h:
 ; called - until the bank has been shown to hold our image. Two bytes rather
 ; than the button path's six, because this runs every frame.
 ;===========================================================================
-.software_cause:
+.copper_cause:
+    ; Clear reason bits.
+    ; Not to re-arm the NMI - RETN does that in hardware - but so that the NEXT
+    ; NMI reports its cause correctly: leave bit 3 set and a genuine button
+    ; press reads a non-zero mask above and is misrouted down the poll path.
+    ; "and 10000000b" is load bearing: bits 1:0 WRITTEN trigger a soft/hard
+    ; reset (zxnext.vhd:6369-6370) while READ they are the reset type
+    ; (:5891), so a read-modify-write of this register resets the machine -
+    ; and on the poll path that would be once a frame.
+    and 1000_0000b  ; Preserve esp/expbus bit
+    out (c),a   ; = nextreg REG_RESET,a
     ; The cause latch was cleared above, where both non-button causes share it.
     ; Save what MAIN_SLOT held and page MAIN_BANK in over it.
     ; BC is IO_NEXTREG_DAT here.
@@ -170,7 +139,9 @@ nmi66h:
 	in a,(c)	; A contains the previous bank number for MAIN_SLOT
     ld (MF.nmi_slot7),a
 	; Page in slot 7
-	nextreg REG_MMU+MAIN_SLOT,MAIN_BANK
+    ld a,MAIN_BANK
+    out (c),a   ; = nextreg REG_MMU,MAIN_BANK, but 1 cycle less
+	;nextreg REG_MMU+MAIN_SLOT,MAIN_BANK
 
     ; Is our image really there? magic_number_a and magic_number_b are adjacent
     ; (data_const.asm), so both are compared as one word. BC is dead after
@@ -193,9 +164,38 @@ nmi66h:
     ; machine back with the debugger's bank at 0xE000.
     ld a,(MF.nmi_slot7)
     nextreg REG_MMU+MAIN_SLOT,a
-    jr .return_to_interrupted
 
+	ld bc,IO_NEXTREG_REG
+    ; Flow through
 
+    ; Immediately return if it is not copper and not a button press.
+    ; Shared with .poll_decline below, which arrives with the latch cleared too.
+    ; Nothing pages the Multiface out here: RETN does it in hardware, which is
+    ; what the decline has always relied on.
+.return_to_interrupted:
+    ; Restore the debugged program's IO_NEXTREG_REG selection
+	ld a,(MF.nmi_io_next_reg)
+	out (c),a
+
+    ; RETN
+    pop bc, af
+    ld sp,(MF.backup_sp)
+    retn
+
+    ; It was not the copper, so check if it was caused by a button press
+.not_copper_cause:
+    ; Check for button cause
+    and 0001_1100b
+    jr z,.is_button_cause
+
+    ; Clear reason bits on this path as well.
+    in a,(c)    ; BC is still pointing to IO_NEXTREG_DAT
+    and 1000_0000b  ; Preserve esp/expbus bit
+    out (c),a   ; = nextreg REG_RESET,a
+    dec b   ; IO_NEXTREG_REG
+    jr .return_to_interrupted    ; Jump if not copper and not button
+
+    ; Button was pressed
 .is_button_cause:
 
     IF 0
