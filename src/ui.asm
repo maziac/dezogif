@@ -279,6 +279,9 @@ init_and_show_ui:
     ; Clear the screen
     call cls
 
+    ; Switch in ROM for the font
+    nextreg REG_MMU+1,ROM_BANK
+
 /* Display all colors
     ld hl,COLOR_SCREEN+5*COLOR_SCREEN_WIDTH
     ld a,0

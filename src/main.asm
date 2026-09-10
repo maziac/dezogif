@@ -68,21 +68,8 @@ main_bank_entry:
     ; Initialize the bank for slot 0 with the required code.
     call copy_altrom
 
-    ; Copy the ZX character font from address ROM_FONT (0x3D00)
-    ; to the debugger area at the end of the bank (0x2000-ROM_FONT_SIZE).
-    ; Switch in ROM bank
-    nextreg REG_MMU+0,ROM_BANK
-    nextreg REG_MMU+1,ROM_BANK
-    MEMCOPY MAIN_ADDR+0x2000-ROM_FONT_SIZE+MF_ORIGIN_ROM-MF.main_prg_copy, ROM_FONT, ROM_FONT_SIZE
-
-    ; Restore SWAP_SLOT bank
-    ;nextreg REG_MMU+SWAP_SLOT,a
-
     ; Set baudrate
     call uart.set_baudrate
-
-    ; Init text printing
-    call text.init
 
     ; Enable flashing border
     call uart.flashing_border.enable
@@ -205,14 +192,6 @@ main_loop:
 main_end:
     ASSERT main_end <= (MAIN_SLOT+1)*0x2000
     ASSERT main_end <= MAIN_ADDR+0x1F00
-
-    ; The real ceiling is lower than either of the two above, and neither of
-    ; them can see it: main_bank_entry copies the ZX font into the top of this
-    ; bank and nothing in the source emits a byte there, so growing past that
-    ; address aliases the debugger's variables onto the glyph bitmaps - silently
-    ; and in both directions. Same expression as the MEMCOPY that fills it.
-    ASSERT main_end <= MAIN_ADDR+0x2000-ROM_FONT_SIZE+MF_ORIGIN_ROM-MF.main_prg_copy
-
 
 
 ;===========================================================================

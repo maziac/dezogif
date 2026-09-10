@@ -37,6 +37,9 @@ ROM_PRINT               EQU  0x203C
 ROM_FONT:  equ 0x3D00
 ROM_FONT_SIZE: equ 0x0300  ; 96 chars, [0x20..0x7F]
 
+; FONT address: 0x20*8 skips the unprintable characters.
+FONT:	equ ROM_FONT-0x20*8
+
 ; The ROM start address and the ROM size (16k) of the Spectrum.
 ROM_START:  equ 0x0000
 ROM_SIZE: equ 0x4000  ; 16k
