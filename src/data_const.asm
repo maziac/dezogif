@@ -10,7 +10,7 @@
 
 ; The dezogif program version:
  MACRO PRG_VERSION
- 	defb "v2.3.0-rc1"
+ 	defb "v2.3.0-rc2"
  ENDM
 
 
@@ -55,7 +55,7 @@ INTRO_TEXT:
     AT 14, 2
     defb ", Issue"
     AT 0, 3
-    defb "ESP UART Baudrate: "
+    defb "UART Baudrate: "
     STRINGIFY BAUDRATE
     AT 0, 4
     defb "Video timing:"
@@ -74,7 +74,7 @@ INTRO_TEXT:
     AT 0, 11
     defb "2=Joy 2"
     AT 0, 12
-    defb "3=CN9 ESP"
+    defb "3=CN9 header"
     AT 0, 13
     defb "A=Async-Break"
     AT 16, 10
@@ -96,7 +96,7 @@ JOY2_SELECTED_TEXT:
 CN9_SELECTED_TEXT:
     STATUS_COL
     AT 6, 6
-    defb "CN9 ESP      ", 0
+    defb "CN9 header   ", 0
 
 SELECTED_TEXT_TABLE:
     defw CN9_SELECTED_TEXT
@@ -126,7 +126,7 @@ HELP_TEXT_1:
     defb "Select here which port to use   "
     defb "for UART communication. Either  "
     defb "one of the 2 ", COLOR, MAGENTA, "joystick ports", COLOR, WHITE, " or  "
-    defb "the ", COLOR, MAGENTA, "CN9 ESP port", COLOR, WHITE, " can be used."
+    defb "the ", COLOR, MAGENTA, "CN9 header", COLOR, WHITE, " can be used."
     AT 0, 7
     defb "For CN9 you need to open your ZX"
     AT 0, 8
