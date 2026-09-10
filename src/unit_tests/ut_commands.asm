@@ -19,15 +19,6 @@ test_memory_payload:
 ; Test data is written to this port:
 PORT_TEST_DATA:	equ 0x8000
 
-	MACRO SET_PRGM_STATE_IDLE
-	ld a,PRGM_IDLE
-	ld (prgm_state),a
-	ENDM
-
-	MACRO SET_PRGM_STATE_RUNNING
-	ld a,PRGM_RUNNING
-	ld (prgm_state),a
-	ENDM
 
 ; Helper function that inits all backup values to 0xFF.
 cmd_data_init:
@@ -172,7 +163,6 @@ test_get_response:
 ; Test command to subroutine pointer conversion.
 UT_get_cmd_pointer:
 	; Test several commands
-	SET_PRGM_STATE_RUNNING
 
 	; Minimum
 	ld a,1
@@ -210,7 +200,6 @@ UT_get_cmd_pointer:
 
 ; Test response of cmd_init.
 UT_01_cmd_init:
-	SET_PRGM_STATE_IDLE
 	; Write test data to simulated UART buffer.
 	TEST_PREPARE_COMMAND
 
@@ -247,7 +236,6 @@ UT_01_cmd_init:
 
 ; Test response of cmd_close.
 UT_02_cmd_close:
-	SET_PRGM_STATE_RUNNING
 	; Write test data to simulated UART buffer.
 	TEST_EMPTY_COMMAND
 
@@ -274,7 +262,6 @@ UT_02_cmd_close:
 
 ; Test cmd_get_registers.
 UT_03_cmd_get_registers:
-	SET_PRGM_STATE_RUNNING
 	; Write test data to simulated UART buffer.
 	TEST_EMPTY_COMMAND
 
@@ -330,7 +317,6 @@ UT_03_cmd_get_registers:
 
 ; Test that double register is set correctly.
 UT_04_cmd_set_register.UT_pc:
-	SET_PRGM_STATE_RUNNING
 	TEST_PREPARE_COMMAND
 
     ; Test
@@ -356,7 +342,6 @@ UT_04_cmd_set_register.UT_pc:
 
 ; Test that single register low is set correctly.
 UT_04_cmd_set_register.UT_c:
-	SET_PRGM_STATE_RUNNING
 	TEST_PREPARE_COMMAND
 
 	ld bc,0xFEDE
@@ -385,7 +370,6 @@ UT_04_cmd_set_register.UT_c:
 
 ; Test that single register high is set correctly.
 UT_04_cmd_set_register.UT_b:
-	SET_PRGM_STATE_RUNNING
 	TEST_PREPARE_COMMAND
 
 	ld bc,0xFEDE
@@ -427,7 +411,6 @@ cmd_set_dreg:
 
 ; Test that register SP to HL' are set correctly.
 UT_04_cmd_set_register.UT_SP_to_HL2:
-	SET_PRGM_STATE_RUNNING
 	; Init values
 	call cmd_data_init
 	; First set all double registers
@@ -518,7 +501,6 @@ set_reg:
 
 ; Test that register A to H' are set correctly.
 UT_04_cmd_set_register.UT_A_to_IR:
-	SET_PRGM_STATE_RUNNING
 	; Init values
 	call cmd_data_init
 	; First set all single registers
@@ -588,7 +570,6 @@ UT_04_cmd_set_register.UT_A_to_IR:
 ; A real check is not possible, IM cannot be read.
 ; The check only allows a visual check that all lines have been covered.
 UT_04_cmd_set_register.UT_im:
-	SET_PRGM_STATE_RUNNING
 	ld a,13	; IM register
 	ld (payload_set_reg.register_number),a
 	; IM 0
@@ -613,7 +594,6 @@ UT_04_cmd_set_register.UT_im:
 ; Test writing a wrong register index.
 ; The check is simply that no crash happens.
 UT_04_cmd_set_register.UT_wrong_register:
-	SET_PRGM_STATE_RUNNING
 	ld a,35	; First non existing register
 	ld (payload_set_reg.register_number),a
 	ld hl,0xCC55
@@ -630,7 +610,6 @@ UT_04_cmd_set_register.UT_wrong_register:
 ; Test writing data to a memory bank.
 ; The test simulates the receive_bytes function call.
 UT_05_cmd_write_bank:
-	SET_PRGM_STATE_RUNNING
 	; Remember current bank for slot
 	ld a,REG_MMU+SWAP_SLOT
 	call read_tbblue_reg	; Result in A
@@ -722,7 +701,6 @@ UT_05_cmd_write_bank:
 
 ; Test cmd_continue
 UT_06_continue:
-	SET_PRGM_STATE_RUNNING
 	; Write test data to simulated UART buffer.
 	TEST_PREPARE_COMMAND
 
@@ -763,14 +741,12 @@ UT_06_continue:
 
 ; Test cmd_pause
 UT_07_pause:
-	SET_PRGM_STATE_RUNNING
 	; cmd_pause acknowledges and does nothing else
  TC_END
 
 
 ; Test reading memory.
 UT_08_cmd_read_mem.UT_normal:
-	SET_PRGM_STATE_RUNNING
 	TEST_PREPARE_COMMAND
 
 	; Test
@@ -800,7 +776,6 @@ UT_08_cmd_read_mem.UT_normal:
 ; Test reading memory in each relevant bank.
 ; Note: The locations should not contain any code/data.
 UT_08_cmd_read_mem.UT_banks:
-	SET_PRGM_STATE_RUNNING
 	; Page in different memory to ROM
 	nextreg REG_MMU,81
 	nextreg REG_MMU+1,82
@@ -892,7 +867,6 @@ UT_08_cmd_read_mem.UT_banks:
 
 ; Test reading memory from a bank.
 UT_08_cmd_read_mem.UT_from_bank:
-	SET_PRGM_STATE_RUNNING
 
 	; Use bank 0 and 50 in slot 6
 	; Put defined values in banks
@@ -961,7 +935,6 @@ UT_08_cmd_read_mem.UT_from_bank:
 
 ; Test writing memory.
 UT_09_cmd_write_mem.UT_normal:
-	SET_PRGM_STATE_RUNNING
 	TEST_PREPARE_COMMAND
 
 	; Test
@@ -992,7 +965,6 @@ UT_09_cmd_write_mem.UT_normal:
 ; Note: The locations should not contain any code/data of
 ; the tested program which is around 0x7000 for unit testing.
 UT_09_cmd_write_mem.UT_banks:
-	SET_PRGM_STATE_RUNNING	; TODO : Remove everywhere
 	; Page in different memory to ROM
 	nextreg REG_MMU,81
 	nextreg REG_MMU+1,82
@@ -1127,7 +1099,6 @@ UT_09_cmd_write_mem.UT_to_bank:
 
 ; Test cmd_set_slot
 UT_10_cmd_set_slot:
-	SET_PRGM_STATE_RUNNING
 	ld iy,.cmd_data
 
 	; Test
@@ -1202,7 +1173,6 @@ UT_10_cmd_set_slot:
 ; Test cmd_get_tbblue_reg.
 ; Check a set slot.
 UT_11_cmd_get_tbblue_reg:
-	SET_PRGM_STATE_RUNNING
 
 	; Test
 	TEST_PREPARE_COMMAND
@@ -1235,7 +1205,6 @@ UT_11_cmd_get_tbblue_reg:
 
 ; Test cmd_set_border. Test works only on zsim.
 UT_12_cmd_set_border:
-	SET_PRGM_STATE_RUNNING
 	ld iy,.cmd_data
 
 	; Test
@@ -1274,7 +1243,6 @@ UT_12_cmd_set_border:
 
 ; Test cmd_set_breakpoints with no breakpoints.
 UT_13_cmd_set_breakpoints.UT_no_bp:
-	SET_PRGM_STATE_RUNNING
 	TEST_EMPTY_COMMAND
 
 	; Test
@@ -1290,7 +1258,6 @@ UT_13_cmd_set_breakpoints.UT_no_bp:
 ; Test cmd_set_breakpoints.
 ; 2 breakpoints.
 UT_13_cmd_set_breakpoints.UT_2_bps:
-	SET_PRGM_STATE_RUNNING
 	TEST_PREPARE_COMMAND
 
 	; Test
@@ -1325,7 +1292,6 @@ UT_13_cmd_set_breakpoints.UT_2_bps:
 ; Test cmd_set_breakpoints.
 ; Restore slots.
 UT_13_cmd_set_breakpoints.UT_restore_slots:
-	SET_PRGM_STATE_RUNNING
 	TEST_PREPARE_COMMAND
 
 	; Page in banks in ROM area
@@ -1372,7 +1338,6 @@ UT_13_cmd_set_breakpoints.UT_restore_slots:
 ; Test cmd_set_breakpoints.
 ; With long addresses (i.e. with banking).
 UT_13_cmd_set_breakpoints.UT_long_bps:
-	SET_PRGM_STATE_RUNNING
 	TEST_PREPARE_COMMAND
 
 	; Page in banks in ROM area
@@ -1410,7 +1375,6 @@ UT_13_cmd_set_breakpoints.UT_long_bps:
 
 ; Test cmd_restore_mem with no values.
 UT_14_cmd_restore_mem.UT_no_values:
-	SET_PRGM_STATE_RUNNING
 	TEST_EMPTY_COMMAND
 
 	; Test
@@ -1426,7 +1390,6 @@ UT_14_cmd_restore_mem.UT_no_values:
 ; Test cmd_restore_mem.
 ; 2 values.
 UT_14_cmd_restore_mem.UT_2_values:
-	SET_PRGM_STATE_RUNNING
 	TEST_PREPARE_COMMAND
 
 	; Test
@@ -1457,7 +1420,6 @@ UT_14_cmd_restore_mem.UT_2_values:
 ; Test cmd_restore_mem.
 ; 2 values.
 UT_14_cmd_restore_mem.UT_not_RST0:
-	SET_PRGM_STATE_RUNNING
 	TEST_PREPARE_COMMAND
 
 	; Test
@@ -1490,7 +1452,6 @@ UT_14_cmd_restore_mem.UT_not_RST0:
 ; Test cmd_restore_mem.
 ; Restore slots.
 UT_14_cmd_restore_mem.UT_restore_slots:
-	SET_PRGM_STATE_RUNNING
 	TEST_PREPARE_COMMAND
 
 	; Page in banks in ROM area
@@ -1537,7 +1498,6 @@ UT_14_cmd_restore_mem.UT_restore_slots:
 ; Test cmd_restore_mem.
 ; 2 values.
 UT_14_cmd_restore_mem.UT_long_addresses:
-	SET_PRGM_STATE_RUNNING
 	TEST_PREPARE_COMMAND
 
 	; Page in banks in ROM area
@@ -1574,7 +1534,6 @@ UT_14_cmd_restore_mem.UT_long_addresses:
 ; Test cmd_loopback.
 ; Test looping back received data.
 UT_15_cmd_loopback:
-	SET_PRGM_STATE_RUNNING
 	TEST_PREPARE_COMMAND
 
 	; Test
@@ -1609,7 +1568,6 @@ UT_15_cmd_loopback:
 ; Test that 513 bytes are send for both palettes.
 ; Note: teh values are not simulated in zsim.
 UT_16_cmd_get_sprites_palette:
-	SET_PRGM_STATE_RUNNING
 	; Test
 	xor a	; Palette 0
 	ld (.cmd_data),a
@@ -1639,7 +1597,6 @@ UT_16_cmd_get_sprites_palette:
 
 ; Test cmd_get_sprites_clip_window_and_control
 UT_17_cmd_get_sprites_clip_window_and_control:
-	SET_PRGM_STATE_RUNNING
 
 	/* Clipwindow is not simulated in tests.
 	; Set clip window
@@ -1680,7 +1637,6 @@ UT_17_cmd_get_sprites_clip_window_and_control:
 
 ; Test cmd_read_port
 UT_20_cmd_read_port:
-	SET_PRGM_STATE_RUNNING
 	; Test
 	TEST_PREPARE_COMMAND
 	; Test port value
@@ -1720,7 +1676,6 @@ UT_20_cmd_read_port:
 
 ; Test cmd_write_port
 UT_21_cmd_write_port:
-	SET_PRGM_STATE_RUNNING
 	; Test port value
 	ld a,0xA5
 	ld (.cmd_port_data),a
@@ -1762,7 +1717,6 @@ UT_21_cmd_write_port:
 
 ; Test cmd_exec_asm: successfully execute a smallassembler program
 UT_22_cmd_exec_asm.UT_success:
-	SET_PRGM_STATE_RUNNING
 	; Test data = asm program
 	TEST_PREPARE_COMMAND
 	; Test
@@ -1797,7 +1751,6 @@ UT_22_cmd_exec_asm.UT_success:
 
 ; Test cmd_exec_asm: program too big
 UT_22_cmd_exec_asm.UT_too_big:
-	SET_PRGM_STATE_RUNNING
 	; Test data = asm program
 	TEST_PREPARE_COMMAND
 	; Test
@@ -1821,7 +1774,6 @@ UT_22_cmd_exec_asm.UT_too_big:
 
 ; Test cmd_exec_asm: program just fits
 UT_22_cmd_exec_asm.UT_just_fits:
-	SET_PRGM_STATE_RUNNING
 	; Test data = asm program
 	TEST_PREPARE_COMMAND
 	; Test
@@ -1842,7 +1794,6 @@ UT_22_cmd_exec_asm.UT_just_fits:
 
 ; Test cmd_interrupt_on_off: Test to enable/disable the interrupt.
 UT_23_cmd_interrupt_on_off:
-	SET_PRGM_STATE_RUNNING
 	; Enable
 	ld a,1
 	ld (.cmd_data),a
@@ -1884,7 +1835,6 @@ UT_23_cmd_interrupt_on_off:
 
 ; Test cmd_get_supported_commands:
 UT_24_cmd_get_supported_commands:
-	SET_PRGM_STATE_RUNNING
 	; Test data = asm program
 	TEST_EMPTY_COMMAND
 	; Test
