@@ -105,13 +105,35 @@
 ;	dest = Pointer to destination
 ;   value = The byte value to set
 ; Changes:
-;   HL
+;   A
 ;===========================================================================
 	MACRO MEMSETWORD dest?, value?
 	ld a,value? & 0xFF
 	ld (dest?),a
 	ld a,value? >> 8
 	ld (dest?+1),a
+	ENDM
+
+
+;===========================================================================
+; Macro to set a series of byte values in a memory location.
+; Parameters:
+;	dest = Pointer to destination
+;   values = The byte values to set
+; Changes:
+;   -
+;===========================================================================
+	MACRO MEMSET dest?, values?
+	push hl, de, bc
+	jr .memset_skip_data
+.memset_data:
+	defb values?
+.memset_skip_data:
+	ld hl,.memset_data
+	ld de,dest?
+	ld bc,.memset_skip_data-.memset_data
+	ldir
+	pop bc, de, hl
 	ENDM
 
 ;===========================================================================
