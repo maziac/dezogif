@@ -59,14 +59,27 @@ range_end	defw
 
 ; CMD_READ_MEM
 	STRUCT PAYLOAD_READ_MEM
-bankp1   	defb
+reserved   	defb
 mem_start	defw
 mem_size	defw
 	ENDS
 
 ; CMD_WRITE_MEM
 	STRUCT PAYLOAD_WRITE_MEM
-bankp1		defb
+reserved	defb
+mem_start	defw
+	ENDS
+
+; CMD_READ_BANK_MEM
+	STRUCT PAYLOAD_READ_BANK_MEM
+bank    	defb
+mem_start	defw
+mem_size	defw
+	ENDS
+
+; CMD_WRITE_BANK_MEM
+	STRUCT PAYLOAD_WRITE_BANK_MEM
+bank		defb
 mem_start	defw
 	ENDS
 

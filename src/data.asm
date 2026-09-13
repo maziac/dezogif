@@ -121,7 +121,8 @@ payload_continue:	PAYLOAD_CONTINUE = receive_buffer.payload
 payload_read_mem:	PAYLOAD_READ_MEM = receive_buffer.payload
 payload_write_mem:	PAYLOAD_WRITE_MEM = receive_buffer.payload
 payload_exec_asm:	PAYLOAD_EXEC_ASM = receive_buffer.payload
-
+payload_read_bank_mem:	PAYLOAD_READ_BANK_MEM = receive_buffer.payload
+payload_write_bank_mem:	PAYLOAD_WRITE_BANK_MEM = receive_buffer.payload
 
 ;===========================================================================
 ; Main use: uart.asm

@@ -171,10 +171,10 @@ UT_get_cmd_pointer:
 	; ASSERTION HL == cmd_init
 
 	; Maximum
-	ld a,23
+	ld a,26
 	ld (receive_buffer.command),a
 	call get_cmd_pointer
-	; ASSERTION HL == cmd_interrupt_on_off
+	; ASSERTION HL == cmd_write_bank_mem
 
 	; Some not supported
 	ld a,18
@@ -183,7 +183,7 @@ UT_get_cmd_pointer:
 	; ASSERTION HL == cmd_not_supported
 
 	; Out of range
-	ld a,25
+	ld a,27
 	ld (receive_buffer.command),a
 	call get_cmd_pointer
 	; ASSERTION HL == cmd_not_supported
@@ -865,74 +865,6 @@ UT_08_cmd_read_mem.UT_banks:
 .cmd_data_end
 
 
-; Test reading memory from a bank.
-UT_08_cmd_read_mem.UT_from_bank:
-
-	; Use bank 0 and 50 in slot 6
-	; Put defined values in banks
-	nextreg REG_MMU+SWAP_SLOT,0
-	MEMSET 0xC001, <0x01, 0x02, 0x03>
-	; Put defined values in banks
-	nextreg REG_MMU+SWAP_SLOT,50
-	MEMSET 0xC001, <0x02, 0x03, 0x04>
-
-	; Test bank 0
-	ld a,0
-	ld hl,0x0001	; offset in bank
-	call .do_cmd_and_get_response
-	; Compare result
-	TEST_MEMORY_BYTE test_memory_payload+1, 0x01
-	TEST_MEMORY_BYTE test_memory_payload+2, 0x02
-	TEST_MEMORY_BYTE test_memory_payload+3, 0x03
-
-	; Test bank 0 again, test address masking
-	ld a,0
-	ld hl,0xE001	; offset in bank but out of bank (will be masked)
-	call .do_cmd_and_get_response
-	; Compare result
-	TEST_MEMORY_BYTE test_memory_payload+1, 0x01
-	TEST_MEMORY_BYTE test_memory_payload+2, 0x02
-	TEST_MEMORY_BYTE test_memory_payload+3, 0x03
-
-
-	; Test bank 50
-	ld a,50
-	ld hl,0x0001	; offset in bank
-	call .do_cmd_and_get_response
-	; Compare result
-	TEST_MEMORY_BYTE test_memory_payload+1, 0x02
-	TEST_MEMORY_BYTE test_memory_payload+2, 0x03
-	TEST_MEMORY_BYTE test_memory_payload+3, 0x04
-
-	; Test bank 50 again, test address masking
-	ld a,50
-	ld hl,0xE001	; offset in bank but out of bank (will be masked)
-	call .do_cmd_and_get_response
-	; Compare result
-	TEST_MEMORY_BYTE test_memory_payload+1, 0x02
-	TEST_MEMORY_BYTE test_memory_payload+2, 0x03
-	TEST_MEMORY_BYTE test_memory_payload+3, 0x04
-
- TC_END
-
-; A = bank
-; HL = pointer to memory start
-.do_cmd_and_get_response:
-	inc a	; bank plus 1
-	ld (.cmd_data.bankp1),a
-	ld (.cmd_data.mem_start),hl
-	ld hl,3
-	ld (.cmd_data.mem_size),hl
-	TEST_PREPARE_COMMAND
-	call cmd_read_mem
-	; Check response
-	call test_get_response
-	ret
-
-.cmd_data: PAYLOAD_READ_MEM	0, 0, 0
-.cmd_data_end
-
-
 ; Test writing memory.
 UT_09_cmd_write_mem.UT_normal:
 	TEST_PREPARE_COMMAND
@@ -1064,38 +996,6 @@ UT_09_cmd_write_mem.UT_banks:
 .cmd_data: PAYLOAD_WRITE_MEM	0, 0
 	defb 0	; test data
 .cmd_data_end
-
-; Test writing memory.
-UT_09_cmd_write_mem.UT_to_bank:
-	; Test set data
-	nextreg REG_MMU+SWAP_SLOT, 2	; Page in bank 2 in slot 6 (0xC000)
-
-	; Data at offset 0x0009, bank2
-	TEST_PREPARE_CMD <2+1, 0x09,0x00, 0xA1, 0xA2, 0xA3>
-	call cmd_write_mem
-	; Check response
-	call test_get_response
-	; Test size
-	TEST_MEMORY_WORD test_memory_payload.length, 1
-	TEST_MEMORY_BYTE 0xC009, 0xA1
-	TEST_MEMORY_BYTE 0xC00A, 0xA2
-	TEST_MEMORY_BYTE 0xC00B, 0xA3
-
-	; Data at offset 0xE009, bank2
-	TEST_PREPARE_CMD <2+1, 0x09,0xE0, 0xD1, 0xD2, 0xD3>
-	call cmd_write_mem
-	; Check response
-	call test_get_response
-	; Test size
-	TEST_MEMORY_WORD test_memory_payload.length, 1
-
-	; Test set data
-	nextreg REG_MMU+SWAP_SLOT, 2	; Page in bank 2 in slot 6 (0xC000)
-	TEST_MEMORY_BYTE 0xC009, 0xD1
-	TEST_MEMORY_BYTE 0xC00A, 0xD2
-	TEST_MEMORY_BYTE 0xC00B, 0xD3
- TC_END
-
 
 ; Test cmd_set_slot
 UT_10_cmd_set_slot:
@@ -1832,7 +1732,6 @@ UT_23_cmd_interrupt_on_off:
 .cmd_data_end
 
 
-
 ; Test cmd_get_supported_commands:
 UT_24_cmd_get_supported_commands:
 	; Test data = asm program
@@ -1847,8 +1746,102 @@ UT_24_cmd_get_supported_commands:
 	TEST_MEMORY_BYTE test_memory_payload+1, 1101_1110b	; CMD_INIT - CMD_PAUSE
 	TEST_MEMORY_BYTE test_memory_payload+2, 1111_1111b	; CMD_READ_MEM - CMD_LOOPBACK
 	TEST_MEMORY_BYTE test_memory_payload+3, 1111_0011b	; CMD_GET_SPRITES_PALETTE - CMD_INTERRUPT_ON_OFF
-	TEST_MEMORY_BYTE test_memory_payload+4, 0000_0001b	; CMD_GET_SUPPORTED_COMMANDS
+	TEST_MEMORY_BYTE test_memory_payload+4, 0000_0111b	; CMD_GET_SUPPORTED_COMMANDS
  TC_END
 
+
+; Test reading memory from a bank.
+UT_25_cmd_read_bank_mem:
+	; Use bank 0 and 50 in slot 6
+	; Put defined values in banks
+	nextreg REG_MMU+SWAP_SLOT,0
+	MEMSET 0xC001, <0x01, 0x02, 0x03>
+	; Put defined values in banks
+	nextreg REG_MMU+SWAP_SLOT,50
+	MEMSET 0xC001, <0x02, 0x03, 0x04>
+
+	; Test bank 0
+	ld a,0
+	ld hl,0x0001	; offset in bank
+	call .do_cmd_and_get_response
+	; Compare result
+	TEST_MEMORY_BYTE test_memory_payload+1, 0x01
+	TEST_MEMORY_BYTE test_memory_payload+2, 0x02
+	TEST_MEMORY_BYTE test_memory_payload+3, 0x03
+
+	; Test bank 0 again, test address masking
+	ld a,0
+	ld hl,0xE001	; offset in bank but out of bank (will be masked)
+	call .do_cmd_and_get_response
+	; Compare result
+	TEST_MEMORY_BYTE test_memory_payload+1, 0x01
+	TEST_MEMORY_BYTE test_memory_payload+2, 0x02
+	TEST_MEMORY_BYTE test_memory_payload+3, 0x03
+
+	; Test bank 50
+	ld a,50
+	ld hl,0x0001	; offset in bank
+	call .do_cmd_and_get_response
+	; Compare result
+	TEST_MEMORY_BYTE test_memory_payload+1, 0x02
+	TEST_MEMORY_BYTE test_memory_payload+2, 0x03
+	TEST_MEMORY_BYTE test_memory_payload+3, 0x04
+
+	; Test bank 50 again, test address masking
+	ld a,50
+	ld hl,0xE001	; offset in bank but out of bank (will be masked)
+	call .do_cmd_and_get_response
+	; Compare result
+	TEST_MEMORY_BYTE test_memory_payload+1, 0x02
+	TEST_MEMORY_BYTE test_memory_payload+2, 0x03
+	TEST_MEMORY_BYTE test_memory_payload+3, 0x04
+ TC_END
+
+; A = bank
+; HL = pointer to memory start
+.do_cmd_and_get_response:
+	ld (.cmd_data.bank),a
+	ld (.cmd_data.mem_start),hl
+	ld hl,3
+	ld (.cmd_data.mem_size),hl
+	TEST_PREPARE_COMMAND
+	call cmd_read_bank_mem
+	; Check response
+	call test_get_response
+	ret
+
+.cmd_data: PAYLOAD_READ_BANK_MEM	0, 0, 0
+.cmd_data_end
+
+; Test writing memory.
+UT_26_cmd_write_bank_mem:
+	; Test set data
+	nextreg REG_MMU+SWAP_SLOT, 2	; Page in bank 2 in slot 6 (0xC000)
+
+	; Data at offset 0x0009, bank2
+	TEST_PREPARE_CMD <2, 0x09,0x00, 0xA1, 0xA2, 0xA3>
+	call cmd_write_bank_mem
+	; Check response
+	call test_get_response
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 1
+	TEST_MEMORY_BYTE 0xC009, 0xA1
+	TEST_MEMORY_BYTE 0xC00A, 0xA2
+	TEST_MEMORY_BYTE 0xC00B, 0xA3
+
+	; Data at offset 0xE009, bank2
+	TEST_PREPARE_CMD <2, 0x09,0xE0, 0xD1, 0xD2, 0xD3>
+	call cmd_write_bank_mem
+	; Check response
+	call test_get_response
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 1
+
+	; Test set data
+	nextreg REG_MMU+SWAP_SLOT, 2	; Page in bank 2 in slot 6 (0xC000)
+	TEST_MEMORY_BYTE 0xC009, 0xD1
+	TEST_MEMORY_BYTE 0xC00A, 0xD2
+	TEST_MEMORY_BYTE 0xC00B, 0xD3
+ TC_END
 
     ENDMODULE

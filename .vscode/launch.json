@@ -86,7 +86,7 @@
             "zrcp": {
                 "hostname": "localhost",
                 "port": 10000,
-                "socketTimeout": 50
+                "timeout": 50
             },
             "sjasmplus": [
                 {
@@ -114,7 +114,7 @@
             "cspect": {
                 "hostname": "localhost",
                 "port": 11000,
-                "socketTimeout": 50
+                "timeout": 50
             },
             "sjasmplus": [
                 {

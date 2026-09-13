@@ -63,6 +63,8 @@ cmd_jump_table:
 .exec_asm:			defw cmd_exec_asm	; 22
 .interrupt_on_off:	defw cmd_interrupt_on_off	; 23
 .get_supported_commands: defw cmd_get_supported_commands	; 24
+.read_bank_mem:		defw cmd_read_bank_mem			; 25
+.write_bank_mem:	defw cmd_write_bank_mem			; 26
 .end
 
 ;.get_sprites:			defw 0	; not supported on a ZX Next
@@ -231,7 +233,7 @@ cmd_get_supported_commands:
 	call uart.write_tx_byte
 	ld a,1111_0011b	; CMD_GET_SPRITES_PALETTE - CMD_INTERRUPT_ON_OFF
 	call uart.write_tx_byte
-	ld a,0000_0001b	; CMD_GET_SUPPORTED_COMMANDS
+	ld a,0000_0111b	; CMD_GET_SUPPORTED_COMMANDS - CMD_WRITE_MEM_BANK
 	call uart.write_tx_byte
 	ret
 
@@ -511,16 +513,13 @@ cmd_pause:
 	ld hl,0 ; bp address
 	jp send_ntf_pause ; Also changes prgm_state to PRGM_STOPPED
 
+
 ;===========================================================================
 ; CMD_READ_MEM
-; Reads a memory area. Either from the 64k area (.inner_64k) or from a
-; bank (.inner_banked).
-; 64k read (bankp1 = 0):Special is that if slot 7 area is read,
-;  then the memory bank of slot_backup.slot7 is temporarily paged into
-;  SWAP_SLOT and read.
-; banked: The memory is read from the specified bank after swapping it
-;  into SWAP_SLOT. The read address will wrap around inside the bank,
-;  i.e. it is masked so that it stays within the bank.
+; Reads a memory area.
+; Special is that if slot 7 area is read,
+; then the memory bank of slot_backup.slot7 is temporarily paged into
+; SWAP_SLOT and read.
 ; Changes:
 ;  NA
 ;===========================================================================
@@ -541,12 +540,7 @@ cmd_read_mem:
 .hl_correct:
 	call send_4bytes_length_and_seqno
 
-	; Check bank
-	ld a,(payload_read_mem.bankp1)
-	or a
-	jr nz,.inner_banked
-
-.inner64k:		; For unit testing
+.inner:		; For unit testing
 	ld de,(payload_read_mem.mem_size)
 	ld hl,(payload_read_mem.mem_start)
 	ld bc,.read
@@ -559,16 +553,40 @@ cmd_read_mem:
 	; Send
 	jp uart.write_tx_byte
 
+;===========================================================================
+; CMD_READ_BANK_MEM
+; Reads memory from the specified bank after swapping it
+; into SWAP_SLOT. The read address will wrap around inside the bank,
+;  i.e. it is masked so that it stays within the bank.
+; Changes:
+;  NA
+;===========================================================================
+cmd_read_bank_mem:
+	; LOGPOINT [CMD] cmd_read_bank_mem
+	; Read address and size from message
+	ld hl,receive_buffer.payload
+	ld de,PAYLOAD_READ_BANK_MEM
+	call receive_bytes
+
+	; Send response
+	ld hl,(payload_read_bank_mem.mem_size)
+	ld de,1		; Add 1 for the sequence number
+	add hl,de
+	ex hl,de
+	jr c,.hl_correct	; If C then hl already contains 1.
+	ld l,0	; If NC then we need to reset HL to 0.
+.hl_correct:
+	call send_4bytes_length_and_seqno
+
 .inner_banked:		; For unit testing
 	; Remember current bank for slot
 	call save_swap_slot
 	; Swap in memory
-	ld a,(payload_read_mem.bankp1) ; bank+1
-	dec a	; bank
+	ld a,(payload_read_bank_mem.bank) ; bank
 	nextreg REG_MMU+SWAP_SLOT,a
 	; Get start and size
-	ld hl,(payload_read_mem.mem_start)
-	ld de,(payload_read_mem.mem_size)
+	ld hl,(payload_read_bank_mem.mem_start)
+	ld de,(payload_read_bank_mem.mem_size)
 
 	; Loop until all bytes are read and sent
 .loop:
@@ -592,16 +610,13 @@ cmd_read_mem:
 	; Restore slot/bank
 	jp restore_swap_slot
 
+
 ;===========================================================================
 ; CMD_WRITE_MEM
-; Writes a memory area. Either to the 64k area (.inner_64k) or to a
-; bank (.inner_banked).
-; 64k write (bankp1 = 0):Special is that if slot 7 area is written,
-;  then the memory bank of slot_backup.slot7 is temporarily paged into
-;  SWAP_SLOT and written.
-; banked: The memory is written to the specified bank after swapping it
-;  into SWAP_SLOT. The write address will wrap around inside the bank,
-;  i.e. it is masked so that it stays within the bank.
+; Writes a memory area.
+; Special is that if slot 7 area is read,
+; then the memory bank of slot_backup.slot7 is temporarily paged into
+; SWAP_SLOT and written.
 ; Changes:
 ;  NA
 ;===========================================================================
@@ -612,20 +627,14 @@ cmd_write_mem:
 	ld de,PAYLOAD_WRITE_MEM
 	call receive_bytes
 
-.inner:
+	call save_swap_slot
 	; Read length and subtract 3
 	ld hl,(receive_buffer.length)
 	ld de,-PAYLOAD_WRITE_MEM
 	add hl,de
-	ex de,hl ; de = length to read and send
-	ld hl,(payload_write_mem.mem_start)
-
-	; Check bank
-	ld a,(payload_write_mem.bankp1)
-	or a
-	jr nz,.inner_banked
-
+	ex de,hl
 	; Read bytes from UART and put into memory
+	ld hl,(payload_write_mem.mem_start)
 	ld bc,.write
 	call memory_loop
 
@@ -644,12 +653,32 @@ cmd_write_mem:
 	pop de
 	ret
 
-.inner_banked:		; For unit testing
+;===========================================================================
+; CMD_WRITE_BANK_MEM
+; Writes a data to the specified bank after swapping it
+; into SWAP_SLOT. The write address will wrap around inside the bank,
+;  i.e. it is masked so that it stays within the bank.
+; Changes:
+;  NA
+;===========================================================================
+cmd_write_bank_mem:
+	; LOGPOINT [CMD] cmd_write_bank_mem
+	; Read address from message
+	ld hl,receive_buffer.payload
+	ld de,PAYLOAD_WRITE_BANK_MEM
+	call receive_bytes
+
+	; Read length and subtract 3
+	ld hl,(receive_buffer.length)
+	ld de,-PAYLOAD_WRITE_BANK_MEM
+	add hl,de
+	ex de,hl ; de = length to read and send
+	ld hl,(payload_write_bank_mem.mem_start)
+
 	; Remember current bank for slot
 	call save_swap_slot
 	; Swap in memory
-	ld a,(payload_write_mem.bankp1) ; bank+1
-	dec a	; bank
+	ld a,(payload_write_bank_mem.bank) ; bank
 	nextreg REG_MMU+SWAP_SLOT,a
 
 	; Loop until all bytes are read and written
@@ -663,7 +692,7 @@ cmd_write_mem:
 	or HIGH SWAP_ADDR
 	ld h,a
 	; Read byte from uart and write to RAM
-	call .write
+	call cmd_write_mem.write
 	; Next
 	dec de
 	inc hl
@@ -672,7 +701,7 @@ cmd_write_mem:
 .loop_end:
 	; Restore slot/bank
 	call restore_swap_slot
-	jr .send_response
+	jr cmd_write_mem.send_response
 
 ;===========================================================================
 ; CMD_SET_SLOT
