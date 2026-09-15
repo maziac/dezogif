@@ -79,9 +79,6 @@ cmd_jump_table:
 ;.write_state:			defw 0	; not supported
 
 
-; Used Command definitions
-CMD_INIT:		equ 1
-CMD_LOOPBACK:	equ 15
 
 
 ;===========================================================================
@@ -150,7 +147,6 @@ cmd_not_allowed:
 cmd_init:
 	; LOGPOINT [CMD] cmd_init
 	SEND_NTF_LOG "<<< CMD_INIT", 0
-
 	; DBG_LOG 'i'
 	call .inner
 	; Reset slots to ZX128 default: ROM0, 5, 2, 0 => ROM0, ROM0, 10, 11, 4, 5, 0, 1
@@ -174,6 +170,8 @@ cmd_init:
     call uart.flashing_border.enable
 	; Afterwards start all over again / show the "UI"
     call init_and_show_ui  ; Also re-initializes copper break
+	; Set priority
+    nextreg REG_SPRITE_LAYER_SYSTEM, RSLS_SPRITES_VISIBLE|RSLS_LAYER_PRIORITY_SLU
 
 .response:
 	; Send length and seq-no

@@ -201,6 +201,7 @@ wait_on_key_release:
     jr nz,wait_on_key_release
     ret
 
+
 /*
 ;===========================================================================
 ; Standard ZX Spectrum ULA palette, RGB333 packed into 8 bits (RRRGGGBB,
@@ -212,7 +213,6 @@ ULA_DEFAULT_PALETTE:
     defb 0x00, 0x02, 0xA0, 0xA2, 0x14, 0x16, 0xB4, 0xB6
     ; Bright: black, blue, red, magenta, green, cyan, yellow, white
     defb 0x00, 0x03, 0xE0, 0xE3, 0x1C, 0x1F, 0xFC, 0xFF
-
 
 ;===========================================================================
 ; Rewrites all 16 ULA palette entries (bank 0) to the standard Sinclair
@@ -235,18 +235,39 @@ set_ula_default_palette:
 */
 
 ;===========================================================================
+; Turn all sprites individually invisible.
+;===========================================================================
+set_sprites_invisible:
+    nextreg REG_SPRITE_SLOT,0          ; Set sprite index to 0
+    ld bc,IO_NEXTREG_REG
+    ld a,REG_SPRITE_ATTR_3_AUTOINC     ; $78
+    out (c),a
+    inc b
+    ld d,128
+    xor a                               ; 0 -> Visible-Bit (Bit 7)
+.loop:
+    out (c),a
+    dec d
+    jr nz, .loop
+    ret
+
+;===========================================================================
 ; Switches to ULA mode and shows the UI.
+; Tries to initialize similar values as nexload.
 ;===========================================================================
 init_and_show_ui:
     ; Set the copper break according to the current state
     call copper.set_copper_break
+
+    ; Sprites
+    call set_sprites_invisible
 
     ; Switch to ULA
     nextreg REG_ULA_X_OFFSET, 0
     nextreg REG_ULA_Y_OFFSET, 0
     nextreg REG_ULA_CONTROL, 0
     nextreg REG_DISPLAY_CONTROL, 0
-    nextreg REG_SPRITE_LAYER_SYSTEM, RSLS_LAYER_PRIORITY_SLU
+    nextreg REG_SPRITE_LAYER_SYSTEM, RSLS_LAYER_PRIORITY_SLU ; Note: CMD_INIT will switch this to RSLS_SPRITES_VISIBLE|RSLS_LAYER_PRIORITY_SLU
 
     ; Turn off clipping (might have been used by screensaver)
     nextreg REG_CLIP_WINDOW_CONTROL, RCWC_RESET_ULA_CLIP_INDEX | RCWC_RESET_SPRITE_CLIP_INDEX | RCWC_RESET_LAYER_2_CLIP_INDEX
@@ -256,8 +277,8 @@ init_and_show_ui:
     nextreg REG_CLIP_WINDOW_ULA, 191
 
     ; Init
-    nextreg REG_LAYER_2_RAM_BANK, 0x08
-    nextreg REG_LAYER_2_SHADOW_RAM_BANK, 0x0B
+    nextreg REG_LAYER_2_RAM_BANK, 9
+    nextreg REG_LAYER_2_SHADOW_RAM_BANK, 12
     nextreg REG_LAYER_2_OFFSET_X, 0
     nextreg REG_LAYER_2_OFFSET_Y, 0
     nextreg REG_LAYER_2_CONTROL, 0
@@ -270,8 +291,10 @@ init_and_show_ui:
     nextreg REG_SPRITE_TRANSPARENCY_COLOR_INDEX, 0xE3
     nextreg REG_TILEMAP_TRANSPARENCY_INDEX, 0x0F
     nextreg REG_PALETTE_INDEX, 0
-    nextreg REG_ULANEXT_PALETTE_FORMAT, 0x07
+    nextreg REG_ULANEXT_PALETTE_FORMAT, 0x0F
     nextreg REG_PALETTE_CONTROL, 0
+    nextreg REG_GLOBAL_TRANSPARENCY_COLOR, 0xE3
+    nextreg REG_FALLBACK_COLOR, 0 ; Black
 
     ; Also rewrite default palette
     ;call set_ula_default_palette

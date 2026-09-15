@@ -320,6 +320,9 @@ ISF_COLLISION:	equ	0x01             ; set if non-transparent pixels of any two s
 IO_303B_MAX_SPRITES_PER_LINE:	equ	ISF_MAX_SPRITES_PER_LINE
 IO_303B_COLLISION:	equ	ISF_COLLISION
 
+REG_SPRITE_ATTR_3_AUTOINC:    equ 0x78 ; Attribute 3 with auto-increment of the sprite number
+
+
 ; PORT 0x53: Sprite Palette (write only)
 ; Each sprite's 8-bit pixel value passes through this palette to generate
 ; a new 8-bit value.  This 8-bit value is then passed through the sprite
