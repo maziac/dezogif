@@ -43,14 +43,14 @@ cmd_jump_table:
 .close:				defw cmd_close				; 2
 .get_registers:		defw cmd_get_registers		; 3
 .set_register:		defw cmd_set_register		; 4
-.write_bank:		defw cmd_write_bank			; 5
+.write_bank:		defw cmd_not_supported		; 5
 .continue:			defw cmd_continue			; 6
 .pause:				defw cmd_pause				; 7
 .read_mem:			defw cmd_read_mem			; 8
 .write_mem:			defw cmd_write_mem			; 9
 .set_slot:			defw cmd_set_slot			; 10
 .get_tbblue_reg:	defw cmd_get_tbblue_reg		; 11
-.set_border:		defw cmd_set_border			; 12
+.set_border:		defw cmd_not_supported		; 12
 .set_breakpoints:	defw cmd_set_breakpoints	; 13
 .restore_mem:		defw cmd_restore_mem		; 14
 .loopback:			defw cmd_loopback			; 15
@@ -388,58 +388,6 @@ cmd_set_register:
 
 
 ;===========================================================================
-; CMD_WRITE_BANK
-; Writes one memory bank.
-; If MAIN_BANK should be written an error occurs.
-; Changes:
-;  NA
-;===========================================================================
-// TODO: Deprecated. Remove with next version.
-cmd_write_bank:
-	; LOGPOINT [CMD] cmd_write_bank
-	; Execute command
-	call cmd_write_bank.inner
-	; Send response
-	ld de,3
-	call send_length_and_seqno
-	; No error
-	xor a
-	call uart.write_tx_byte
-	; No error string
-	jp uart.write_tx_byte
-
-
-.inner:
-	; Read bank number of message
-	call uart.read_rx_byte
-
-	; Check if it is own bank
-	cp MAIN_BANK
-	jr z,error_write_main_bank
-
-	; Remember current bank for slot
-	ld e,a
-	call save_swap_slot
-	ld a,e
-
-	; Change bank for slot
-	nextreg REG_MMU+SWAP_SLOT,a
-
-	; Read bytes from UART and put into bank
-	ld hl,SWAP_ADDR		;.slot<<13	; Start address
-	ld de,(receive_buffer.length)	; Bank size
-	dec de
-	call receive_bytes
-
-	; Restore slot/bank (D)
-	jp restore_swap_slot
-
-error_write_main_bank:
-	ld a,ERROR_WRITE_MAIN_BANK
-    jp drain_main
-
-
-;===========================================================================
 ; CMD_CONTINUE
 ; Continues debugged program execution.
 ; Restores the back'uped registers and jumps to the last
@@ -765,22 +713,6 @@ cmd_get_tbblue_reg:
 	call read_tbblue_reg	; Result in A
 	; Send
 	jp uart.write_tx_byte
-
-
-;===========================================================================
-; CMD_SET_BORDER
-; Sets the border color.
-; Changes:
-;  NA
-;===========================================================================
-cmd_set_border:
-	; LOGPOINT [CMD] cmd_set_border
-	; Read border color
-	call uart.read_rx_byte
-	ld (backup.border_color),a
-	; Send response
-	ld de,1
-	jp send_length_and_seqno
 
 
 ;===========================================================================

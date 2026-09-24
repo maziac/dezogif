@@ -9,6 +9,7 @@
 - Support for DZRP 2.2.0:
   - CMD_GET_SUPPORTED_COMMANDS added which returns the supported commands.
   - CMD_READ_BANK_MEM/CMD_WRITE_BANK_MEM added to allow read from/write to a bank.
+  - CMD_SET_BORDER and CMD_WRITE_BANK removed.
 - Changed video initialization. E.g. layer priorization. Should be more similar to a reset ZX Next.
 - Fixed bug which prevented breakpoints in slot 7, 0xE000-0xFFFF (!)
 
