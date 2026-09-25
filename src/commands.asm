@@ -125,18 +125,6 @@ cmd_not_supported:
 	ld a,ERROR_CMD_NOT_SUPPORTED
     jp drain_main
 
-;===========================================================================
-; CMD not allowed.
-; Is called for a command that is not allowed in current mode.
-; Creates an error output.
-; Changes:
-;  NA
-;===========================================================================
-cmd_not_allowed:
-	; LOGPOINT [CMD] cmd_not_allowed
-	ld a,ERROR_CMD_NOT_ALLOWED
-    jp drain_main
-
 
 ;===========================================================================
 ; CMD_INIT

@@ -26,12 +26,12 @@ BP_INSTRUCTION:		EQU 0xC7		; RST 0
 
 
 ; The breakpoint structure to save.
-	STRUCT BREAKPOINT
-instruction_length	defb	; The length of the 'breaked' instruction. 0 indicates a free location.
-address				defw	; The location of the breakpoint
-;branch_address		defw	; The optional branch address of the instruction
-opcode				defb	; The substituted opcode
-	ENDS
+; 	STRUCT BREAKPOINT
+; instruction_length	defb	; The length of the 'breaked' instruction. 0 indicates a free location.
+; address				defw	; The location of the breakpoint
+; ;branch_address		defw	; The optional branch address of the instruction
+; opcode				defb	; The substituted opcode
+; 	ENDS
 
 ; The temporary breakpoint structure.
 	STRUCT TMP_BREAKPOINT
@@ -50,7 +50,7 @@ copy_rom_start_0000h_code:	; Located at 0x0000/0xE000
 	DISP 0x0000	; Compile for address 0x0000
 
 ; Will be executed whenever a RST 0 (SW breakpoint) happens.
-entry_code:
+;entry_code:
  	jr dbg_enter
 
 ; Jump here to return from debugger.

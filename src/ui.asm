@@ -19,10 +19,9 @@ ERROR_WRONG_FUNC_NUMBER:	equ 4
 ERROR_WRITE_MAIN_BANK:	    equ 5
 ERROR_CORE_VERSION_NOT_SUPPORTED:  equ 6
 ERROR_CMD_NOT_SUPPORTED:    equ 7
-ERROR_CMD_NOT_ALLOWED:      equ 8
-ERROR_FILE_WRITE:           equ 9
-ERROR_FILE_READ:            equ 10
-ERROR_LOOPBACK_SIZE:        equ 11
+ERROR_FILE_WRITE:           equ 8
+ERROR_FILE_READ:            equ 9
+ERROR_LOOPBACK_SIZE:        equ 10
 
 
 ;===========================================================================

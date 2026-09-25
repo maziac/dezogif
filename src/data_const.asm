@@ -10,7 +10,7 @@
 
 ; The dezogif program version:
  MACRO PRG_VERSION
- 	defb "v2.3.0-rc2"
+ 	defb "v2.3.0-rc3"
  ENDM
 
 
@@ -200,8 +200,6 @@ TEXT_ERROR_CORE_VERSION_NOT_SUPPORTED: ; Core not supported
     defb "Core Version not supported,     should be >= 03.01.10", 0
 TEXT_CMD_NOT_SUPPORTED: ; Core not supported
     defb "CMD not supported", 0
-TEXT_CMD_NOT_ALLOWED: ; Core not supported
-    defb "CMD not allowed in current mode", 0
 
 TEXT_ERROR_FILE_WRITE: defb "File write error", 0
 TEXT_ERROR_FILE_READ: defb "File read error", 0
@@ -215,7 +213,6 @@ ERROR_TEXT_TABLE:
     defw TEXT_ERROR_WRITE_MAIN_BANK
     defw TEXT_ERROR_CORE_VERSION_NOT_SUPPORTED
     defw TEXT_CMD_NOT_SUPPORTED
-    defw TEXT_CMD_NOT_ALLOWED
     defw TEXT_ERROR_FILE_WRITE
     defw TEXT_ERROR_FILE_READ
     defw TEXT_ERROR_LOOPBACK_SIZE

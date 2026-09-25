@@ -15,7 +15,6 @@ set_copper_break:
     jr z,copper.break_stop
    ; Flow through
 
-
 ;===========================================================================
 ; Installs the Copper list that raises a Multiface NMI once
 ; per frame.

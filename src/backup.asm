@@ -234,7 +234,7 @@ restore_layer2_rw:
 ; ===========================================================================
 save_swap_slot:
 	ld a,REG_MMU+SWAP_SLOT
-save_slot:	; Save the slot in A
+;save_slot:	; Save the slot in A
 	call read_tbblue_reg
 	ld (slot_backup.tmp_slot),a
 	ret
@@ -247,7 +247,7 @@ save_slot:	; Save the slot in A
 ; ===========================================================================
 restore_swap_slot:
 	ld a,(slot_backup.tmp_slot)
-restore_slot:	; Restore the slot in A
+;restore_slot:	; Restore the slot in A
 	nextreg REG_MMU+SWAP_SLOT,a
 	ret
 
