@@ -36,16 +36,6 @@ register_number	defb
 register_value	defw
 	ENDS
 
-; CMD_ADD_BREAKPOINT
-	STRUCT PAYLOAD_ADD_BREAKPOINT
-bp_address	defw
-	ENDS
-
-; CMD_REMOVE_BREAKPOINT
-	STRUCT PAYLOAD_REMOVE_BREAKPOINT
-bp_id	defw
-	ENDS
-
 ; CMD_CONTINUE
 	STRUCT PAYLOAD_CONTINUE
 bp1_enable	defb
