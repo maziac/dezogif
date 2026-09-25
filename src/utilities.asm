@@ -86,6 +86,7 @@ read_tbblue_reg:
 ; Changes:
 ;   F
 ;===========================================================================
+/* Unused at the moment:
 read_tbblue_reg_multiple:
 	; Select register in A
 	out (c),a
@@ -94,7 +95,7 @@ read_tbblue_reg_multiple:
 	in a,(c)
 	dec b
 	ret
-
+*/
 
 ;===========================================================================
 ; Writes a color to the border and waits on press

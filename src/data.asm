@@ -121,12 +121,6 @@ payload_exec_asm:	PAYLOAD_EXEC_ASM = receive_buffer.payload
 payload_read_bank_mem:	PAYLOAD_READ_BANK_MEM = receive_buffer.payload
 payload_write_bank_mem:	PAYLOAD_WRITE_BANK_MEM = receive_buffer.payload
 
-;===========================================================================
-; Main use: uart.asm
-
-; Color is changed after each received message.
-border_color:	defb BLACK
-
 
 ;===========================================================================
 ; Main use: utilities.asm, breakpoints.asm
@@ -134,7 +128,6 @@ border_color:	defb BLACK
 ; Temporary data area to be used by several subroutines.
 tmp_data:   defs 4
 tmp_clip_window = tmp_data
-
 
 
 ;===========================================================================
@@ -161,14 +154,6 @@ uart_joyport_selection: defb 0
 copper_break_enabled:	defb 1
 
 settings_data.end:
-
-;===========================================================================
-; Used by: text.asm
-
-; The address of character 0 of the font. Each font character is 8 byte in size
-; and there can be up to 256 of them (although 0 is not used).
-; I.e. you can safely set this 8 bytes below character at index 1.
-font_address:   defw    ROM_START+ROM_SIZE-ROM_FONT_SIZE-0x20*8
 
 
 ;===========================================================================

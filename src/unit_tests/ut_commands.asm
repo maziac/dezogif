@@ -249,12 +249,7 @@ UT_02_cmd_close:
 	TEST_MEMORY_WORD test_memory_payload.length, 1
 
 	; Test is done already inside test_get_response
-
  TC_END
-
-; cmd_close jumps here:
-@main_with_copper_reinit:
-	ret
 
 ; get_cmd_pointer jumps here:
 @main:

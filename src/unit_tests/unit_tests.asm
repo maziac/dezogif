@@ -49,7 +49,7 @@ LOADED_BANK:    EQU 92
 
 
     ORG 0x7000
-PRG_START:
+;PRG_START:
     include "unit_tests/unit_tests.inc"
     include "unit_tests/ut_utilities.asm"
     include "unit_tests/ut_uart.asm"
