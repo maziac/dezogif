@@ -151,6 +151,10 @@ cmd_init:
 	; Reset error
 	xor a
 	ld (last_error),a
+	; Reset nextreg selection
+	ld (backup.io_next_reg),a	; A = 0
+	; Reset border color
+	ld (border_color),a	; A = 0
 	; Program state
 	ld a,PRGM_LOADING
 	ld (prgm_state),a
@@ -1176,6 +1180,14 @@ cmd_write_port:
 	; Write to the port
 	ld bc,hl
 	out (c),a
+	; Check for border
+	cp BORDER
+	jr nz,.border_not_changed
+
+	; Remember border value
+	ld (border_color),a
+
+.border_not_changed:
 	; Send response
 	ld de,1
 	jp send_length_and_seqno
@@ -1213,6 +1225,20 @@ cmd_exec_asm:
 
 	; Save all registers
 	push hl, de, bc, af
+
+	; Via CMD_EXEC_ASM it is possible to change registers that will keep
+	; their values even when starting the debugged program with CMD_CONTINUE.
+	; Read layer_2 port;
+	ld bc,LAYER_2_PORT
+	in a,(c)
+	ld (backup.layer_2_port),a
+	; Read CPU speed
+	ld a,REG_TURBO_MODE
+	call read_tbblue_reg
+	ld (backup.speed),a
+	; Switch to 28Mhz
+	nextreg REG_TURBO_MODE,RTM_28MHZ
+
 	; No error
 	xor a
 

@@ -160,6 +160,8 @@ check_rx_byte_available:
 ;===========================================================================
 ; Waits until an RX byte is available and returns it.
 ; Waits max. 100ms for the next byte, otherwise a timeout error is thrown.
+; Very time-sensitive operation, adding a few NOPs can already lead to
+; an RX_BUFFER_OVERFLOW error.
 ; Returns:
 ;   A = the received byte.
 ; Changes:
@@ -253,6 +255,9 @@ flashing_border.disable:
     ld a,2
     ld (read_rx_byte.flash1+1),a
     ld (read_rx_byte.flash2+1),a
+    ; Restore color
+    ld a,(border_color)
+    out (BORDER),a
     ret
 
 

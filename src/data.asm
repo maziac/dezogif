@@ -19,6 +19,9 @@ last_error: defb 0
 ; UART flow control
 uart.write_counter:	defb 0
 
+; Might be set during CMD_WRITE_PORT
+border_color:	defb 0
+
 
 ;===========================================================================
 ; Main use: breakpoint.asm

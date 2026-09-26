@@ -82,41 +82,7 @@ nmi66h:
     bit 3,a
     jr z,.not_copper_cause ; If bit 3 is set, it is a software NMI = Copper
 
-
-;===========================================================================
-; A software Multiface NMI: the asynchronous-break poll.
-;
-; Raised by a two-instruction Copper list - "WAIT line,N" / "MOVE $02,$08" -
-; that THE DEBUGGED PROGRAM installs, not the debugger. That division is
-; deliberate and it is not an optimization: the Copper's 1024-instruction list
-; is write-only (both instruction RAMs discard their CPU-side read output,
-; zxnext.vhd:3959-3976 and :3980-3998, and NR 0x60/0x63 have no read decode,
-; :6286-6287), so a debugger that installed a list of its own could never give
-; the original back. A program that carries the two instructions itself keeps
-; its own Copper program; one that does not simply gets no asynchronous break.
-; See documentation/AsynchronousBreak.md.
-;
-; This path runs once a frame while the debugged program runs, so it is written
-; to leave as fast as it can and to touch as little as possible:
-;
-;   * It does NOT change the clock speed unless it breaks in. The button path
-;     switches to 28MHz before it has decided anything; doing that here would
-;     move the machine's clock 50 times a second, which for contended memory,
-;     tape or beeper code is a worse perturbation than the stolen cycles.
-;   * It never reaches init_main_bank. Symbol Shift is not polled and a magic
-;     mismatch declines rather than re-initializing: a poll that re-copied the
-;     debugger over a running session would be catastrophic, and it fires by
-;     itself with nobody's finger on anything.
-;   * It restores MAIN_SLOT. The button path's immediate return deliberately
-;     does not, because it only ever runs while the DEBUGGER executes and
-;     MAIN_SLOT legitimately holds MAIN_BANK. This fires while the DEBUGGED
-;     PROGRAM executes.
-;
-; The magic check is the safety gate and is not optional: prgm_state lives in
-; MAIN_BANK, so neither it nor anything else there may be trusted - let alone
-; called - until the bank has been shown to hold our image. Two bytes rather
-; than the button path's six, because this runs every frame.
-;===========================================================================
+; A software Multiface NMI/Copper: the asynchronous-break poll.
 .copper_cause:
     ; Clear reason bits.
     ; Not to re-arm the NMI - RETN does that in hardware - but so that the NEXT
