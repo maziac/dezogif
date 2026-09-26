@@ -129,30 +129,17 @@ drain_rx_buffer_with_timeout:
 
 ;===========================================================================
 ; Waits until an RX byte is available.
-; Note: This runs when possibly the layer 2 read/write is set. I.e. it is not
-; allowed to read/write data.
-; I.e. also no CALLs, no PUSH/POP.
+
 ; Changes:
 ;   A, DE, BC
 ;===========================================================================
 wait_for_rx:
-    ; Write layer 2 previous value
-    ld a,(backup.layer_2_port)
-    ld bc,LAYER_2_PORT
-    out (c),a
-
 .loop:
     ; Check if byte available.
 	ld a,HIGH UART_TX
 	in a,(LOW UART_TX)	; Read status bits
     bit UART_RX_FIFO_EMPTY,a
     jr z,.loop   ; Wait until byte available
-
-    ; Disable layer 2 read/write
-    ld a,(backup.layer_2_port)
-	and 11111010b	; Disable read/write only
-    ld bc,LAYER_2_PORT
-    out (c),a
     ret       ; RET if byte available
 
 
