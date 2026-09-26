@@ -198,7 +198,7 @@ main_end:
 ; Save bin file.
 ;===========================================================================
 
-    SAVEBIN "out/main.bin", 0xE000, MF_ORIGIN_ROM+0x2000-MF.main_prg_copy
+    SAVEBIN BIN_FILE, 0xE000, MF_ORIGIN_ROM+0x2000-MF.main_prg_copy
 
     ;SAVENEX CLOSE
 
