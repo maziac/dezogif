@@ -155,7 +155,7 @@ test_get_response:
 	ENDM
 
 ; Simulates an empty command.
-	MACRO TEST_EMPTY_COMMAND:
+	MACRO TEST_EMPTY_COMMAND
 	ld de,0
 	call test_prepare_command
 	ENDM

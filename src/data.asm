@@ -89,7 +89,6 @@ backup:
 ;.save_mem_bank:		defb 0
 .speed:				defb 0
 .layer_2_port:		defb 0
-.border_color:		defb 0
 .io_next_reg:		defb 0
 backup_top:
 

@@ -205,15 +205,6 @@ nmi66h:
     ; Button was pressed
 .is_button_cause:
 
-    IF 0
-    ; Change border
-    ld a,(MF.border_color)
-    inc a
-    and 0x07
-    ld (MF.border_color),a
-    out (BORDER),a
-    ENDIF
-
     ; Save cause
 	ld a,NMI_CAUSE_BUTTON
 	ld (MF.nmi_cause),a

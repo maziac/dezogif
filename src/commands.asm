@@ -418,7 +418,7 @@ cmd_continue:
 	cp PRGM_LOADING
 	jr nz,.not_loading
 	; Loading finished: Set border color after loading
-	ld a,(backup.border_color)
+	; Set border to black (A is already 0)
 	out (BORDER),a
     ; Disable flashing border
     call uart.flashing_border.disable
