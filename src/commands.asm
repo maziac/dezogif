@@ -65,6 +65,7 @@ cmd_jump_table:
 .get_supported_commands: defw cmd_get_supported_commands	; 24
 .read_bank_mem:		defw cmd_read_bank_mem			; 25
 .write_bank_mem:	defw cmd_write_bank_mem			; 26
+.set_nextregs:		defw cmd_set_nextregs			; 27
 .end
 
 ;.get_sprites:			defw 0	; not supported on a ZX Next
@@ -223,7 +224,7 @@ cmd_get_supported_commands:
 	call uart.write_tx_byte
 	ld a,1111_0011b	; CMD_GET_SPRITES_PALETTE - CMD_INTERRUPT_ON_OFF
 	call uart.write_tx_byte
-	ld a,0000_0111b	; CMD_GET_SUPPORTED_COMMANDS - CMD_WRITE_MEM_BANK
+	ld a,0000_1111b	; CMD_GET_SUPPORTED_COMMANDS - CMD_SET_NEXTREGS
 	call uart.write_tx_byte
 	ret
 
@@ -640,6 +641,79 @@ cmd_write_bank_mem:
 	; Restore slot/bank
 	call restore_swap_slot
 	jr cmd_write_mem.send_response
+
+
+;===========================================================================
+; CMD_SET_NEXTREGS
+; Writes a list of (register, value) pairs to the ZX Next registers.
+; The values have to persist when the debugged program is continued.
+; Therefore registers that are changed by the debugger and restored
+; on continue are handled especially:
+; - REG_TURBO_MODE: only backup.speed is changed (debugger keeps 28MHz).
+; - REG_MMU+MAIN_SLOT: only slot_backup.slot7 is changed (the debugger
+;   runs in MAIN_SLOT).
+; Note: With nextreg command $69 the Layer 2 enabled bit could be changed.
+; Therefore the layer_2_port is restored on entry of this command and saved
+; on exit.
+; Changes:
+;  NA
+;===========================================================================
+cmd_set_nextregs:
+	; LOGPOINT [CMD] cmd_set_nextregs
+	; In case nextreg $69 is called
+	call restore_layer2_rw
+	; Number of pairs = length/2
+	ld de,(receive_buffer.length)	; Read only the lower bytes
+	srl d :	rr e	; de /= 2
+
+.loop:
+	; Check for end
+	ld a,e
+	or d
+	jr z,.loop_end
+	push de
+	; Get register
+	call uart.read_rx_byte
+	; Check for special regs
+	cp REG_TURBO_MODE
+	jr z,.speed
+	cp REG_MMU+MAIN_SLOT
+	jr z,.slot7
+	; "Normal" register
+	ld (.nextreg_register+2),a	; Modify opcode
+	; Get value
+	call uart.read_rx_byte
+
+	; Execute nextreg
+.nextreg_register:
+	nextreg 0x00,a	; Self-modifying code
+
+.continue:
+	pop de
+	dec de
+	jr .loop
+
+.loop_end:
+	; In case nextreg $69 has been called
+	call save_layer2_rw
+	; Send response
+	ld de,1
+	jp send_length_and_seqno
+
+.speed:
+	; Get value
+	call uart.read_rx_byte
+	; Store
+	ld (backup.speed),a
+	jr .continue
+
+.slot7:
+	; Get value
+	call uart.read_rx_byte
+	; Store
+	ld (slot_backup.slot7),a
+	jr .continue
+
 
 ;===========================================================================
 ; CMD_SET_SLOT
@@ -1141,7 +1215,7 @@ cmd_get_sprites_clip_window_and_control:
 ;  NA
 ;===========================================================================
 cmd_read_port:
-	; LOGPOINT [CMD] cmd_write_port
+	; LOGPOINT [CMD] cmd_read_port
 	; Read port (low byte)
 	call uart.read_rx_byte
 	ld l,a
@@ -1164,11 +1238,18 @@ cmd_read_port:
 ;===========================================================================
 ; CMD_WRITE_PORT
 ; Writes a value to a port.
+; Notes:
+; - BORDER additionally saves the value to be set when border flashing is disabled.
+; - The layer_2_port could be changed which changes the memory mapping.
+; Therefore the layer_2_port is restored on entry of this command and saved
+; on exit.
 ; Changes:
 ;  NA
 ;===========================================================================
 cmd_write_port:
 	; LOGPOINT [CMD] cmd_write_port
+	; In case layer_2_port is changed
+	call restore_layer2_rw
 	; Read port (low byte)
 	call uart.read_rx_byte
 	ld l,a
@@ -1188,6 +1269,8 @@ cmd_write_port:
 	ld (border_color),a
 
 .border_not_changed:
+	; In case layer_2_port has been changed
+	call save_layer2_rw
 	; Send response
 	ld de,1
 	jp send_length_and_seqno

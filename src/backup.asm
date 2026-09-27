@@ -197,6 +197,9 @@ adjust_debugged_program_stack_for_nmi:
 
 ;===========================================================================
 ; Saves layer 2 reading/writing.
+; Why? The debugger accesses 0x0000-0xBFFF (memory commands, breakpoints,
+; debugged stack, ULA screen) while the MF is paged out; Layer 2 r/w mapping
+; would redirect these accesses.
 ; Changes:
 ;   A, BC
 ; ===========================================================================

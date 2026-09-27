@@ -183,7 +183,7 @@ UT_get_cmd_pointer:
 	; ASSERTION HL == cmd_not_supported
 
 	; Out of range
-	ld a,27
+	ld a,28
 	ld (receive_buffer.command),a
 	call get_cmd_pointer
 	; ASSERTION HL == cmd_not_supported
@@ -1611,7 +1611,7 @@ UT_24_cmd_get_supported_commands:
 	TEST_MEMORY_BYTE test_memory_payload+1, 1101_1110b	; CMD_INIT - CMD_PAUSE
 	TEST_MEMORY_BYTE test_memory_payload+2, 1111_1111b	; CMD_READ_MEM - CMD_LOOPBACK
 	TEST_MEMORY_BYTE test_memory_payload+3, 1111_0011b	; CMD_GET_SPRITES_PALETTE - CMD_INTERRUPT_ON_OFF
-	TEST_MEMORY_BYTE test_memory_payload+4, 0000_0111b	; CMD_GET_SUPPORTED_COMMANDS
+	TEST_MEMORY_BYTE test_memory_payload+4, 0000_1111b	; CMD_GET_SUPPORTED_COMMANDS - CMD_SET_NEXTREGS
  TC_END
 
 
@@ -1707,6 +1707,37 @@ UT_26_cmd_write_bank_mem:
 	TEST_MEMORY_BYTE 0xC009, 0xD1
 	TEST_MEMORY_BYTE 0xC00A, 0xD2
 	TEST_MEMORY_BYTE 0xC00B, 0xD3
+ TC_END
+
+; Test setting next registers.
+UT_27_cmd_set_nextregs:
+	; ld a,0  ; zsim does not implement REG_DISPLAY_CONTROL or layer 2 port.
+	; Therefore this test is meaningless and commented.
+	; ld (backup.layer_2_port),a
+
+	; Test: normal register, same register several times, speed and slot 7
+	TEST_PREPARE_CMD <REG_MMU+SWAP_SLOT, 71, REG_MMU+SWAP_SLOT, 72, REG_TURBO_MODE, RTM_3MHZ, REG_MMU+MAIN_SLOT, 73> ;, REG_DISPLAY_CONTROL, 0x80>
+	call cmd_set_nextregs
+	; Check response
+	call test_get_response
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 1
+	; Check bank
+	ld a,REG_MMU+SWAP_SLOT
+	call read_tbblue_reg
+	; TEST ASSERTION A == 72
+	; Check backup values
+	TEST_MEMORY_BYTE backup.speed, RTM_3MHZ
+	TEST_MEMORY_BYTE slot_backup.slot7, 73
+	;TEST_MEMORY_BYTE backup.layer_2_port, 0
+
+	; Test: empty list
+	TEST_EMPTY_COMMAND
+	call cmd_set_nextregs
+	; Check response
+	call test_get_response
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 1
  TC_END
 
     ENDMODULE
