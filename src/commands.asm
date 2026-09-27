@@ -1309,6 +1309,7 @@ cmd_exec_asm:
 	; Save all registers
 	push hl, de, bc, af
 
+	/*
 	; Via CMD_EXEC_ASM it is possible to change registers that will keep
 	; their values even when starting the debugged program with CMD_CONTINUE.
 	; Read layer_2 port;
@@ -1321,6 +1322,7 @@ cmd_exec_asm:
 	ld (backup.speed),a
 	; Switch to 28Mhz
 	nextreg REG_TURBO_MODE,RTM_28MHZ
+	*/
 
 	; No error
 	xor a
