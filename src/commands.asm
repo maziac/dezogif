@@ -49,7 +49,7 @@ cmd_jump_table:
 .read_mem:			defw cmd_read_mem			; 8
 .write_mem:			defw cmd_write_mem			; 9
 .set_slot:			defw cmd_set_slot			; 10
-.get_tbblue_reg:	defw cmd_get_tbblue_reg		; 11
+.get_tbblue_reg:	defw cmd_get_nextreg		; 11
 .set_border:		defw cmd_not_supported		; 12
 .set_breakpoints:	defw cmd_set_breakpoints	; 13
 .restore_mem:		defw cmd_restore_mem		; 14
@@ -764,13 +764,13 @@ cmd_set_slot:
 
 
 ;===========================================================================
-; CMD_GET_TBBLUE_REG
+; CMD_GET_NEXTREG
 ; Reads the tbblue register.
 ; Changes:
 ;  NA
 ;===========================================================================
-cmd_get_tbblue_reg:
-	; LOGPOINT [CMD] cmd_get_tbblue_reg
+cmd_get_nextreg:
+	; LOGPOINT [CMD] cmd_get_nextreg
 	; Send response
 	ld de,2
 	call send_length_and_seqno

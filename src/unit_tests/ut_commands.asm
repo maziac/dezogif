@@ -973,14 +973,14 @@ UT_10_cmd_set_slot:
 
 
 
-; Test cmd_get_tbblue_reg.
+; Test cmd_get_nextreg.
 ; Check a set slot.
-UT_11_cmd_get_tbblue_reg:
+UT_11_cmd_get_nextreg:
 
 	; Test
 	TEST_PREPARE_COMMAND
 	nextreg REG_MMU+SWAP_SLOT, 74
-	call cmd_get_tbblue_reg
+	call cmd_get_nextreg
 	; Check response
  	call test_get_response
 	; Test size
@@ -992,7 +992,7 @@ UT_11_cmd_get_tbblue_reg:
 	; Test
 	TEST_PREPARE_COMMAND
 	nextreg REG_MMU+SWAP_SLOT, 73
-	call cmd_get_tbblue_reg
+	call cmd_get_nextreg
 	; Check response
  	call test_get_response
 	; Test size
