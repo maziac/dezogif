@@ -119,6 +119,9 @@ restore_registers:
 	ld bc,debugged_prgm_stack_copy.af
 	call write_debugged_prgm_mem
 
+	; Restore the memory mapping of slots 0-6
+	call restore_slots
+
 	; Restore layer 2 reading/writing
 	call restore_layer2_rw
 	; It's still possible to read/write in slot 7
@@ -231,31 +234,126 @@ restore_layer2_rw:
 
 
 ;===========================================================================
-; Saves the swap slot bank.
+; Saves the banks of slots 0-6 (MMU registers) to slot_backup.
+; Slot 7 is handled separately by the entry code.
 ; Changes:
-;   AF, BC
+;   AF, BC, D, HL
 ; ===========================================================================
-save_swap_slot:
-	ld a,REG_MMU+SWAP_SLOT
-;save_slot:	; Save the slot in A
+save_slots:
+	ld hl,slot_backup.slot0
+	ld d,REG_MMU
+	jr .loop
+
+; Same, but starts with slot 1. Used on a SW breakpoint, where slot 0 has
+; already been saved and MAIN_BANK is currently paged in there.
+.from_slot1:
+	ld hl,slot_backup.slot1
+	ld d,REG_MMU+1
+.loop:
+	ld a,d
 	call read_tbblue_reg
-	ld (slot_backup.tmp_slot),a
+	ldi (hl),a
+	inc d
+	ld a,d
+	cp REG_MMU+MAIN_SLOT
+	jr nz,.loop
 	ret
 
 
 ;===========================================================================
-; Restores the swap slot bank.
+; Restores the banks of slots 0-6 (MMU registers) from slot_backup.
+; Slot 7 is handled separately by the exit code.
 ; Changes:
-;   A
+;   AF, B, HL
 ; ===========================================================================
-restore_swap_slot:
-	ld a,(slot_backup.tmp_slot)
-;restore_slot:	; Restore the slot in A
-	nextreg REG_MMU+SWAP_SLOT,a
+restore_slots:
+	; Loop backwards from slot 6 to slot 0
+	ld hl,slot_backup.slot6
+	ld b,MAIN_SLOT
+.loop:
+	; MMU register for slot B-1
+	ld a,b
+	add REG_MMU-1
+	ld (.nextreg_register+2),a	; Modify opcode
+	; Get bank
+	ld a,(hl)
+	dec hl
+.nextreg_register:
+	nextreg 0x00,a	; Self-modifying code
+	djnz .loop
 	ret
 
 
+;===========================================================================
+; Returns the bank of the debugged program for an address.
+; Parameters:
+;   H = high byte of the address
+; Returns:
+;   A = bank (from slot_backup)
+; Changes:
+;   AF
+; ===========================================================================
+get_slot_bank:
+	push hl
+	; Get slot
+	ld a,h
+	rlca : rlca : rlca
+	and 0x07
+	; Get bank
+	ld hl,slot_backup
+	add hl,a
+	ld a,(hl)
+	pop hl
+	ret
 
+
+;===========================================================================
+; Pages the bank of the debugged program for an address in (see page_in_bank)
+; and converts the address accordingly.
+; Parameters:
+;   HL = address of the debugged program
+; Returns:
+;   HL = the address where the memory can be accessed
+; Changes:
+;   AF, HL
+; ===========================================================================
+page_in_debugged_prgm_bank:
+	call get_slot_bank
+	; Flow through
+
+;===========================================================================
+; Pages a bank in and converts the address accordingly.
+; - RAM bank: The bank is paged into SWAP_SLOT. Only the offset inside
+;   the 8k bank is used from the address.
+; - ROM (0xFF): The ROM can only be paged into slot 0 and 1. Therefore
+;   the ROM is paged into both slots and the address is masked with 0x3FFF,
+;   i.e. address 0x2000-0x3FFF accesses the upper half of the ROM.
+; Parameters:
+;   A = bank
+;   HL = address
+; Returns:
+;   HL = the address where the memory can be accessed
+; Changes:
+;   AF, HL
+; ===========================================================================
+page_in_bank:
+	cp ROM_BANK
+	jr z,.rom
+	; RAM bank
+	nextreg REG_MMU+SWAP_SLOT,a
+	ld a,h
+	and 0x1F
+	or HIGH SWAP_ADDR
+	ld h,a
+	ret
+
+.rom:
+	nextreg REG_MMU,a
+	nextreg REG_MMU+1,a
+	ld a,h
+	and 0x3F
+	ld h,a
+	ret
 
 
 ;===========================================================================
@@ -273,7 +371,6 @@ read_debugged_prgm_mem:
 	push bc
 	ld bc,.read_write
 	ld (memory_loop.inner_call+1),bc	; function pointer
-	call save_swap_slot
 	pop bc
 	jp memory_loop.inner
 
@@ -301,7 +398,6 @@ write_debugged_prgm_mem:
 	push bc
 	ld bc,.read_write
 	ld (memory_loop.inner_call+1),bc	; function pointer
-	call save_swap_slot
 	pop bc
 	jp memory_loop.inner
 
@@ -315,12 +411,37 @@ write_debugged_prgm_mem:
 
 
 ; ===========================================================================
+; Helper for cmd_read/write_bank_mem.
+; Loops over the memory of one bank (see page_in_bank).
+; - RAM bank: The address is masked with 0x1FFF, i.e. it wraps around
+;   inside the 8k bank.
+; - ROM (0xFF): The address is masked with 0x3FFF, i.e. both halves of the
+;   ROM are accessible. It wraps around inside the 16k ROM.
+; Parameters:
+;   A = bank
+;   HL = start address
+;   DE = size
+;   BC = contains a function pointer to the inner call. When called (HL)
+;        contains the memory at the location. DE and HL should not be changed.
+; ===========================================================================
+bank_mem_loop:
+	ld (memory_loop.inner_call+1),bc	; function pointer
+	ld (.bank+1),a
+.loop:
+	; Page in bank, also wraps the address around
+.bank:
+	ld a,0	; Self-modifying code
+	call page_in_bank
+	call memory_loop.inner_loop
+	jr nz,.loop	; End of 8k area reached
+	ret
+
+
+; ===========================================================================
 ; Helper class for cmd_read/write_mem and read/write_debugged_prgm_mem.
-; Loop over (debugged program) memory in 2 phases:
-; 1. memory in range 0xE000-0xFFFF
-; 2. memory in range 0x0000-0xDFFF
-; 3. loop to 1
-; Each of the phase is optional.
+; Loops over the debugged program's memory. For each 8k slot the bank
+; from slot_backup is paged in (see page_in_bank). After 0xFFFF the loop
+; continues at 0x0000.
 ; Parameters:
 ;   HL = memory to read
 ;   DE = size
@@ -328,44 +449,33 @@ write_debugged_prgm_mem:
 ;        contains the memory at the location. DE and HL should not be changed.
 ; ===========================================================================
 memory_loop:
-	; Phase 1: memory in range 0xE000-0xFFFF
 	ld (.inner_call+1),bc	; function pointer
-	; Remember current bank for slot
-	call save_swap_slot
 .inner:	; Beginning from here BC is not touched anymore
+	; Get slot
 	ld a,h
-	cp MAIN_SLOT*0x20	; 0xE0
-	jr c,.phase2
+	rlca : rlca : rlca
+	and 0x07
+	ld (.slot+1),a
+	; Page in bank of the slot
+	call page_in_debugged_prgm_bank
 
-	; Modify HL
-	and 0x1F
-	add HIGH SWAP_ADDR	; 0xC0
-	ld h,a
-
-.phase1:
-	; Page in slot 7 area to swap slot
-	ld a,(slot_backup.slot7)
-	nextreg REG_MMU+SWAP_SLOT,a
-
-	call .inner_loop
-
-	; End if de was 0
-	jp z,restore_swap_slot
-
-	; Page in original banks
-	call restore_swap_slot
-
-	; Correct the address
-	ld hl,0x0000
-
-.phase2:
-	; Phase 2: memory in range 0x0000-0xDFFF
+.slot_loop:
 	call .inner_loop
 	ret z	; Return if DE was 0
 
-	; Phase 1 again: memory in range 0xE000-0xFFFF
-	ld hl,SWAP_ADDR	; Correct HL to 0xC000
-	jr .phase1
+	; Next slot
+.slot:
+	ld a,0	; Self-modifying code
+	inc a
+	and 0x07
+	ld (.slot+1),a
+	; Start address of the slot
+	rrca : rrca : rrca
+	ld h,a
+	ld l,0
+	; Page in bank of the slot
+	call page_in_debugged_prgm_bank
+	jr .slot_loop
 
 
 	; On a return DE contains the rest of the bytes to copy.
@@ -386,12 +496,11 @@ memory_loop:
 	jr nz,.inner_loop
 	inc h
 	ld a,h
-	cp 0x20*(SWAP_SLOT+1)	; Compare with end of slot memory area
+	and 0x1F	; Check for end of the 8k slot memory area (SWAP_SLOT or ROM)
 	jr nz,.inner_loop
 
-	; End of bank(s) reached
+	; End of bank reached
 	; Check DE once again
 	ld a,e
 	or d
 	ret
-

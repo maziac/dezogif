@@ -258,6 +258,9 @@ UT_read_debugged_prgm_mem.UT_slot7:
     TEST_MEMORY_BYTE .mem_write+2, 0xB2
     TEST_MEMORY_BYTE .mem_write+3, 0xB3
     TEST_MEMORY_BYTE .mem_write+4, 0xB4
+
+    ; Restore
+    call ut_reset_slots
  TC_END
 .mem_write: defs 5
 
@@ -265,7 +268,8 @@ UT_read_debugged_prgm_mem.UT_slot7:
 ; Test that memory is read correctly. Area at border 0xDFFF-0xE000.
 UT_read_debugged_prgm_mem.UT_border_0xE000:
     ; Init
-    ; Use bank 40 for testing in slot 7, slot 6 is anyway swap slot, i.e. don't care
+    ; Use bank 40 for testing in slot 7 and bank 41 for slot 6
+    UT_SET_SLOT SWAP_SLOT, 41
     ld a,40
     ld (slot_backup.slot7),a
     nextreg REG_MMU+MAIN_SLOT,a
@@ -288,6 +292,9 @@ UT_read_debugged_prgm_mem.UT_border_0xE000:
     TEST_MEMORY_BYTE .mem_write+2, 0xB2
     TEST_MEMORY_BYTE .mem_write+3, 0xB3
     TEST_MEMORY_BYTE .mem_write+4, 0xB4
+
+    ; Restore
+    call ut_reset_slots
  TC_END
 .mem_write: defs 5
 
@@ -296,11 +303,10 @@ UT_read_debugged_prgm_mem.UT_border_0x0000:
     ; Init
     ; Use bank 40 for testing in slot 7
     ; and bank 39 for slot 0
+    UT_SET_SLOT 0, 39
     ld a,40
     ld (slot_backup.slot7),a
     nextreg REG_MMU+MAIN_SLOT,a
-    dec a
-    nextreg REG_MMU,a
     ld a,0xC0
     ld hl,0xFFFD
     ld b,5
@@ -320,8 +326,51 @@ UT_read_debugged_prgm_mem.UT_border_0x0000:
     TEST_MEMORY_BYTE .mem_write+2, 0xC2
     TEST_MEMORY_BYTE .mem_write+3, 0xC3
     TEST_MEMORY_BYTE .mem_write+4, 0xC4
+
+    ; Restore
+    call ut_reset_slots
  TC_END
 .mem_write: defs 5
+
+
+; Test that the ROM is read correctly (slot 0/1 = ROM in slot_backup)
+; and that the border to slot 2 is handled.
+UT_read_debugged_prgm_mem.UT_rom:
+    ; Get reference data from ROM
+    nextreg REG_MMU,ROM_BANK
+    nextreg REG_MMU+1,ROM_BANK
+    MEMCOPY .mem_ref, 0x1FFE, 4
+    MEMCOPY .mem_ref+4, 0x3FFE, 2
+    ; Slot 2
+    MEMCOPY .mem_ref+6, 0x4000, 2
+    ; Page in other banks, the debugger must page in the ROM itself
+    nextreg REG_MMU,70
+    nextreg REG_MMU+1,71
+    ld a,ROM_BANK
+    ld (slot_backup.slot0),a
+    ld (slot_backup.slot1),a
+
+    ; Test: crossing slot 0/1
+    MEMCLEAR .mem_write, 4
+    ld hl,0x1FFE
+    ld de,4
+    ld bc,.mem_write
+    call read_debugged_prgm_mem
+    TEST_MEM_CMP .mem_write, .mem_ref, 4
+
+    ; Test: crossing slot 1/2
+    MEMCLEAR .mem_write, 4
+    ld hl,0x3FFE
+    ld de,4
+    ld bc,.mem_write
+    call read_debugged_prgm_mem
+    TEST_MEM_CMP .mem_write, .mem_ref+4, 4
+
+    ; Restore
+    call ut_reset_slots
+ TC_END
+.mem_ref:   defs 8
+.mem_write: defs 4
 
 
 ; Test that memory is read correctly. Area outside ROM and slot 7.

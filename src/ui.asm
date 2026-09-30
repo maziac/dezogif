@@ -298,6 +298,11 @@ init_and_show_ui:
     ; Also rewrite default palette
     ;call set_ula_default_palette
 
+    ; Switch in the ULA screen (bank 5).
+    ; Note: the MMU registers belong to the debugger, the mapping of the
+    ; debugged program is in slot_backup.
+    nextreg REG_MMU+2,10
+
     ; Clear the screen
     call cls
 

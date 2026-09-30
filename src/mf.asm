@@ -113,6 +113,9 @@ mf_nmi_happened:
     ; Change SP to main slot
     ld sp,debug_stack.top
 
+	; Save the banks of slots 0-6 (slot 7 is already saved)
+	call save_slots
+
 	; Save the return address from the debugged program to debugged_prgm_stack_copy.return1 and backup.pc
 	call save_nmi_return_address
 

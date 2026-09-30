@@ -51,6 +51,32 @@ LOADED_BANK:    EQU 92
     ORG 0x7000
 ;PRG_START:
     include "unit_tests/unit_tests.inc"
+
+
+; Sets the bank of a slot (0-6) in the MMU register and in slot_backup.
+    MACRO UT_SET_SLOT slot?, bank?
+    nextreg REG_MMU+slot?,bank?
+    ld a,bank?
+    ld (slot_backup+slot?),a
+    ENDM
+
+; Initializes slot_backup with the memory mapping at start of the unit tests.
+; The mapping is also stored in ut_default_slots.
+ut_init_slots:
+    call save_slots
+    ld a,LOADED_BANK
+    ld (slot_backup.slot7),a
+    MEMCOPY ut_default_slots, slot_backup, SLOT_BACKUP
+    ret
+
+; Restores the default memory mapping (MMU registers of slot 0-6 and slot_backup).
+; To be used after a test that changed the mapping.
+ut_reset_slots:
+    MEMCOPY slot_backup, ut_default_slots, SLOT_BACKUP
+    jp restore_slots
+
+ut_default_slots:   defs SLOT_BACKUP
+
     include "unit_tests/ut_utilities.asm"
     include "unit_tests/ut_uart.asm"
     include "unit_tests/ut_backup.asm"
@@ -66,7 +92,8 @@ main_loop.continue:     ret
     UNITTEST_INITIALIZE
     ; Page in main bank
     nextreg REG_MMU+MAIN_SLOT,LOADED_BANK
-    ret
+    ; Init the slot backup
+    jp ut_init_slots
 PRG_END:
 
 

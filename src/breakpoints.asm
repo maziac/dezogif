@@ -175,6 +175,9 @@ copy_rom_start_code_end
 ; - [SP]:	BC
 ;===========================================================================
 enter_debugger:
+	; Save the banks of slot 1-6 (slot 0 and 7 are already saved)
+	call save_slots.from_slot1
+
 	; Save clock speed
 	ld a,REG_TURBO_MODE
 	call read_tbblue_reg
@@ -289,27 +292,11 @@ clear_tmp_breakpoint:
 	ret
 
 .continue:
-	; Check for bp in main slot area
-	ld a,d
-	cp HIGH MAIN_ADDR	; 0xE000
-	jr c,.normal
+	; Page in bank of the debugged program
+	ex de,hl
+	call page_in_debugged_prgm_bank
+	ex de,hl
 
-	; Temporary switch to swap slot
-	call save_swap_slot
-	ld a,(slot_backup.slot7)
-	nextreg REG_MMU+SWAP_SLOT,a
-
-	; Adjust to swap slot area
-	ld a,d
-	and 0x1F
-	add HIGH SWAP_ADDR	; 0xC0
-	ld d,a
-
-	call .normal
-	; Restore swap slot
-	jp restore_swap_slot
-
-.normal:
 	; Restore opcode
 	dec hl
 	ld a,(hl)
@@ -332,22 +319,9 @@ clear_tmp_breakpoint:
 ;   HL, DE, A
 ;===========================================================================
 set_tmp_breakpoint:
-	; Check for bp in main slot area
-	ld a,h
-	cp HIGH MAIN_ADDR	; 0xE000
-	jr c,.normal
-
-	; Temporary switch to swap slot
-	call save_swap_slot
-	ld a,(slot_backup.slot7)
-	nextreg REG_MMU+SWAP_SLOT,a
-
-	; Adjust to swap slot area
+	; Page in bank of the debugged program
 	push hl		; Save real address
-	ld a,h
-	and 0x1F
-	add HIGH SWAP_ADDR	; 0xC0
-	ld h,a
+	call page_in_debugged_prgm_bank
 
 	; Get opcode
 	ld a,(hl)
@@ -356,31 +330,17 @@ set_tmp_breakpoint:
 
 	; Do nothing if already a breakpoint set
 	pop hl
-	; Restore swap slot
-	jp restore_swap_slot
+	ret
 
 .setbp:
 	; Set BP
-	ld (hl),BP_INSTRUCTION ; LOGPOINT [BP] set_tmp_breakpoint @${HL:hex16} (${HL})
+	ld (hl),BP_INSTRUCTION
 	; Restore real address
 	pop hl
-	; Store to 'opcode'
-	call .store
-	; Restore swap slot
-	jp restore_swap_slot
-
-.normal:
-	; Get opcode
-	ld a,(hl)
-	cp BP_INSTRUCTION
-	ret z	; Do nothing if already a breakpoint set
-
-	; Set BP
-	ld (hl),BP_INSTRUCTION ; LOGPOINT [BP] set_tmp_breakpoint @${HL:hex16} (${HL})
 
 .store:
 	; Store to 'opcode'
-	ex de,hl
+	ex de,hl ; LOGPOINT [BP] set_tmp_breakpoint @${HL:hex16} (${HL})
 	ldi (hl),a
 	; Store address
 	ldi (hl),de

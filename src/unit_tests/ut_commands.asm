@@ -260,23 +260,8 @@ UT_03_cmd_get_registers:
 	; Write test data to simulated UART buffer.
 	TEST_EMPTY_COMMAND
 
-	; Save current slot configuration
-	; Save the first 7 slots
-	ld d,REG_MMU
-	ld e,7
-	ld hl,.cmp_slots
-.loop:
-	; Get bank for slot
-	ld a,d
-	call read_tbblue_reg	; Result in A
-	; Store for later comparison
-	ldi (hl),a
-	inc d
-	dec e
-	jr nz,.loop
-	; Last slot
-	ld a,(slot_backup.slot7)
-	ld (.cmp_slots+7),a
+	; Set slot configuration (only the backup is used)
+	MEMCOPY slot_backup, .cmp_slots, SLOT_BACKUP
 
 	; Copy data
 	MEMCOPY backup, .cmd_data, .cmd_data_end-.cmd_data
@@ -297,6 +282,8 @@ UT_03_cmd_get_registers:
 	TEST_MEMORY_BYTE test_memory_payload+29, 8	; 8 slots
 	TEST_MEM_CMP test_memory_payload+30, .cmp_slots, 8
 
+	; Restore
+	call ut_reset_slots
  TC_END
 
 .cmd_data:	; WPMEM, ut_commands.UT_03_cmd_get_registers.cmd_data_end - ut_commands.UT_03_cmd_get_registers.cmd_data, W
@@ -307,7 +294,7 @@ UT_03_cmd_get_registers:
 	defw 0x2007, 0x2006, 0x2005, 0x2004, 0x2003, 0x2002, 0x2001
 	defw 0x1007, 0x1006, 0x1005, 0x1004, 0x1003, 0x1002, 0x1001
 .cmp_data_end
-.cmp_slots:	defs 8
+.cmp_slots:	defb 70, 71, 72, 73, 74, 75, 76, 77
 
 
 ; Test that double register is set correctly.
@@ -680,9 +667,10 @@ UT_09_cmd_write_mem.UT_normal:
 ; Note: The locations should not contain any code/data of
 ; the tested program which is around 0x7000 for unit testing.
 UT_09_cmd_write_mem.UT_banks:
-	; Page in different memory to ROM
-	nextreg REG_MMU,81
-	nextreg REG_MMU+1,82
+	; Page in different memory to ROM and in swap slot
+	UT_SET_SLOT 0, 81
+	UT_SET_SLOT 1, 82
+	UT_SET_SLOT SWAP_SLOT, 83
 
 	; Location 0x1FFF
 	ld hl,.cmd_data.mem_start
@@ -755,6 +743,7 @@ UT_09_cmd_write_mem.UT_banks:
 	; Check response
 	call test_get_response
 	; Test data
+	nextreg REG_MMU+SWAP_SLOT,83
 	TEST_MEMORY_BYTE 0xC000, 0xB6
 
 	; Location 0xFFFF
@@ -774,6 +763,7 @@ UT_09_cmd_write_mem.UT_banks:
 
 	; Restore
 	nextreg REG_MMU+MAIN_SLOT,LOADED_BANK
+	call ut_reset_slots
  TC_END
 
 .cmd_data: PAYLOAD_WRITE_MEM	0, 0
@@ -796,9 +786,7 @@ UT_10_cmd_set_slot:
 	; Test: no error
 	TEST_MEMORY_BYTE test_memory_payload+1, 0
 	; Check bank
-	ld a,REG_MMU+SWAP_SLOT
-	call read_tbblue_reg
-	; TEST ASSERTION A == 75
+	TEST_MEMORY_BYTE slot_backup+SWAP_SLOT, 75
 
 	; Test
 	ld (iy+PAYLOAD_SET_SLOT.slot),SWAP_SLOT
@@ -808,9 +796,7 @@ UT_10_cmd_set_slot:
 	; Check response
  	call test_get_response
 	; Check bank
-	ld a,REG_MMU+SWAP_SLOT
-	call read_tbblue_reg
-	; TEST ASSERTION A == 76
+	TEST_MEMORY_BYTE slot_backup+SWAP_SLOT, 76
 
 	; Test
 	ld (iy+PAYLOAD_SET_SLOT.slot),MAIN_SLOT
@@ -830,9 +816,7 @@ UT_10_cmd_set_slot:
 	; Check response
  	call test_get_response
 	; Check bank
-	ld a,REG_MMU+0
-	call read_tbblue_reg
-	; TEST ASSERTION A == ROM_BANK
+	TEST_MEMORY_BYTE slot_backup.slot0, ROM_BANK
 
 	; Test
 	ld (iy+PAYLOAD_SET_SLOT.slot),0
@@ -842,10 +826,15 @@ UT_10_cmd_set_slot:
 	; Check response
  	call test_get_response
 	; Check bank
-	ld a,REG_MMU+0
-	call read_tbblue_reg
-	; TEST ASSERTION A == ROM_BANK
+	TEST_MEMORY_BYTE slot_backup.slot0, ROM_BANK
 
+	; Test that the MMU register is not changed
+	ld a,REG_MMU+SWAP_SLOT
+	call read_tbblue_reg
+	; TEST ASSERTION A != 76
+
+	; Restore
+	call ut_reset_slots
  TC_END
 
 .cmd_data:	PAYLOAD_SET_SLOT	0, 0
@@ -906,6 +895,7 @@ UT_13_cmd_set_breakpoints.UT_2_bps:
 	TEST_PREPARE_COMMAND
 
 	; Test
+	UT_SET_SLOT SWAP_SLOT, 72
 	ld a,8
 	ld (0xC000),a
 	ld a,123
@@ -921,9 +911,12 @@ UT_13_cmd_set_breakpoints.UT_2_bps:
 	TEST_MEMORY_BYTE test_memory_payload+2, 123
 
 	; Test memory (breakpoints)
+	nextreg REG_MMU+SWAP_SLOT,72
 	TEST_MEMORY_BYTE 0xC000, BP_INSTRUCTION
 	TEST_MEMORY_BYTE 0xC0FF, BP_INSTRUCTION
 
+	; Restore
+	call ut_reset_slots
  TC_END
 
 .cmd_data:	defw 0xC000
@@ -935,18 +928,17 @@ UT_13_cmd_set_breakpoints.UT_2_bps:
 
 
 ; Test cmd_set_breakpoints.
-; Restore slots.
-UT_13_cmd_set_breakpoints.UT_restore_slots:
+; Breakpoints in slot 0 and 1 (banks from slot_backup).
+UT_13_cmd_set_breakpoints.UT_slots_0_1:
 	TEST_PREPARE_COMMAND
 
 	; Page in banks in ROM area
-	nextreg REG_MMU+0,70
-	nextreg REG_MMU+1,71
-	nextreg REG_MMU+SWAP_SLOT,72
+	UT_SET_SLOT 0, 70
+	UT_SET_SLOT 1, 71
 
 	; Test
 	xor a
-	ld (0x8200),a
+	ld (0x0200),a
 	ld (0x3FFF),a
 	call cmd_set_breakpoints
 	; Check response
@@ -958,19 +950,19 @@ UT_13_cmd_set_breakpoints.UT_restore_slots:
 	TEST_MEMORY_BYTE test_memory_payload+1, 0
 	TEST_MEMORY_BYTE test_memory_payload+2, 0
 
-	; Test that slots are restored
+	; Test that slot 0 and 1 are unchanged
 	ld a,REG_MMU
 	call read_tbblue_reg
 	; TEST ASSERTION A == 70
 	ld a,REG_MMU+1
 	call read_tbblue_reg
 	; TEST ASSERTION A == 71
-	ld a,REG_MMU+SWAP_SLOT
-	call read_tbblue_reg
-	; TEST ASSERTION A == 72
 
 	TEST_MEMORY_BYTE 0x0200, BP_INSTRUCTION
 	TEST_MEMORY_BYTE 0x3FFF, BP_INSTRUCTION
+
+	; Restore
+	call ut_reset_slots
  TC_END
 
 .cmd_data:	defw 0x0200
@@ -1009,6 +1001,8 @@ UT_13_cmd_set_breakpoints.UT_long_bps:
 	TEST_MEMORY_BYTE 0x8200&0x1FFF, BP_INSTRUCTION
 	TEST_MEMORY_BYTE 0x3FFF&0x1FFF+0x2000, BP_INSTRUCTION
 
+	; Restore
+	call ut_reset_slots
  TC_END
 
 .cmd_data:	defw 0x8200
@@ -1038,6 +1032,7 @@ UT_14_cmd_restore_mem.UT_2_values:
 	TEST_PREPARE_COMMAND
 
 	; Test
+	UT_SET_SLOT SWAP_SLOT, 72
 	ld a,0xC7 ; RST0
 	ld (0xC000),a
 	ld (0xC0FF),a
@@ -1048,8 +1043,12 @@ UT_14_cmd_restore_mem.UT_2_values:
 	TEST_MEMORY_WORD test_memory_payload.length, 1
 
 	; Test
+	nextreg REG_MMU+SWAP_SLOT,72
 	TEST_MEMORY_BYTE 0xC000, 0xAA
 	TEST_MEMORY_BYTE 0xC0FF, 0x55
+
+	; Restore
+	call ut_reset_slots
  TC_END
 
 .cmd_data:
@@ -1068,6 +1067,7 @@ UT_14_cmd_restore_mem.UT_not_RST0:
 	TEST_PREPARE_COMMAND
 
 	; Test
+	UT_SET_SLOT SWAP_SLOT, 72
 	ld a,0xC7 ; RST0
 	ld (0xC000),a
 	ld a,0xBB ; not RST0
@@ -1079,8 +1079,12 @@ UT_14_cmd_restore_mem.UT_not_RST0:
 	TEST_MEMORY_WORD test_memory_payload.length, 1
 
 	; Test
+	nextreg REG_MMU+SWAP_SLOT,72
 	TEST_MEMORY_BYTE 0xC000, 0xAA
 	TEST_MEMORY_BYTE 0xC001, 0xBB  ; Unchanged
+
+	; Restore
+	call ut_reset_slots
  TC_END
 
 .cmd_data:
@@ -1095,14 +1099,13 @@ UT_14_cmd_restore_mem.UT_not_RST0:
 
 
 ; Test cmd_restore_mem.
-; Restore slots.
-UT_14_cmd_restore_mem.UT_restore_slots:
+; Values in slot 0 and 1 (banks from slot_backup).
+UT_14_cmd_restore_mem.UT_slots_0_1:
 	TEST_PREPARE_COMMAND
 
 	; Page in banks in ROM area
-	nextreg REG_MMU+0,70
-	nextreg REG_MMU+1,71
-	nextreg REG_MMU+SWAP_SLOT,72
+	UT_SET_SLOT 0, 70
+	UT_SET_SLOT 1, 71
 
 	; Test
 	ld a,0xC7	; RST0
@@ -1114,19 +1117,19 @@ UT_14_cmd_restore_mem.UT_restore_slots:
 	; Test size
 	TEST_MEMORY_WORD test_memory_payload.length, 1
 
-	; Test that slots are restored
+	; Test that slot 0 and 1 are unchanged
 	ld a,REG_MMU
 	call read_tbblue_reg
 	; TEST ASSERTION A == 70
 	ld a,REG_MMU+1
 	call read_tbblue_reg
 	; TEST ASSERTION A == 71
-	ld a,REG_MMU+SWAP_SLOT
-	call read_tbblue_reg
-	; TEST ASSERTION A == 72
 
 	TEST_MEMORY_BYTE 0x0200, 0xA5
 	TEST_MEMORY_BYTE 0x3FFF, 0x5A
+
+	; Restore
+	call ut_reset_slots
  TC_END
 
 .cmd_data:
@@ -1163,6 +1166,9 @@ UT_14_cmd_restore_mem.UT_long_addresses:
 	; Test
 	TEST_MEMORY_BYTE 0xCF00&0x1FFF, 0xAA
 	TEST_MEMORY_BYTE (0xC0FF&0x1FFF)+0x2000, 0x55
+
+	; Restore
+	call ut_reset_slots
  TC_END
 
 .cmd_data:
@@ -1182,17 +1188,11 @@ UT_15_cmd_loopback:
 	TEST_PREPARE_COMMAND
 
 	; Test
-	nextreg REG_MMU+SWAP_SLOT, 69
 	call .wrap_cmd_loopback
 	; Check response
  	call test_get_response
 	; Test size
 	TEST_MEMORY_WORD test_memory_payload.length, 31
-
-	; Test that slot was restored
-	ld a,REG_MMU+SWAP_SLOT
-	call read_tbblue_reg
-	; TEST ASSERTION A == 69
 
 	; Check all value
 	TEST_MEM_CMP test_memory_payload+1, .cmd_data, .cmd_data_end-.cmd_data
@@ -1540,15 +1540,29 @@ UT_25_cmd_read_bank_mem:
 	TEST_MEMORY_BYTE test_memory_payload+1, 0x02
 	TEST_MEMORY_BYTE test_memory_payload+2, 0x03
 	TEST_MEMORY_BYTE test_memory_payload+3, 0x04
+
+	; Test wrap around at the end of the bank
+	nextreg REG_MMU+SWAP_SLOT,50
+	MEMSET 0xDFFF, <0x11>
+	MEMSET 0xC000, <0x12, 0x13>
+	ld a,50
+	ld hl,0x1FFF
+	call .do_cmd_and_get_response
+	; Compare result
+	TEST_MEMORY_BYTE test_memory_payload+1, 0x11
+	TEST_MEMORY_BYTE test_memory_payload+2, 0x12
+	TEST_MEMORY_BYTE test_memory_payload+3, 0x13
  TC_END
 
 ; A = bank
 ; HL = pointer to memory start
 .do_cmd_and_get_response:
+	ld de,3
+; DE = size
+.do_cmd_de_and_get_response:
 	ld (.cmd_data.bank),a
 	ld (.cmd_data.mem_start),hl
-	ld hl,3
-	ld (.cmd_data.mem_size),hl
+	ld (.cmd_data.mem_size),de
 	TEST_PREPARE_COMMAND
 	call cmd_read_bank_mem
 	; Check response
@@ -1557,6 +1571,40 @@ UT_25_cmd_read_bank_mem:
 
 .cmd_data: PAYLOAD_READ_BANK_MEM	0, 0, 0
 .cmd_data_end
+
+; Test reading the ROM (bank 0xFF) through slot 0 and 1.
+UT_25_cmd_read_bank_mem_rom:
+	; Get reference data from ROM
+	nextreg REG_MMU,ROM_BANK
+	nextreg REG_MMU+1,ROM_BANK
+	MEMCOPY .rom_ref, 0x1FFE, 4
+	MEMCOPY .rom_ref+4, 0x3FFE, 2
+	MEMCOPY .rom_ref+6, 0x0000, 2
+	; Page in other banks, the debugger must page in the ROM itself
+	nextreg REG_MMU,70
+	nextreg REG_MMU+1,71
+
+	; Read across the 8k boundary of the ROM
+	ld a,ROM_BANK
+	ld hl,0x1FFE
+	ld de,4
+	call UT_25_cmd_read_bank_mem.do_cmd_de_and_get_response
+	TEST_MEMORY_WORD test_memory_payload.length, 1+4
+	TEST_MEM_CMP test_memory_payload+1, .rom_ref, 4
+
+	; Wrap around at the end of the ROM
+	ld a,ROM_BANK
+	ld hl,0x3FFE
+	ld de,4
+	call UT_25_cmd_read_bank_mem.do_cmd_de_and_get_response
+	TEST_MEMORY_WORD test_memory_payload.length, 1+4
+	TEST_MEM_CMP test_memory_payload+1, .rom_ref+4, 4
+
+	; Restore
+	call ut_reset_slots
+ TC_END
+
+.rom_ref:	defs 8
 
 ; Test writing memory.
 UT_26_cmd_write_bank_mem:
@@ -1595,20 +1643,23 @@ UT_27_cmd_set_nextregs:
 	; Therefore this test is meaningless and commented.
 	; ld (backup.layer_2_port),a
 
-	; Test: normal register, same register several times, speed and slot 7
-	TEST_PREPARE_CMD <REG_MMU+SWAP_SLOT, 71, REG_MMU+SWAP_SLOT, 72, REG_TURBO_MODE, RTM_3MHZ, REG_MMU+MAIN_SLOT, 73> ;, REG_DISPLAY_CONTROL, 0x80>
+	; Test: normal register, same register several times, speed and slots
+	nextreg REG_MMU+SWAP_SLOT,70
+	TEST_PREPARE_CMD <REG_MMU+SWAP_SLOT, 71, REG_MMU+SWAP_SLOT, 72, REG_TURBO_MODE, RTM_3MHZ, REG_MMU+MAIN_SLOT, 73, REG_MMU, 74> ;, REG_DISPLAY_CONTROL, 0x80>
 	call cmd_set_nextregs
 	; Check response
 	call test_get_response
 	; Test size
 	TEST_MEMORY_WORD test_memory_payload.length, 1
-	; Check bank
+	; Check that the MMU register is not changed
 	ld a,REG_MMU+SWAP_SLOT
 	call read_tbblue_reg
-	; TEST ASSERTION A == 72
+	; TEST ASSERTION A == 70
 	; Check backup values
 	TEST_MEMORY_BYTE backup.speed, RTM_3MHZ
+	TEST_MEMORY_BYTE slot_backup+SWAP_SLOT, 72
 	TEST_MEMORY_BYTE slot_backup.slot7, 73
+	TEST_MEMORY_BYTE slot_backup.slot0, 74
 	;TEST_MEMORY_BYTE backup.layer_2_port, 0
 
 	; Test: empty list
@@ -1618,6 +1669,9 @@ UT_27_cmd_set_nextregs:
 	call test_get_response
 	; Test size
 	TEST_MEMORY_WORD test_memory_payload.length, 1
+
+	; Restore
+	call ut_reset_slots
  TC_END
 
 
@@ -1713,14 +1767,10 @@ UT_28_cmd_read_mem_blocks.UT_no_block:
 ; and that wrap at the 64k boundary.
 ; Note: The locations should not contain any code/data.
 UT_28_cmd_read_mem_blocks.UT_banks_and_wrap:
-	; Remember slot 7 bank of the debugged program
-	ld a,(slot_backup.slot7)
-	ld (.slot7_save),a
-
 	; Page in different memory to ROM and in the swap slot
-	nextreg REG_MMU,81
-	nextreg REG_MMU+1,82
-	nextreg REG_MMU+SWAP_SLOT,83
+	UT_SET_SLOT 0, 81
+	UT_SET_SLOT 1, 82
+	UT_SET_SLOT SWAP_SLOT, 83
 
 	; Test data
 	ld a,0xE1
@@ -1752,23 +1802,17 @@ UT_28_cmd_read_mem_blocks.UT_banks_and_wrap:
 	; Compare against expected data
 	TEST_MEM_CMP .expected, test_memory_payload+1, .expected_end-.expected
 
-	; Test that slots are restored
+	; Test that slot 0 and 1 are unchanged
 	ld a,REG_MMU
 	call read_tbblue_reg
 	; TEST ASSERTION A == 81
 	ld a,REG_MMU+1
 	call read_tbblue_reg
 	; TEST ASSERTION A == 82
-	ld a,REG_MMU+SWAP_SLOT
-	call read_tbblue_reg
-	; TEST ASSERTION A == 83
 
-	; Restore slot 7 bank of the debugged program
-	ld a,(.slot7_save)
-	ld (slot_backup.slot7),a
+	; Restore
+	call ut_reset_slots
  TC_END
-
-.slot7_save:	defb 0
 
 .expected:	defb 0xE1, 0xE2,  0xE3, 0xE4,  0xE5
 .expected_end:

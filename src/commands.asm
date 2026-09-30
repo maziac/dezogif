@@ -10,11 +10,20 @@
 ; Structs
 ;===========================================================================
 
-	; Used in backup/restore of the slots.
+	; The memory mapping (banks) of the debugged program.
+	; Saved when entering the debugger, restored on continue.
+	; While debugging the MMU registers belong to the debugger. All accesses
+	; to the debugged program's memory go through this backup.
+	; slot0-slot7 need to be consecutive (indexed by slot number).
 	STRUCT SLOT_BACKUP
-slot0:		defb	; Saved when entering debugging (RST 0), restored on continue. At the moment this must be 0xFF=ROM. I.e. saving/restoring has no real meaning. In future, when using UART interrupts, this will make more sense.
-slot7:		defb	; Saved when entering debugging (RST 0), restored on continue.
-tmp_slot:	defb	; Normally SWAP_SLOT but could be also other.
+slot0:		defb	; On a SW breakpoint (RST 0) this must be 0xFF=ROM (AltROM).
+slot1:		defb
+slot2:		defb
+slot3:		defb
+slot4:		defb
+slot5:		defb
+slot6:		defb
+slot7:		defb
 	ENDS
 
 
@@ -140,16 +149,11 @@ cmd_init:
 	; DBG_LOG 'i'
 	call .inner
 	; Reset slots to ZX128 default: ROM0, 5, 2, 0 => ROM0, ROM0, 10, 11, 4, 5, 0, 1
-	ld hl,slot_backup
-	ldi (hl),ROM_BANK	; Slot 0
-	ld (hl),1	; Slot 7
-	; Other slots are set directly
-	nextreg REG_MMU+1,ROM_BANK
-	nextreg REG_MMU+2,10
-	nextreg REG_MMU+3,11
-	nextreg REG_MMU+4,4
-	nextreg REG_MMU+5,5
-	nextreg REG_MMU+6,0
+	; Only the backup is set. It is written to the MMU registers on continue.
+	ld hl,.default_slots
+	ld de,slot_backup
+	ld bc,SLOT_BACKUP
+	ldir
 	; Reset error
 	xor a
 	ld (last_error),a
@@ -193,6 +197,9 @@ cmd_init:
 	or a
 	jr nz,.write_prg_name_loop
 	ret
+
+.default_slots:
+	defb ROM_BANK, ROM_BANK, 10, 11, 4, 5, 0, 1
 
 .inner:
 	; Read version number
@@ -284,22 +291,15 @@ cmd_get_registers:
 	ld a,8	; 8 slots
 	call uart.write_tx_byte
 
-	; Send the first 7 slots
-	ld de,256*REG_MMU+7	; Load D and E at the same time
+	; Send the banks of all 8 slots
+	ld hl,slot_backup
+	ld e,SLOT_BACKUP
 .slot_loop:
-	; Get bank for slot
-	ld a,d
-	call read_tbblue_reg	; Result in A
-	; Send
+	ldi a,(hl)
 	call uart.write_tx_byte
-	inc d
 	dec e
 	jr nz,.slot_loop
-
-	; Get and send slot 7
-	ld a,(slot_backup.slot7)
-	; LOGPOINT cmd_get_slots slot0: ${A}
-	jp uart.write_tx_byte
+	ret
 
 
 ;===========================================================================
@@ -457,8 +457,7 @@ cmd_pause:
 ;=============================================
 ; CMD_READ_MEM_BLOCKS
 ; Reads a few memory blocks.
-; Special is that if slot 7 area is read,
-; then the memory bank of slot_backup.slot7 is temporarily paged into
+; The memory banks of slot_backup are temporarily paged into
 ; SWAP_SLOT and read.
 ; Changes:
 ;  NA
@@ -511,9 +510,8 @@ cmd_read_mem_blocks:
 
 ;===========================================================================
 ; CMD_READ_BANK_MEM
-; Reads memory from the specified bank after swapping it
-; into SWAP_SLOT. The read address will wrap around inside the bank,
-;  i.e. it is masked so that it stays within the bank.
+; Reads memory from the specified bank.
+; See bank_mem_loop for address handling and ROM access.
 ; Changes:
 ;  NA
 ;===========================================================================
@@ -534,44 +532,19 @@ cmd_read_bank_mem:
 .hl_correct:
 	call send_4bytes_length_and_seqno
 
-.inner_banked:		; For unit testing
-	; Remember current bank for slot
-	call save_swap_slot
-	; Swap in memory
-	ld a,(payload_read_bank_mem.bank) ; bank
-	nextreg REG_MMU+SWAP_SLOT,a
-	; Get start and size
+	; Get bank, start and size
+	ld a,(payload_read_bank_mem.bank)
 	ld hl,(payload_read_bank_mem.mem_start)
 	ld de,(payload_read_bank_mem.mem_size)
-
-	; Loop until all bytes are read and sent
-.loop:
-	ld a,d
-	or e
-	jr z,.loop_end
-	; Adjust hl to bank size, may wrap around
-	ld a,h
-	and 0x1F
-	or HIGH SWAP_ADDR
-	ld h,a
-	; Read byte and write to uart
-	ld a,(hl)
-	call uart.write_tx_byte
-	; Next
-	dec de
-	inc hl
-	jr .loop
-
-.loop_end:
-	; Restore slot/bank
-	jp restore_swap_slot
+	; Read bytes and send them through the UART
+	ld bc,cmd_read_mem_blocks.read
+	jp bank_mem_loop
 
 
 ;===========================================================================
 ; CMD_WRITE_MEM
 ; Writes a memory area.
-; Special is that if slot 7 area is read,
-; then the memory bank of slot_backup.slot7 is temporarily paged into
+; The memory banks of slot_backup are temporarily paged into
 ; SWAP_SLOT and written.
 ; Changes:
 ;  NA
@@ -583,7 +556,6 @@ cmd_write_mem:
 	ld de,PAYLOAD_WRITE_MEM
 	call receive_bytes
 
-	call save_swap_slot
 	; Read length and subtract 3
 	ld hl,(receive_buffer.length)
 	ld de,-PAYLOAD_WRITE_MEM
@@ -611,9 +583,8 @@ cmd_write_mem:
 
 ;===========================================================================
 ; CMD_WRITE_BANK_MEM
-; Writes a data to the specified bank after swapping it
-; into SWAP_SLOT. The write address will wrap around inside the bank,
-;  i.e. it is masked so that it stays within the bank.
+; Writes data to the specified bank.
+; See bank_mem_loop for address handling and ROM access.
 ; Changes:
 ;  NA
 ;===========================================================================
@@ -628,35 +599,12 @@ cmd_write_bank_mem:
 	ld hl,(receive_buffer.length)
 	ld de,-PAYLOAD_WRITE_BANK_MEM
 	add hl,de
-	ex de,hl ; de = length to read and send
+	ex de,hl ; de = length to read and write
 	ld hl,(payload_write_bank_mem.mem_start)
-
-	; Remember current bank for slot
-	call save_swap_slot
-	; Swap in memory
-	ld a,(payload_write_bank_mem.bank) ; bank
-	nextreg REG_MMU+SWAP_SLOT,a
-
-	; Loop until all bytes are read and written
-.loop:
-	ld a,d
-	or e
-	jr z,.loop_end
-	; Adjust hl to bank size, may wrap around
-	ld a,h
-	and 0x1F
-	or HIGH SWAP_ADDR
-	ld h,a
-	; Read byte from uart and write to RAM
-	call cmd_write_mem.write
-	; Next
-	dec de
-	inc hl
-	jr .loop
-
-.loop_end:
-	; Restore slot/bank
-	call restore_swap_slot
+	ld a,(payload_write_bank_mem.bank)
+	; Read bytes from UART and write them to the bank
+	ld bc,cmd_write_mem.write
+	call bank_mem_loop
 	jr cmd_write_mem.send_response
 
 
@@ -667,8 +615,8 @@ cmd_write_bank_mem:
 ; Therefore registers that are changed by the debugger and restored
 ; on continue are handled especially:
 ; - REG_TURBO_MODE: only backup.speed is changed (debugger keeps 28MHz).
-; - REG_MMU+MAIN_SLOT: only slot_backup.slot7 is changed (the debugger
-;   runs in MAIN_SLOT).
+; - REG_MMU+0..7: only slot_backup is changed (the MMU registers belong
+;   to the debugger while debugging, they are restored on continue).
 ; Note: With nextreg command $69 the Layer 2 enabled bit could be changed.
 ; Therefore the layer_2_port is restored on entry of this command and saved
 ; on exit.
@@ -694,8 +642,11 @@ cmd_set_nextregs:
 	; Check for special regs
 	cp REG_TURBO_MODE
 	jr z,.speed
-	cp REG_MMU+MAIN_SLOT
-	jr z,.slot7
+	ld e,a
+	and 0xF8
+	cp REG_MMU	; REG_MMU+0..7
+	ld a,e
+	jr z,.slot
 	; "Normal" register
 	ld (.nextreg_register+2),a	; Modify opcode
 	; Get value
@@ -724,17 +675,23 @@ cmd_set_nextregs:
 	ld (backup.speed),a
 	jr .continue
 
-.slot7:
+.slot:
+	; Get pointer to slot backup
+	sub REG_MMU
+	ld hl,slot_backup
+	add hl,a
 	; Get value
 	call uart.read_rx_byte
 	; Store
-	ld (slot_backup.slot7),a
+	ld (hl),a
 	jr .continue
 
 
 ;===========================================================================
 ; CMD_SET_SLOT
 ; Sets a 8k-banks/slot association.
+; Only slot_backup is changed. It is written to the MMU registers on
+; continue.
 ; Changes:
 ;  NA
 ;===========================================================================
@@ -751,28 +708,13 @@ cmd_set_slot:
 	inc a	; Change 0xFE to 0xFF
 .no_fe:
 	; A = bank
-
-	; Get slot
-	inc l
-	bit 3,l	; check for 0
-	jr z,.not_slot7
-
-	; LOGPOINT cmd_set_slot slot0: ${A}
-
-	; Slot 7 is handled especially: don't change the slot but only the backed up value
-	ld (slot_backup.slot7),a
-	jr .end
-
-.not_slot7:
-	ld h,a	; H = bank
-	dec l
+	ld e,a
+	; Store in slot backup
 	ld a,l	; slot
-	add a,REG_MMU
-	ld (.nextreg_register+2),a	; Modify opcode
-	ld a,h	; A = bank
-.nextreg_register:
-	nextreg 0x00,a	; Self-modifying code
-.end:
+	and 0x07
+	ld hl,slot_backup
+	add hl,a
+	ld (hl),e	; LOGPOINT cmd_set_slot bank: ${E}
 	; Send response
 	ld de,2
 	call send_length_and_seqno
@@ -806,7 +748,6 @@ cmd_get_nextreg:
 ;===========================================================================
 cmd_set_breakpoints:
 	; LOGPOINT [CMD] cmd_set_breakpoints
-	call save_swap_slot
 	; Calculate the count
 	ld hl,(receive_buffer.length)	; Read only the lower bytes
 	; Divide by 3
@@ -838,44 +779,20 @@ cmd_set_breakpoints:
 
 	; Handle long address
 	dec a	; A = bank
-	; Page in bank in upper memory
-	jr .page_in_bank
+	; Page in bank
+	call page_in_bank
+	jr .set_bp
 
 .handle_64k_address:
-	; Normal 64k address:
-	; Check memory area
-    ld a,h
-	cp HIGH MAIN_ADDR	; 0xE000
-	jr c,.normal
+	; Normal 64k address: page in bank of the debugged program
+	call page_in_debugged_prgm_bank
 
-	; Page in bank
-	ld a,(slot_backup.slot7)
-.page_in_bank:
-	nextreg REG_MMU+SWAP_SLOT,a
-	ld a,h
-	and 0x1F
-	add HIGH SWAP_ADDR	; 0xC0
-	ld h,a
+.set_bp:
 	; Get memory
 	ld a,(hl)	; LOGPOINT [CMD] BP=${HL:hex16}h, ${HL} (SWAP)
 	; Set breakpoint
 	ld (hl),BP_INSTRUCTION
 
-	; Restore slot/bank
-	ld e,a
-	call restore_swap_slot
-
-	; Restore a
-	ld a,e
-	jr .next
-
-.normal:
-	; Get memory
-	ld a,(hl)	; LOGPOINT [CMD] BP=${HL:hex16}h, ${HL}
-	; Set breakpoint
-	ld (hl),BP_INSTRUCTION
-
-.next:
 	; Send memory
 	call uart.write_tx_byte
 	pop de
@@ -898,8 +815,6 @@ cmd_set_breakpoints:
 ;===========================================================================
 cmd_restore_mem:
 	; LOGPOINT [CMD] cmd_restore_mem
-	;call save_rom_slots
-	call save_swap_slot
 	; Send response
 	ld de,1
 	call send_length_and_seqno
@@ -911,8 +826,7 @@ cmd_restore_mem:
 	; Check for end
 	ld a,e
 	or d
-	;jp z,restore_rom_slots	; Returns
-	jp z,restore_swap_slot	; Returns
+	ret z
 	; Loop
 	push de
 	; Get memory address
@@ -927,33 +841,17 @@ cmd_restore_mem:
 
 	; Handle long address
 	dec a	; A = bank
-	; Page in bank in upper memory
-	jr .page_in_bank
+	; Page in bank
+	call page_in_bank
+	jr .restore
 
 .handle_64k_address:
-	; Check memory area
-    ld a,h
-	cp HIGH MAIN_ADDR	; 0xE000
-	jr c,.normal
+	; Normal 64k address: page in bank of the debugged program
+	call page_in_debugged_prgm_bank
 
-	ld a,(slot_backup.slot7)
-.page_in_bank:
-	nextreg REG_MMU+SWAP_SLOT,a
-	ld a,h
-	and 0x1F
-	add HIGH SWAP_ADDR	; 0xC0
-	ld h,a
-	; Restore
+.restore:
 	call .read_and_restore
 
-	; Restore slot/bank
-	call restore_swap_slot
-	jr .next
-
-.normal:
-	call .read_and_restore
-
-.next:
 	; Next address
 	pop de
 	add de,-4
@@ -987,9 +885,6 @@ cmd_restore_mem:
 cmd_loopback:
 	; LOGPOINT [CMD] cmd_loopback
 	DBG_LOG 'L'
-	; Save swap slot
-	call save_swap_slot
-
 	; Page in bank for storage
 	nextreg REG_MMU+SWAP_SLOT,LOOPBACK_BANK
 	; Get length
@@ -1044,8 +939,6 @@ cmd_loopback:
 	or d
 	jr nz,.send_loop
 
-	; Restore slot
-	call restore_swap_slot
 	; Continue
 	pop af	; swallow return address
 	jp main_loop.continue
@@ -1260,11 +1153,14 @@ cmd_read_port:
 ; - The layer_2_port could be changed which changes the memory mapping.
 ; Therefore the layer_2_port is restored on entry of this command and saved
 ; on exit.
+; - The same is done for the slots (e.g. port 0x7FFD changes the MMU registers).
 ; Changes:
 ;  NA
 ;===========================================================================
 cmd_write_port:
 	; LOGPOINT [CMD] cmd_write_port
+	; In case the memory mapping is changed
+	call restore_slots
 	; In case layer_2_port is changed
 	call restore_layer2_rw
 	; Read port (low byte)
@@ -1288,6 +1184,8 @@ cmd_write_port:
 .border_not_changed:
 	; In case layer_2_port has been changed
 	call save_layer2_rw
+	; In case the memory mapping has been changed
+	call save_slots
 	; Send response
 	ld de,1
 	jp send_length_and_seqno
@@ -1296,6 +1194,8 @@ cmd_write_port:
 ;===========================================================================
 ; CMD_EXEC_ASM
 ; Executes a small assembler program.
+; The program is executed with the memory mapping of the debugged program.
+; Changes to the mapping (e.g. by nextreg or port 0x7FFD) are kept.
 ; Changes:
 ;  NA
 ;===========================================================================
@@ -1320,11 +1220,17 @@ cmd_exec_asm:
 	; End the code with a RET
 	ld (hl),0xC9
 
+	; Use the memory mapping of the debugged program
+	call restore_slots
+
 	; Execute
 	call payload_exec_asm.code
 
 	; Save all registers
 	push hl, de, bc, af
+
+	; In case the memory mapping has been changed
+	call save_slots
 
 	/*
 	; Via CMD_EXEC_ASM it is possible to change registers that will keep
