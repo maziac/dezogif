@@ -1279,7 +1279,7 @@ cmd_write_port:
 	ld bc,hl
 	out (c),a
 	; Check for border
-	cp BORDER
+	bit 0,c	; Check only A0 of the address bits
 	jr nz,.border_not_changed
 
 	; Remember border value

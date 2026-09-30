@@ -118,10 +118,17 @@ cmd_loop:
 	; Check if debugged program is running
 	ld a,(prgm_state)
 	cp PRGM_RUNNING
-	jr nz,cmd_loop
-
 	; Program is running, leave the command loop/continue debugged program execution
-	jp restore_registers
+	jp z,restore_registers
+
+	; While loading, restore the border color after each command.
+	; Otherwise the last flashing color would stay if DeZog stops
+	; the program without a CMD_CONTINUE.
+	cp PRGM_LOADING
+	jr nz,cmd_loop
+	ld a,(border_color)
+	out (BORDER),a
+	jr cmd_loop
 
 
 /*
