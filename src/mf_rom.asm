@@ -98,17 +98,22 @@ nmi66h:
     ; Check if UART TX bytes available
 	ld a,HIGH uart.UART_TX
 	in a,(LOW uart.UART_TX)	; Read status bits
-    bit uart.UART_RX_FIFO_EMPTY,a
-    jp nz,.uart_rx_received
+    ; "rra : jr c" instead of "bit : jp nz" saves 7 T-states on the fast path.
+    rra     ; Bit 0 -> carry
+    jr c,.uart_rx_received
 
     ; This is the fastest path out of the NMI handler: copper-caused && no UART RX activity.
 
     ; Immediately return if it is not copper and not a button press.
-    ; Shared with .poll_decline below, which arrives with the latch cleared too.
+    ; Shared with .not_copper_cause and .poll_decline below, which arrive with
+    ; the latch cleared too.
     ; Nothing pages the Multiface out here: RETN does it in hardware, which is
     ; what the decline has always relied on.
-.return_to_interrupted:
-	ld bc,IO_NEXTREG_REG
+.return_to_interrupted_bc_dat:
+    ; BC is IO_NEXTREG_DAT here, so "dec b" is enough (6 T-states less than "ld bc,IO_NEXTREG_REG").
+    dec b   ; IO_NEXTREG_REG
+.return_to_interrupted_bc_reg:
+    ; BC is IO_NEXTREG_REG here.
     ; Restore the debugged program's IO_NEXTREG_REG selection
 	ld a,(MF.nmi_io_next_reg)
 	out (c),a
@@ -154,7 +159,8 @@ nmi66h:
     ld a,(MF.nmi_slot7)
     nextreg REG_MMU+MAIN_SLOT,a
     ; Return
-    jr .return_to_interrupted
+	ld bc,IO_NEXTREG_REG
+    jr .return_to_interrupted_bc_reg
 
     ; It was not the copper, so check if it was caused by a button press
 .not_copper_cause:
@@ -166,7 +172,7 @@ nmi66h:
     in a,(c)    ; BC is still pointing to IO_NEXTREG_DAT
     and 1000_0000b  ; Preserve esp/expbus bit
     out (c),a   ; = nextreg REG_RESET,a
-    jr .return_to_interrupted    ; Jump if not copper and not button
+    jr .return_to_interrupted_bc_dat    ; Jump if not copper and not button
 
     ; Button was pressed
 .is_button_cause:
