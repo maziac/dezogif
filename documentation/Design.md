@@ -342,55 +342,73 @@ When it is executed the prgm_state is set to PRGM_RUNNING, the routine is left a
 
 
 # Memory Bank Switching - Multiface
+The memory mapping (banks of slot 0-7) of the debugged program is saved into `slot_backup.slot0..7` when the debugger is entered and written back when the debugger is left (CMD_CONTINUE).
+While the debugger is running the MMU registers belong to the debugger.
+It can change them at will and does not need to restore them after a command.
+I.e. `slot_backup` is the only place where the memory mapping of the debugged program is kept:
+- Memory accesses to the debugged program never access the memory directly. For each 8k slot the bank from `slot_backup` is paged in (see "Reading/Writing Memory").
+- CMD_SET_SLOT and CMD_SET_NEXTREGS (for MMU registers 0x50-0x57) only change `slot_backup`.
+- CMD_GET_REGISTERS (slots) and the pause notification (bank of the breakpoint address) read `slot_backup`.
+- CMD_WRITE_PORT and CMD_EXEC_ASM might change the mapping (e.g. port 0x7FFD or `nextreg`). Therefore the slots are restored from `slot_backup` before and saved to it afterwards (like the layer 2 port).
+
 The table below shows the bank switching in case a breakpoint is hit:
 
-| Slot/L2    | Running | BP hit   | Enter    | Enter    | Dbg loop | Dbg exec | Dbg loop | Exit     | Running |
-| :--------- | :------ | :------- | :------- | :------- | :------- | :------- | :------- | :------- | :------ |
-| 0          | **XM**  | **MAIN** | **MAIN** | **MAIN** | XM       | XM       | XM       | **XM**   | **XM**  |
-| 1          | **X**   | X        | X        | X        | X        | X        | X        | X        | **X**   |
-| 2-5        | **X**   | X        | X        | X        | X        | X        | X        | X        | **X**   |
-| 6          | **X**   | X        | X        | X        | X        | SWAP     | X        | X        | **X**   |
-| 7          | **X**   | X        | X        | **MAIN** | **MAIN** | **MAIN** | **MAIN** | **MAIN** | **X**   |
-| L2 RW      | 0/1     | 0/1      | 0        | 0        | 0        | 0        | 0        | 0/1      | 0/1     |
-| PC         | 0-7     | 0        | 0        | 0->7     | 7        | 7        | 7        | 7->0     | 0-7     |
-| M1 enabled | 1       | 1->0     | 0        | 0        | 0        | 0        | 0        | 0->1     | 0-7     |
+| Slot/L2     | Running | BP hit   | Enter    | Enter     | Dbg loop | Dbg exec | Dbg loop | Exit     | Running |
+| :---------- | :------ | :------- | :------- | :-------- | :------- | :------- | :------- | :------- | :------ |
+| 0           | **XM**  | **MAIN** | **MAIN** | MAIN->XM  | XM       | XM/ROM   | XM/ROM   | **XM**   | **XM**  |
+| 1           | **X**   | X        | X        | X         | X        | X/ROM    | X/ROM    | X        | **X**   |
+| 2-5         | **X**   | X        | X        | X         | X        | X        | X        | X        | **X**   |
+| 6           | **X**   | X        | X        | SWAP      | SWAP     | SWAP     | SWAP     | X        | **X**   |
+| 7           | **X**   | X        | X        | **MAIN**  | **MAIN** | **MAIN** | **MAIN** | **MAIN** | **X**   |
+| slot_backup | -       | -        | save 0,7 | save 1-6  | valid    | valid    | valid    | restore  | -       |
+| L2 RW       | 0/1     | 0/1      | 0        | 0         | 0        | 0        | 0        | 0/1      | 0/1     |
+| PC          | 0-7     | 0        | 0        | 0->7      | 7        | 7        | 7        | 7->0     | 0-7     |
+| M1 enabled  | 1       | 1->0     | 0        | 0         | 0        | 0        | 0        | 0->1     | 0-7     |
 
 Slot/Banks/L2:
 X = The bank used by the debugged program
 XM = The modified (alt) ROM or the (modified) bank of the debugged program for slot 0
 MAIN = The main debugger program
-SWAP = Temporary swap space for the debugger program. Used e.g. to page in a different bank to read/write the memory.
+SWAP = Swap space of the debugger. Used to page in a bank of the debugged program (from `slot_backup`) or any other bank (e.g. CMD_READ_BANK_MEM) to read/write the memory. It is not restored after the access, i.e. its contents is undefined until Exit.
+ROM = The ROM (0xFF) can only be paged into slot 0 and 1. If the debugger accesses the ROM (a slot in `slot_backup` is 0xFF or a bank command with bank 0xFF) it pages the ROM into slot 0 and 1. It is not restored after the access.
+slot_backup = The banks of the debugged program. Saved on Enter, written to the MMU registers on Exit (slot 0-6 by `restore_slots`, slot 7 by the exit code).
 L2 RW = Layer 2 read/write enable.
 PC = Slot used for program execution. (Also bold)
 M1 enabled = 1 if the M1 key is enabled. I.e. the NMI is only allowed during debugged program execution. While the debugger is running it is disabled.
 
 States:
 Running = The debugged program being run.
-BP hit = A breakpoint is hit. The program in M switches bank in slot 0 to MAIN.
-Enter = Transition into the debug loop.
+BP hit = A breakpoint is hit. The program in M switches bank in slot 0 to MAIN. The bank for slot 0 (always XM) is saved to `slot_backup.slot0`, the bank for slot 7 to `slot_backup.slot7`.
+Enter = Transition into the debug loop. The banks of slot 1-6 are saved (`save_slots`). Then the debugged program's stack is read through SWAP and slot 0 is set back to XM.
 Dbg loop = The debugger loop. The debugger waits for commands from DeZog.
 Dbg exec = The debugger executes a command from DeZog.
-Exit = The debugger is left.
+Exit = The debugger is left. Slot 0-6 are written from `slot_backup`, slot 7 by the exit code in slot 0.
 
 Notes:
-- The SP of the debugged program can only be used in the code running in M. The SP might be placed inside M so it is not safe to access it while MAIN is paged in slot 0. It can also not be accessed from MAIN being paged into slot 7 as SP might be in slot 7.
+- As the MMU registers are only written on Exit, a slot change by DeZog (CMD_SET_SLOT) becomes visible to the hardware only when the debugged program continues. Until then the table shows the old banks for X.
+- On a SW breakpoint slot 0 needs to contain XM (the AltROM) on Exit because the exit code is located there.
+- The SP of the debugged program can only be used in the code running in M. The SP might be placed inside M so it is not safe to access it while MAIN is paged in slot 0. It can also not be accessed from MAIN being paged into slot 7 as SP might be in slot 7. Therefore the stack is read through `slot_backup` and SWAP.
 - The data of MAIN can be accessed from either slot: slot 0 or slot 7. If accessed from slot 0 than the addresses need to be subtracted by 0xE000.
 - It's not possible to directly switch from M into Main/slot 7 because the subroutine would become too large by a few bytes. The code would reach into area 0x0074 which (for the ROM) is occupied by used ROM code.
 
 
 
-This table shows the bank switching in case th M1 MF NMI (yellow) button is pressed:
+This table shows the bank switching in case the M1 MF NMI (yellow) button is pressed.
+The Async-Break (Copper poll) takes the same path if it breaks in. If it does not break in it returns before MAIN is involved beyond checking `prgm_state`, see "Pausing a running program from the PC" in AsynchronousBreak.md.
 
-| Slot/L2    | Running | NMI/M1     | Enter      | RETN     | Dbg loop | Dbg exec | Dbg loop | Exit     | Running |
-| :--------- | :------ | :--------- | :--------- | :------- | :------- | :------- | :------- | :------- | :------ |
-| 0          | **XM**  | **MF ROM** | **MF ROM** | XM       | XM       | XM       | XM       | **XM**   | **XM**  |
-| 1          | **X**   | MF RAM     | MF RAM     | X        | X        | X        | X        | X        | **X**   |
-| 2-5        | **X**   | X          | X          | X        | X        | X        | X        | X        | **X**   |
-| 6          | **X**   | X          | X          | X        | X        | SWAP     | X        | X        | **X**   |
-| 7          | **X**   | X          | **MAIN**   | **MAIN** | **MAIN** | **MAIN** | **MAIN** | **MAIN** | **X**   |
-| L2 RW      | 0/1     | 0/1        | 0          | 0        | 0        | 0        | 0        | 0/1      | 0/1     |
-| PC         | 0-7     | 0          | 0->7       | 7        | 7        | 7        | 7        | 7->0     | 0-7     |
-| M1 enabled | 1       | 1->0       | 0          | 0        | 0        | 0        | 0        | 0->1     | 0-7     |
+| Slot/L2     | Running | NMI/M1     | Enter      | RETN     | Dbg loop | Dbg exec | Dbg loop | Exit     | Running |
+| :---------- | :------ | :--------- | :--------- | :------- | :------- | :------- | :------- | :------- | :------ |
+| 0           | **XM**  | **MF ROM** | **MF ROM** | XM       | XM       | XM/ROM   | XM/ROM   | **XM**   | **XM**  |
+| 1           | **X**   | MF RAM     | MF RAM     | X        | X        | X/ROM    | X/ROM    | X        | **X**   |
+| 2-5         | **X**   | X          | X          | X        | X        | X        | X        | X        | **X**   |
+| 6           | **X**   | X          | SWAP       | SWAP     | SWAP     | SWAP     | SWAP     | X        | **X**   |
+| 7           | **X**   | X          | **MAIN**   | **MAIN** | **MAIN** | **MAIN** | **MAIN** | **MAIN** | **X**   |
+| slot_backup | -       | -          | save 0-7   | valid    | valid    | valid    | valid    | restore  | -       |
+| L2 RW       | 0/1     | 0/1        | 0          | 0        | 0        | 0        | 0        | 0/1      | 0/1     |
+| PC          | 0-7     | 0          | 0->7       | 7        | 7        | 7        | 7        | 7->0     | 0-7     |
+| M1 enabled  | 1       | 1->0       | 0          | 0        | 0        | 0        | 0        | 0->1     | 0-7     |
+
+Enter: The bank for slot 7 is saved by the MF ROM code, slot 0-6 by `save_slots` in `mf_nmi_happened`. The MMU registers of slot 0/1 are read correctly although MF ROM/RAM overlays that area. The NMI return address is read from the debugged program's stack through SWAP. Slot 6 has to be used here because an access through slot 0/1 would hit MF ROM/RAM.
 
 The debug loop primarily executes the CMD_PAUSE and then stays in the debug loop until DeZog sends a CMD_CONTINUE.
 
@@ -421,16 +439,27 @@ When the other ROMs are mapped the dezogif debugging code would be missing and a
 
 
 # Setting Breakpoints
-The debugger program resides in the ROM area at 0xE000-0xFFFF.
+The debugger program resides in slot 7 (0xE000-0xFFFF).
 If a breakpoint should be set in this area it would be set in the debugger program.
 Setting a breakpoint involves to exchange the opcode at the breakpoint address with RST opcode. I.e. a memory read and write.
 
-To do this the debugged program memory bank is paged in another slot (slot 6, SWAP). Then the memory is read and set. Afterwards the original bank paging is restored.
+Therefore the debugger never accesses the memory of the debugged program directly (for any slot, not only slot 7).
+The bank of the slot is taken from `slot_backup` and paged into slot 6 (SWAP) by `page_in_debugged_prgm_bank`/`page_in_bank`. Then the memory is read and set.
+The swap slot is not restored afterwards.
+For a long address (with bank) the given bank is paged in the same way.
 
 
 # Reading/Writing Memory
-The problem is the same as for breakpoints. It's a little bit more tricky because whole memory areas are involved that can also overlap the bank boundaries. So the memory reading/writing need to be partitioned.
-But the principle is the same as with setting breakpoints.
+The problem is the same as for breakpoints. It's a little bit more tricky because whole memory areas are involved that can also overlap the bank boundaries.
+`memory_loop` (CMD_READ_MEM_BLOCKS, CMD_WRITE_MEM, reading/writing the debugged program's stack) therefore loops over the 8k slots: for each slot the bank from `slot_backup` is paged in and the bytes of that slot are processed. After 0xFFFF it continues at 0x0000. The bank is only switched at the 8k boundaries, the loop per byte stays fast.
+
+`page_in_bank` decides where a bank is paged in:
+- RAM bank: into slot 6 (SWAP). Only the offset in the 8k bank is used from the address.
+- ROM (0xFF): the ROM can only be paged into slot 0 and 1. Therefore the ROM is paged into both slots and the address is masked with 0x3FFF. I.e. addresses 0x2000-0x3FFF access the upper half of the ROM. What is read is the ROM the debugged program sees (e.g. the AltROM).
+
+RAM banks are not accessed through slot 0/1 because this area can be overlaid independently of the MMU registers: by MF ROM/RAM (while the NMI is handled, e.g. when reading the NMI return address), by DivMMC (e.g. if the program was stopped inside an esxDOS call) or by the Layer 2 mapping. Slot 6 has no such overlays.
+
+CMD_READ_BANK_MEM and CMD_WRITE_BANK_MEM (`bank_mem_loop`) use the same mechanism with the bank from the command. For a RAM bank the address wraps around inside the 8k bank, for the ROM inside the 16k ROM.
 
 
 # Stack
