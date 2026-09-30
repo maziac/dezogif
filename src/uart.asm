@@ -232,6 +232,26 @@ tx_timeout: ; The receive timeout handler
 
 
 ;===========================================================================
+; Does 2 read_rx_byte and concatenates the result in HL.
+; Waits max. 100ms for the next byte, otherwise a timeout error is thrown.
+; Very time-sensitive operation, adding a few NOPs can already lead to
+; an RX_BUFFER_OVERFLOW error.
+; Returns:
+;   HL = the received word (low byte in L, high byte in H).
+; Changes:
+;   A, BC, DE
+;===========================================================================
+read_rx_word:
+    ; Read low byte
+    call read_rx_byte
+    ld l,a
+    ; Read high byte
+    call read_rx_byte
+    ld h,a
+    ret
+
+
+;===========================================================================
 ; Enables flashing of the border while receiving data.
 ;===========================================================================
 flashing_border.enable:

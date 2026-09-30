@@ -66,6 +66,7 @@ cmd_jump_table:
 .read_bank_mem:		defw cmd_read_bank_mem			; 25
 .write_bank_mem:	defw cmd_write_bank_mem			; 26
 .set_nextregs:		defw cmd_set_nextregs			; 27
+.read_mem_blocks:	defw cmd_read_mem_blocks		; 28
 .end
 
 ;.get_sprites:			defw 0	; not supported on a ZX Next
@@ -455,7 +456,7 @@ cmd_pause:
 
 ;===========================================================================
 ; CMD_READ_MEM
-; Reads a memory area.
+; Reads a few memory blocks.
 ; Special is that if slot 7 area is read,
 ; then the memory bank of slot_backup.slot7 is temporarily paged into
 ; SWAP_SLOT and read.
@@ -482,6 +483,7 @@ cmd_read_mem:
 .inner:		; For unit testing
 	ld de,(payload_read_mem.mem_size)
 	ld hl,(payload_read_mem.mem_start)
+.read_block:
 	ld bc,.read
 	jp memory_loop
 
@@ -491,6 +493,55 @@ cmd_read_mem:
 	ld a,(hl)
 	; Send
 	jp uart.write_tx_byte
+
+
+;=============================================
+; CMD_READ_MEM_BLOCKS
+; Reads a few memory blocks.
+; Special is that if slot 7 area is read,
+; then the memory bank of slot_backup.slot7 is temporarily paged into
+; SWAP_SLOT and read.
+; Changes:
+;  NA
+;===========================================================================
+cmd_read_mem_blocks:
+	; LOGPOINT [CMD] cmd_read_mem_blocks
+	; Read response length
+	call uart.read_rx_word	; Result in hl, low word
+	ld de,hl
+	call uart.read_rx_word  ; Result in hl, high word
+	; Send length of response and sequence number already
+	call send_4bytes_length_and_seqno
+
+	; Calculate count of blocks
+	ld hl,(receive_buffer.length)	; Only the low word is used. This would allow for 64k/4 = 16k blocks
+	add hl,-4-1  ; The response length field (-1 so that Carry is set correctly in loop below)
+	; Divide by 4 to get the count of blocks (assuming each block is 4 bytes)
+	;srl hl : srl hl
+
+	; Now loop over all mem blocks: address/size, address/size, ...
+.loop:
+	push hl ; Block count
+	; Read address and size from message
+	call uart.read_rx_word	; Result in hl, address
+	push hl
+	call uart.read_rx_word	; Result in hl, size
+	ex de,hl ; de = size
+	pop hl	; Restore address of the current block
+
+	; Read block and sent data through uart
+	ld bc,cmd_read_mem.read
+	call cmd_read_mem.read_block
+
+ 	; Restore block count
+	pop hl
+	or a
+	ld de,4
+	sbc hl,de
+	jr nc,.loop
+
+	ret
+
 
 ;===========================================================================
 ; CMD_READ_BANK_MEM

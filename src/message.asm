@@ -54,6 +54,12 @@ mem_start	defw
 mem_size	defw
 	ENDS
 
+; CMD_READ_MEM_BLOCKS (multiple blocks)
+	STRUCT PAYLOAD_READ_MEM_BLOCKS
+mem_start	defw
+mem_size	defw
+	ENDS
+
 ; CMD_WRITE_MEM
 	STRUCT PAYLOAD_WRITE_MEM
 reserved	defb
