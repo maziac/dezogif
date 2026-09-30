@@ -129,7 +129,7 @@ check_key_help:
 .wait_on_key_press:
     ; Check if something received at UART
     call uart.check_rx_byte_available
-    jr z,.wait_continue
+    jr nc,.wait_continue
     ; If uart byte received, leave help page
     pop af  ; Pop return address
     ret ; Leave check_key_help

@@ -62,6 +62,8 @@ UART_FRAME:     equ 0x163b
 
 ; UART Status Bits:
 UART_RX_FIFO_EMPTY: equ 0   ; 0=empty, 1=not empty
+    ; Bit 0 is tested with "rra" (-> carry), 1 byte and 4 T-states less than "bit UART_RX_FIFO_EMPTY,a".
+
 UART_RX_FIFO_OVERFLOW:  equ 2   ; 1=overflowed  ; (clears on read)
 ;UART_RX_FIFO_NEAR_FULL:  equ 3   ; 1=buffer is near full (3/4)
 UART_TX_FULL:       equ 1   ; 1=Tx buffer is full
@@ -92,23 +94,23 @@ baudrate_table:
 ; Default is to use a 100ms timeout.
 ; For return from the breakpoints a faster version is used,
 ; drain_rx_buffer_with_timeout.
-; The timeout is passed via DE. Unit=53/28000=1.9us, i.e. 526 => 1ms.
+; The timeout is passed via DE. Unit=49/28000=1.75us, i.e. 571 => 1ms.
 ; Changes:
 ;   A, BC, DE
 ;===========================================================================
 drain_rx_buffer:
-    ld de,53000 ; 100 ms
+    ld de,57143 ; 100 ms
 drain_rx_buffer_with_timeout:
     ld (.read_next_byte+1),de
 	ld bc,UART_TX
 
 .read_next_byte:
-    ld de,53000 ; 100ms
-    ; 53 T-states => 265*53/28000 = 0.5ms
+    ld de,57143 ; 100ms
+    ; 49 T-states => 286*49/28000 = 0.5ms
 .read_loop:
 	in a,(c)					; Read status bits
-    bit UART_RX_FIFO_EMPTY,a
-    jr nz,.read_byte
+    rra     ; UART_RX_FIFO_EMPTY -> carry
+    jr c,.read_byte
 
     ; Wait
     dec de
@@ -138,23 +140,23 @@ wait_for_rx:
     ; Check if byte available.
 	ld a,HIGH UART_TX
 	in a,(LOW UART_TX)	; Read status bits
-    bit UART_RX_FIFO_EMPTY,a
-    jr z,.loop   ; Wait until byte available
+    rra     ; UART_RX_FIFO_EMPTY -> carry
+    jr nc,.loop   ; Wait until byte available
     ret       ; RET if byte available
 
 
 ;===========================================================================
 ; Checks if a byte is available at the UART.
 ; Returns:
-;   NZ = Byte available
-;   Z = No byte available
+;   C = Byte available
+;   NC = No byte available
 ; Changes:
 ;   AF
 ;===========================================================================
 check_rx_byte_available:
 	ld a,HIGH UART_TX
 	in a,(LOW UART_TX)	; Read status bits
-    bit UART_RX_FIFO_EMPTY,a
+    rra     ; UART_RX_FIFO_EMPTY -> carry
     ret
 
 ;===========================================================================
@@ -174,16 +176,16 @@ read_rx_byte:
     out (BORDER),a
 
     ; Wait on byte
-    ld de,40000 ; => 100ms
+    ld de,42188 ; => 100ms
 	ld bc,UART_TX
 
-    ; 68 T-states => 200*68/27Mhz = 0.5ms
+    ; 64 T-states => 211*64/27Mhz = 0.5ms
 .wait_loop:
 	in a,(c)					; Read status bits
     bit UART_RX_FIFO_OVERFLOW,a
     jr nz,.rx_overflow
-    bit UART_RX_FIFO_EMPTY,a
-    jr nz,.byte_received
+    rra     ; UART_RX_FIFO_EMPTY -> carry
+    jr c,.byte_received
     dec de
     ld a,d
     or e

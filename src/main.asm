@@ -160,7 +160,7 @@ main_loop:
     ; Check if byte available.
     call uart.check_rx_byte_available
     ; If so leave loop and enter command loop
-    jp nz,cmd_loop
+    jp c,cmd_loop
 .continue:
 
 .no_uart_byte:

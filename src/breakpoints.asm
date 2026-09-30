@@ -254,7 +254,7 @@ enter_debugger:
 
 	; Drain receive message queue
 	ld h,d	; Save break reason
-	ld de,526	; Drain buffer with timeout of 1 ms (=526)
+	ld de,571	; Drain buffer with timeout of 1 ms (=571)
 	call uart.drain_rx_buffer_with_timeout
 	ld d,h	; Restore break reason
 
