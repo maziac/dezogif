@@ -171,10 +171,10 @@ UT_get_cmd_pointer:
 	; ASSERTION HL == cmd_init
 
 	; Maximum
-	ld a,26
+	ld a,28
 	ld (receive_buffer.command),a
 	call get_cmd_pointer
-	; ASSERTION HL == cmd_write_bank_mem
+	; ASSERTION HL == cmd_read_mem_blocks
 
 	; Some not supported
 	ld a,18
@@ -183,7 +183,7 @@ UT_get_cmd_pointer:
 	; ASSERTION HL == cmd_not_supported
 
 	; Out of range
-	ld a,28
+	ld a,29
 	ld (receive_buffer.command),a
 	call get_cmd_pointer
 	; ASSERTION HL == cmd_not_supported
@@ -646,126 +646,6 @@ UT_06_continue:
 UT_07_pause:
 	; cmd_pause acknowledges and does nothing else
  TC_END
-
-
-; Test reading memory.
-UT_08_cmd_read_mem.UT_normal:
-	TEST_PREPARE_COMMAND
-
-	; Test
-	ld hl,.test_memory_src
-	ld (payload_read_mem.mem_start),hl
-	ld hl,.test_memory_src_end-.test_memory_src
-	ld (payload_read_mem.mem_size),hl
-	call cmd_read_mem
-
-	; Check response
-	call test_get_response
-
-	; Compare src against dst
-	TEST_MEM_CMP .test_memory_src, test_memory_payload+1, .test_memory_src_end-.test_memory_src
-
- TC_END
-
-.test_memory_src:	defb 1, 2, 3, 4, 5, 6, 7, 8
-.test_memory_src_end:
-	defb 0	; WPMEM
-
-.cmd_data: PAYLOAD_READ_MEM	0, .test_memory_src, .test_memory_src_end-.test_memory_src
-.cmd_data_end
-
-
-
-; Test reading memory in each relevant bank.
-; Note: The locations should not contain any code/data.
-UT_08_cmd_read_mem.UT_banks:
-	; Page in different memory to ROM
-	nextreg REG_MMU,81
-	nextreg REG_MMU+1,82
-
-	; Location 0x1FFF
-	ld hl,0x1FFF
-	ld (hl),0xA1
-	ld (.cmd_data.mem_start),hl
-	TEST_PREPARE_COMMAND
-	call cmd_read_mem
-	call test_get_response
-	TEST_MEMORY_BYTE test_memory_payload+1,0xA1
-
-	; Location 0x2000
-	ld hl,0x2000
-	ld (hl),0xA2
-	ld (.cmd_data.mem_start),hl
-	TEST_PREPARE_COMMAND
-	call cmd_read_mem
-	call test_get_response
-	TEST_MEMORY_BYTE test_memory_payload+1,0xA2
-
-	; Location 0x3FFF
-	ld hl,0x3FFF
-	ld (hl),0xA3
-	ld (.cmd_data.mem_start),hl
-	TEST_PREPARE_COMMAND
-	call cmd_read_mem
-	call test_get_response
-	TEST_MEMORY_BYTE test_memory_payload+1,0xA3
-
-	; Location 0x4000
-	ld hl,0x4000
-	ld (hl),0xA4
-	ld (.cmd_data.mem_start),hl
-	TEST_PREPARE_COMMAND
-	call cmd_read_mem
-	call test_get_response
-	TEST_MEMORY_BYTE test_memory_payload+1,0xA4
-
-	; Location 0x5123
-	ld hl,0x5123
-	ld (hl),0xA5
-	ld (.cmd_data.mem_start),hl
-	TEST_PREPARE_COMMAND
-	call cmd_read_mem
-	call test_get_response
-	TEST_MEMORY_BYTE test_memory_payload+1,0xA5
-
-	; Location 0xC000
-;	ld ix,test_memory_dst	; Pointer to write to
-	ld hl,0xC000
-	ld (hl),0xA6
-	ld (.cmd_data.mem_start),hl
-	TEST_PREPARE_COMMAND
-	call cmd_read_mem
-	call test_get_response
-	TEST_MEMORY_BYTE test_memory_payload+1,0xA6
-
-	; Location 0xFFFF
-	ld hl,0xFFFF
-	; Page in different bank in slot 7 area
-	ld a,80
-	ld (slot_backup.slot7),a
-	nextreg REG_MMU+MAIN_SLOT,a
-	; Write
-	ld (hl),0xA7
-	; Restore bank
-	nextreg REG_MMU+MAIN_SLOT,LOADED_BANK
-
-	ld (.cmd_data.mem_start),hl
-	TEST_PREPARE_COMMAND
-	call cmd_read_mem
-	call test_get_response
-	TEST_MEMORY_BYTE test_memory_payload+1,0xA7
-
-	; Test that slots are restored
-	ld a,REG_MMU
-	call read_tbblue_reg
-	; TEST ASSERTION A == 81
-	ld a,REG_MMU+1
-	call read_tbblue_reg
-	; TEST ASSERTION A == 82
- TC_END
-
-.cmd_data: PAYLOAD_READ_MEM	0, 0, 1
-.cmd_data_end
 
 
 ; Test writing memory.
@@ -1609,9 +1489,9 @@ UT_24_cmd_get_supported_commands:
 	TEST_MEMORY_WORD test_memory_payload.length, 5
 	; Check returned commands
 	TEST_MEMORY_BYTE test_memory_payload+1, 1101_1110b	; CMD_INIT - CMD_PAUSE
-	TEST_MEMORY_BYTE test_memory_payload+2, 1111_1111b	; CMD_READ_MEM - CMD_LOOPBACK
+	TEST_MEMORY_BYTE test_memory_payload+2, 1111_1110b	; CMD_WRITE_MEM - CMD_LOOPBACK
 	TEST_MEMORY_BYTE test_memory_payload+3, 1111_0011b	; CMD_GET_SPRITES_PALETTE - CMD_INTERRUPT_ON_OFF
-	TEST_MEMORY_BYTE test_memory_payload+4, 0000_1111b	; CMD_GET_SUPPORTED_COMMANDS - CMD_SET_NEXTREGS
+	TEST_MEMORY_BYTE test_memory_payload+4, 0001_1111b	; CMD_GET_SUPPORTED_COMMANDS - CMD_READ_MEM_BLOCKS
  TC_END
 
 
@@ -1739,5 +1619,165 @@ UT_27_cmd_set_nextregs:
 	; Test size
 	TEST_MEMORY_WORD test_memory_payload.length, 1
  TC_END
+
+
+; Test reading a single memory block.
+UT_28_cmd_read_mem_blocks.UT_one_block:
+	TEST_PREPARE_COMMAND
+	call cmd_read_mem_blocks
+	; Check response
+	call test_get_response
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 1+8
+	; Compare src against dst
+	TEST_MEM_CMP .test_memory_src, test_memory_payload+1, 8
+ TC_END
+
+.test_memory_src:	defb 1, 2, 3, 4, 5, 6, 7, 8
+
+.cmd_data:
+	defw 1+8, 0		; resp_length
+	defw .test_memory_src, 8
+.cmd_data_end
+
+
+; Test reading several memory blocks. The blocks are returned in order.
+UT_28_cmd_read_mem_blocks.UT_several_blocks:
+	TEST_PREPARE_COMMAND
+	call cmd_read_mem_blocks
+	; Check response
+	call test_get_response
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 1+10
+	; Compare against expected data
+	TEST_MEM_CMP .expected, test_memory_payload+1, .expected_end-.expected
+ TC_END
+
+.test_memory_src_a:	defb 0xA1, 0xA2, 0xA3, 0xA4
+.test_memory_src_b:	defb 0xB1, 0xB2, 0xB3, 0xB4, 0xB5
+
+.expected:	defb 0xA1, 0xA2, 0xA3,  0xB1, 0xB2, 0xB3, 0xB4, 0xB5,  0xA2, 0xA3
+.expected_end:
+
+.cmd_data:
+	defw 1+10, 0	; resp_length
+	defw .test_memory_src_a, 3
+	defw .test_memory_src_b, 5
+	defw .test_memory_src_a+1, 2	; Overlapping block
+.cmd_data_end
+
+
+; Test reading blocks where one block has size 0.
+UT_28_cmd_read_mem_blocks.UT_empty_block:
+	TEST_PREPARE_COMMAND
+	call cmd_read_mem_blocks
+	; Check response
+	call test_get_response
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 1+5
+	; Compare against expected data
+	TEST_MEM_CMP .expected, test_memory_payload+1, .expected_end-.expected
+ TC_END
+
+.test_memory_src_a:	defb 0xC1, 0xC2
+.test_memory_src_b:	defb 0xD1, 0xD2, 0xD3
+
+.expected:	defb 0xC1, 0xC2,  0xD1, 0xD2, 0xD3
+.expected_end:
+
+.cmd_data:
+	defw 1+5, 0		; resp_length
+	defw .test_memory_src_a, 2
+	defw .test_memory_src_b, 0	; Empty block
+	defw .test_memory_src_b, 3
+.cmd_data_end
+
+
+; Test reading no block at all.
+UT_28_cmd_read_mem_blocks.UT_no_block:
+	TEST_PREPARE_COMMAND
+	call cmd_read_mem_blocks
+	; Check response
+	call test_get_response
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 1
+ TC_END
+
+.cmd_data:
+	defw 1, 0		; resp_length
+.cmd_data_end
+
+
+; Test reading blocks that cross the slot 6/7 boundary (0xE000),
+; that are located in slot 7 (read via slot_backup.slot7)
+; and that wrap at the 64k boundary.
+; Note: The locations should not contain any code/data.
+UT_28_cmd_read_mem_blocks.UT_banks_and_wrap:
+	; Remember slot 7 bank of the debugged program
+	ld a,(slot_backup.slot7)
+	ld (.slot7_save),a
+
+	; Page in different memory to ROM and in the swap slot
+	nextreg REG_MMU,81
+	nextreg REG_MMU+1,82
+	nextreg REG_MMU+SWAP_SLOT,83
+
+	; Test data
+	ld a,0xE1
+	ld (0xDFFF),a	; Bank 83
+	ld a,0xE4
+	ld (0x0000),a	; Bank 81
+	ld a,0xE5
+	ld (0x5123),a
+
+	; Page in different bank in slot 7 area
+	ld a,80
+	ld (slot_backup.slot7),a
+	nextreg REG_MMU+MAIN_SLOT,a
+	; Write
+	ld a,0xE2
+	ld (0xE000),a
+	ld a,0xE3
+	ld (0xFFFF),a
+	; Restore bank
+	nextreg REG_MMU+MAIN_SLOT,LOADED_BANK
+
+	; Test
+	TEST_PREPARE_COMMAND
+	call cmd_read_mem_blocks
+	; Check response
+	call test_get_response
+	; Test size
+	TEST_MEMORY_WORD test_memory_payload.length, 1+5
+	; Compare against expected data
+	TEST_MEM_CMP .expected, test_memory_payload+1, .expected_end-.expected
+
+	; Test that slots are restored
+	ld a,REG_MMU
+	call read_tbblue_reg
+	; TEST ASSERTION A == 81
+	ld a,REG_MMU+1
+	call read_tbblue_reg
+	; TEST ASSERTION A == 82
+	ld a,REG_MMU+SWAP_SLOT
+	call read_tbblue_reg
+	; TEST ASSERTION A == 83
+
+	; Restore slot 7 bank of the debugged program
+	ld a,(.slot7_save)
+	ld (slot_backup.slot7),a
+ TC_END
+
+.slot7_save:	defb 0
+
+.expected:	defb 0xE1, 0xE2,  0xE3, 0xE4,  0xE5
+.expected_end:
+
+.cmd_data:
+	defw 1+5, 0		; resp_length
+	defw 0xDFFF, 2	; Crosses slot 6/7 boundary
+	defw 0xFFFF, 2	; Wraps at 64k
+	defw 0x5123, 1
+.cmd_data_end
 
     ENDMODULE

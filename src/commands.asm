@@ -43,14 +43,14 @@ cmd_jump_table:
 .close:				defw cmd_close				; 2
 .get_registers:		defw cmd_get_registers		; 3
 .set_register:		defw cmd_set_register		; 4
-.write_bank:		defw cmd_not_supported		; 5
+.write_bank:		defw cmd_not_supported		; 5 = deprecated
 .continue:			defw cmd_continue			; 6
 .pause:				defw cmd_pause				; 7
-.read_mem:			defw cmd_read_mem			; 8
+.read_mem:			defw cmd_not_supported		; 8 = deprecated
 .write_mem:			defw cmd_write_mem			; 9
 .set_slot:			defw cmd_set_slot			; 10
 .get_tbblue_reg:	defw cmd_get_nextreg		; 11
-.set_border:		defw cmd_not_supported		; 12
+.set_border:		defw cmd_not_supported		; 12 = deprecated
 .set_breakpoints:	defw cmd_set_breakpoints	; 13
 .restore_mem:		defw cmd_restore_mem		; 14
 .loopback:			defw cmd_loopback			; 15
@@ -221,11 +221,11 @@ cmd_get_supported_commands:
 	; Send supported commands
 	ld a,1101_1110b	; CMD_INIT - CMD_PAUSE
 	call uart.write_tx_byte
-	ld a,1111_1111b	; CMD_READ_MEM - CMD_LOOPBACK
+	ld a,1111_1110b	; CMD_WRITE_MEM - CMD_LOOPBACK
 	call uart.write_tx_byte
 	ld a,1111_0011b	; CMD_GET_SPRITES_PALETTE - CMD_INTERRUPT_ON_OFF
 	call uart.write_tx_byte
-	ld a,0000_1111b	; CMD_GET_SUPPORTED_COMMANDS - CMD_SET_NEXTREGS
+	ld a,0001_1111b	; CMD_GET_SUPPORTED_COMMANDS - CMD_READ_MEM_BLOCKS
 	call uart.write_tx_byte
 	ret
 
@@ -454,47 +454,6 @@ cmd_pause:
 	jp send_ntf_pause ; Also changes prgm_state to PRGM_STOPPED
 
 
-;===========================================================================
-; CMD_READ_MEM
-; Reads a few memory blocks.
-; Special is that if slot 7 area is read,
-; then the memory bank of slot_backup.slot7 is temporarily paged into
-; SWAP_SLOT and read.
-; Changes:
-;  NA
-;===========================================================================
-cmd_read_mem:
-	; LOGPOINT [CMD] cmd_read_mem
-	; Read address and size from message
-	ld hl,receive_buffer.payload
-	ld de,PAYLOAD_READ_MEM
-	call receive_bytes
-
-	; Send response
-	ld hl,(payload_read_mem.mem_size)
-	ld de,1		; Add 1 for the sequence number
-	add hl,de
-	ex hl,de
-	jr c,.hl_correct	; If C then hl already contains 1.
-	ld l,0	; If NC then we need to reset HL to 0.
-.hl_correct:
-	call send_4bytes_length_and_seqno
-
-.inner:		; For unit testing
-	ld de,(payload_read_mem.mem_size)
-	ld hl,(payload_read_mem.mem_start)
-.read_block:
-	ld bc,.read
-	jp memory_loop
-
-; The inner call
-.read:
-	; Get byte
-	ld a,(hl)
-	; Send
-	jp uart.write_tx_byte
-
-
 ;=============================================
 ; CMD_READ_MEM_BLOCKS
 ; Reads a few memory blocks.
@@ -508,19 +467,24 @@ cmd_read_mem_blocks:
 	; LOGPOINT [CMD] cmd_read_mem_blocks
 	; Read response length
 	call uart.read_rx_word	; Result in hl, low word
-	ld de,hl
+	push hl
 	call uart.read_rx_word  ; Result in hl, high word
+	pop de	; Low word (read_rx_word changes DE)
 	; Send length of response and sequence number already
 	call send_4bytes_length_and_seqno
 
 	; Calculate count of blocks
 	ld hl,(receive_buffer.length)	; Only the low word is used. This would allow for 64k/4 = 16k blocks
-	add hl,-4-1  ; The response length field (-1 so that Carry is set correctly in loop below)
-	; Divide by 4 to get the count of blocks (assuming each block is 4 bytes)
-	;srl hl : srl hl
+	dec hl	; The response length field (-1 so that Carry is set correctly in loop below)
 
 	; Now loop over all mem blocks: address/size, address/size, ...
 .loop:
+	; Check if count is < 0
+	or a
+	ld de,4
+	sbc hl,de
+	ret c
+
 	push hl ; Block count
 	; Read address and size from message
 	call uart.read_rx_word	; Result in hl, address
@@ -530,17 +494,19 @@ cmd_read_mem_blocks:
 	pop hl	; Restore address of the current block
 
 	; Read block and sent data through uart
-	ld bc,cmd_read_mem.read
-	call cmd_read_mem.read_block
+	ld bc,.read
+	call memory_loop
 
  	; Restore block count
 	pop hl
-	or a
-	ld de,4
-	sbc hl,de
-	jr nc,.loop
+	jr .loop
 
-	ret
+; The inner call
+.read:
+	; Get byte
+	ld a,(hl)
+	; Send
+	jp uart.write_tx_byte
 
 
 ;===========================================================================
