@@ -150,7 +150,7 @@ cmd_init:
 	call .inner
 	; Reset slots to ZX128 default: ROM0, 5, 2, 0 => ROM0, ROM0, 10, 11, 4, 5, 0, 1
 	; Only the backup is set. It is written to the MMU registers on continue.
-	ld hl,.default_slots
+	ld hl,default_slots
 	ld de,slot_backup
 	ld bc,SLOT_BACKUP
 	ldir
@@ -197,9 +197,6 @@ cmd_init:
 	or a
 	jr nz,.write_prg_name_loop
 	ret
-
-.default_slots:
-	defb ROM_BANK, ROM_BANK, 10, 11, 4, 5, 0, 1
 
 .inner:
 	; Read version number

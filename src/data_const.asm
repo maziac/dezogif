@@ -27,6 +27,9 @@ magic_number_d:     equ 0x0067
 ; Const data
 ;===========================================================================
 
+; Default slots
+default_slots:  defb ROM_BANK, ROM_BANK, 10, 11, 4, 5, 0, 1
+
 ; 16 bit build time
 build_time_abs: defw BUILD_TIME16
 build_time_rel = build_time_abs-MAIN_ADDR;
